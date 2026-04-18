@@ -59,6 +59,23 @@ One call per stage. No configuration surface to speak of — yet. A theme
 registry and plugin API will arrive when a second document format needs them,
 not before.
 
+## Callouts
+
+Three types, one source format — labeled NOTE, WARN, or SYSTEM at the start
+of a blockquote.
+
+> [!NOTE]
+> Useful context that isn't load-bearing. A quiet aside the reader can take
+> or leave.
+
+> [!WARN]
+> Something the reader must not miss. The inverted label bar is the
+> typographic equivalent of an air-horn.
+
+> [!SYSTEM]
+> A diagnostic, an engineering invariant, or a pre-condition. Dashed border
+> reads as "from the machine, not the author."
+
 ## A Note on Checklists
 
 - [x] ~~Use five accent colors.~~

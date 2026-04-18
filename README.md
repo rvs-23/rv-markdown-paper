@@ -9,11 +9,14 @@ no rounded corners, no shadows.
 
 ## Status
 
-Week 3 of 10 (part-time). The pipeline now supports GFM (tables, task lists,
-strikethrough, autolinks), Shiki syntax highlighting through a custom
-grayscale theme, YAML frontmatter (`title`, `author`, `date`), and a running
-page header/footer rendered via Playwright templates — a uppercase-mono
-header (title left, author right) and a `[ page / total ]` footer.
+Week 3 of 10 (part-time). The pipeline supports GFM (tables, task lists,
+strikethrough, autolinks), Shiki syntax highlighting through an inverted
+grayscale theme (dark code blocks with a language label in the top corner),
+YAML frontmatter (`title`, `author`, `date`), and a running page
+header/footer rendered via Playwright templates — an uppercase-mono header
+(title left, author right) and a `[ page / total ]` footer. Callouts
+(`[!NOTE]` / `[!WARN]` / `[!SYSTEM]`) were pulled forward from Week 6; they
+are the v1 design signature.
 
 Internal boundaries are intact: `parser/` exposes the mdast AST as a
 first-class value, `html/` wraps the output in a minimal shell with a

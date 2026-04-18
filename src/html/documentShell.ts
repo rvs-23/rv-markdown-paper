@@ -64,20 +64,24 @@ const placeholderCss = `
 
   code {
     font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
-    font-size: 0.95em;
+    font-size: 0.92em;
+    background: #ececec;
+    padding: 1px 5px;
   }
 
   pre {
     font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     font-size: 10pt;
-    background: #f2f2f2;
+    background: #0a0a0a;
+    color: #e8e8e8;
     border-top: 1px solid #000;
     border-bottom: 1px solid #000;
-    padding: 12px 14px;
-    margin: 1em 0;
+    padding: 14px 16px;
+    margin: 1.2em 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     break-inside: avoid;
+    line-height: 1.5;
   }
 
   pre code {
@@ -87,12 +91,29 @@ const placeholderCss = `
   }
 
   pre.shiki {
-    border-top: 1px solid #000;
-    border-bottom: 1px solid #000;
+    position: relative;
+    padding-top: 2em;
   }
 
   pre.shiki code {
     display: block;
+  }
+
+  pre.shiki::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 0.55em;
+    right: 0.9em;
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.72em;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  pre.shiki[data-language="plaintext"]::before,
+  pre.shiki[data-language="text"]::before {
+    content: "";
   }
 
   hr {
@@ -105,6 +126,7 @@ const placeholderCss = `
     border-collapse: collapse;
     width: 100%;
     margin: 1em 0;
+    border-bottom: 2px solid #000;
   }
 
   thead {
@@ -162,6 +184,55 @@ const placeholderCss = `
     position: absolute;
     inset: 0.12em;
     background: #000;
+  }
+
+  /* ---------- Callouts ---------- */
+
+  .callout {
+    margin: 1.4em 0;
+    border: 1px solid #000;
+    padding: 0 0 0.7em;
+    break-inside: avoid;
+  }
+
+  .callout__label {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    padding: 5px 10px;
+    margin: 0 0 0.7em;
+    border-bottom: 1px solid #000;
+  }
+
+  .callout > *:not(.callout__label) {
+    margin-left: 1em;
+    margin-right: 1em;
+    margin-bottom: 0.5em;
+  }
+
+  .callout > *:not(.callout__label):last-child {
+    margin-bottom: 0;
+  }
+
+  .callout--note .callout__label {
+    background: #ececec;
+    color: #000;
+  }
+
+  .callout--warn .callout__label {
+    background: #000;
+    color: #fff;
+  }
+
+  .callout--system {
+    border: 1px dashed #000;
+  }
+  .callout--system .callout__label {
+    background: transparent;
+    color: #000;
+    border-bottom: 1px dashed #000;
   }
 
   img {
