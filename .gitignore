@@ -100,7 +100,7 @@ Desktop.ini
 $RECYCLE.BIN/
 *.lnk
 
-# ---------- Project-specific (beautiful-md-pdf) ----------
+# ---------- Project-specific (rv-markdown-paper) ----------
 # Local scratch directories
 /tmp/
 /scratch/

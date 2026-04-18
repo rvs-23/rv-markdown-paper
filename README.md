@@ -1,28 +1,54 @@
-# beautiful-md-pdf
+# rv-markdown-paper
 
 A grayscale, terminal-inspired Markdown to PDF converter.
 
-The design goal is a printed technical dossier with terminal discipline — black and white only, sharp rectangles, sans-serif body with mono used deliberately for H1, code, callouts, metadata, and page numbers. No color. No rounded corners. No shadows.
+The design goal is a printed technical dossier with terminal discipline —
+black and white only, sharp rectangles, sans-serif body with mono used
+deliberately for H1, code, callouts, metadata, and page numbers. No color,
+no rounded corners, no shadows.
 
 ## Status
 
-Week 2 of 10 (part-time). The conversion pipeline now parses Markdown into HTML via `unified` + `remark-parse` + `remark-rehype` + `rehype-stringify`, wraps the result in an HTML shell with throwaway grayscale CSS, and prints via headless Chromium. Code is split into `parser/`, `html/`, `pdf/`, and a thin `core/` orchestrator. GFM extensions, Shiki syntax highlighting, and image resolution arrive in Week 3.
+Week 3 of 10 (part-time). The pipeline now supports GFM (tables, task lists,
+strikethrough, autolinks), Shiki syntax highlighting through a custom
+grayscale theme, YAML frontmatter (`title`, `author`, `date`), and a running
+page header/footer rendered via Playwright templates — a uppercase-mono
+header (title left, author right) and a `[ page / total ]` footer.
 
-See `~/Desktop/markdown_to_pdf_project_plan.md` for the full teaching plan, architecture, design tenets, and week-by-week breakdown.
+Internal boundaries are intact: `parser/` exposes the mdast AST as a
+first-class value, `html/` wraps the output in a minimal shell with a
+`<base href>` so relative image URLs resolve, `pdf/` drives headless
+Chromium, and `core/` orchestrates. See the teaching plan at
+`~/Desktop/markdown_to_pdf_project_plan.md` for the full week-by-week
+breakdown.
 
 ## Quick start
 
 ```bash
 npm install
 npx playwright install chromium
-npm run mdpdf -- examples/hello.md examples/hello.pdf
+npm run mdpdf -- examples/01-hello.md examples/01-hello.pdf
 ```
 
-Output:
+Render every example:
 
+```bash
+for md in examples/*.md; do
+  npm run mdpdf -- "$md" "${md%.md}.pdf"
+done
 ```
-Wrote examples/hello.pdf
-```
+
+## Examples
+
+Five fixtures of increasing complexity, each with a checked-in rendered PDF:
+
+| File                    | What it demonstrates                                   |
+|-------------------------|--------------------------------------------------------|
+| `01-hello.md`           | Minimal page — type system, nothing else               |
+| `02-typography.md`      | Headings, emphasis, blockquote, link, horizontal rule  |
+| `03-structured.md`      | Ordered / unordered / nested lists, task lists, table  |
+| `04-code.md`            | TypeScript / Python / Bash / JSON in grayscale Shiki   |
+| `05-full-paper.md`      | Frontmatter metadata + all of the above in one paper   |
 
 ## Commands
 
@@ -34,22 +60,38 @@ npm run typecheck # tsc --noEmit
 npm run lint      # eslint
 ```
 
+## Frontmatter
+
+Optional YAML at the top of the file. Supported keys:
+
+```yaml
+---
+title: "A Short Case for Boring Output"
+author: "R. Sharma"
+date: "2026-04-18"
+---
+```
+
+`title` drives the `<title>` tag, the PDF's running header, and falls back
+to the filename when absent. `author` and `date` appear in the header
+(author preferred if both are set). CLI-level overrides arrive in Week 4.
+
 ## Structure
 
 ```
 src/
   cli/       CLI entry (commander)
-  core/      convertMarkdownToPdf
-  parser/    Markdown parsing (unified)
-  transform/ AST transformations         (Week 3+)
+  core/      convertMarkdownToPdf orchestrator
+  parser/    Markdown parsing (unified + GFM) and frontmatter extraction
+  transform/ AST transformations                 (Week 6+)
   html/      HTML shell + placeholder CSS
-  themes/    Minimal theme (CSS + JSON)   (Week 5)
-  pdf/       Playwright wrapper
-  preview/   Local preview server         (Week 8)
+  themes/    Grayscale Shiki theme; Minimal CSS   (full theme, Week 5)
+  pdf/       Playwright wrapper + header/footer templates
+  preview/   Local preview server                 (Week 8)
   utils/
-examples/    Fixture Markdown + generated PDFs
-tests/       Vitest + fixtures            (Week 9)
-docs/        Teaching docs                (Week 10)
+examples/    Markdown fixtures + rendered PDFs
+tests/       Vitest + fixtures                    (Week 9)
+docs/        Teaching docs                        (Week 10)
 ```
 
 ## License
