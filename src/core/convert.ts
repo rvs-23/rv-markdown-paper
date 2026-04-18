@@ -30,14 +30,11 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
   });
 
   const tree = parseMarkdownToMdast(content);
-  const htmlBody = await mdastToHtml(tree, {
-    paperTone: resolved.theme.paperTone,
-    accent: resolved.theme.accent,
-  });
+  const htmlBody = await mdastToHtml(tree);
 
   const title = resolved.title ?? deriveTitle(inputAbsolute);
   const baseUrl = pathToFileURL(inputDir + "/").href;
-  const html = wrapInDocumentShell(htmlBody, { title, baseUrl, theme: resolved.theme });
+  const html = wrapInDocumentShell(htmlBody, { title, baseUrl });
 
   await mkdir(dirname(outputAbsolute), { recursive: true });
   await renderHtmlToPdf({
@@ -48,7 +45,6 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     showHeader: resolved.showHeader,
     showFooter: resolved.showFooter,
     metadata: { title, author: resolved.author, date: resolved.date },
-    theme: resolved.theme,
   });
 }
 

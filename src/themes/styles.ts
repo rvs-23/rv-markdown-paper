@@ -1,90 +1,21 @@
-import { ACCENT_HEX, CODE_BG } from "./shikiTheme.js";
-
 export const GOOGLE_FONTS_HREF =
   "https://fonts.googleapis.com/css2" +
   "?family=Lora:ital,wght@0,400..700;1,400..700" +
-  "&family=Inter:wght@400;500;600;700" +
-  "&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,700;1,400" +
+  "&family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400" +
   "&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400" +
   "&display=swap";
 
 export const STYLESHEET = /* css */ `
   :root {
     color-scheme: light only;
-
-    /* paper tone — cool-white default, overridden by [data-paper-tone="pure-white"] */
-    --paper: #fafbfc;
-    --ink: #18181b;
-    --ink-soft: #3f3f46;
-    --muted: #71717a;
-    --rule: #d4d4d8;
-    --rule-soft: #e4e4e7;
-    --code-bg: ${CODE_BG["cool-white"]};
-    --code-inline-bg: #e9ecef;
-
-    /* accent — graphite default */
-    --accent: ${ACCENT_HEX.graphite};
-    --accent-soft: #e2e8f0;
-
-    /* type */
-    --body-font: "Lora", Georgia, "Times New Roman", serif;
-    --heading-font: "IBM Plex Serif", "Lora", Georgia, serif;
-    --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-    /* density — normal default */
-    --body-size: 11pt;
-    --body-leading: 1.62;
-    --para-gap: 0.95em;
-    --heading-gap-top: 1.65em;
-    --heading-gap-bottom: 0.55em;
-    --h1-size: 26pt;
-    --h2-size: 17pt;
-    --h3-size: 13pt;
-    --h4-size: 11pt;
-    --block-gap: 1.35em;
-  }
-
-  [data-paper-tone="pure-white"] {
-    --paper: #ffffff;
-    --code-bg: ${CODE_BG["pure-white"]};
-    --code-inline-bg: #f4f4f5;
-  }
-
-  [data-accent="forest"] {
-    --accent: ${ACCENT_HEX.forest};
-    --accent-soft: #dbe7df;
-  }
-
-  [data-body-font="inter"] {
-    --body-font: "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
-  }
-
-  [data-heading-font="lora"] {
-    --heading-font: "Lora", Georgia, serif;
-  }
-
-  [data-density="compact"] {
-    --body-size: 10.5pt;
-    --body-leading: 1.5;
-    --para-gap: 0.7em;
-    --heading-gap-top: 1.3em;
-    --heading-gap-bottom: 0.4em;
-    --h1-size: 22pt;
-    --h2-size: 15pt;
-    --h3-size: 12pt;
-    --h4-size: 10.5pt;
-    --block-gap: 1.05em;
-  }
-
-  html, body {
-    background: var(--paper);
   }
 
   body {
-    font-family: var(--body-font);
-    font-size: var(--body-size);
-    line-height: var(--body-leading);
-    color: var(--ink);
+    font-family: "Lora", Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #111;
+    background: #ffffff;
     margin: 0;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "kern", "liga", "onum";
@@ -96,9 +27,9 @@ export const STYLESHEET = /* css */ `
   /* ---------- Headings ---------- */
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--heading-font);
-    color: var(--ink);
-    margin: var(--heading-gap-top) 0 var(--heading-gap-bottom);
+    font-family: "IBM Plex Serif", "Lora", Georgia, serif;
+    color: #000;
+    margin: 1.7em 0 0.5em;
     line-height: 1.2;
     letter-spacing: -0.005em;
     break-after: avoid-page;
@@ -106,38 +37,38 @@ export const STYLESHEET = /* css */ `
   }
 
   h1 {
-    font-size: var(--h1-size);
+    font-size: 26pt;
     font-weight: 700;
     letter-spacing: -0.015em;
     margin-top: 0;
     padding-bottom: 0.35em;
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid #000;
   }
 
   h2 {
-    font-size: var(--h2-size);
+    font-size: 17pt;
     font-weight: 700;
     padding-bottom: 0.2em;
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid #cfcfcf;
   }
 
-  h3 { font-size: var(--h3-size); font-weight: 600; }
-  h4 { font-size: var(--h4-size); font-weight: 600; font-style: italic; }
+  h3 { font-size: 13pt; font-weight: 600; }
+  h4 { font-size: 11pt; font-weight: 600; font-style: italic; }
 
   p {
-    margin: 0 0 var(--para-gap);
+    margin: 0 0 0.9em;
     orphans: 3;
     widows: 3;
     hyphens: auto;
   }
 
-  strong { font-weight: 700; color: var(--ink); }
+  strong { font-weight: 700; color: #000; }
   em { font-style: italic; }
 
   /* ---------- Lists ---------- */
 
   ul, ol {
-    margin: 0 0 var(--block-gap);
+    margin: 0 0 1.1em;
     padding-left: 1.5em;
   }
   li { margin-bottom: 0.25em; }
@@ -146,7 +77,7 @@ export const STYLESHEET = /* css */ `
   /* ---------- Links ---------- */
 
   a {
-    color: var(--accent);
+    color: #000;
     text-decoration: underline;
     text-decoration-thickness: 0.06em;
     text-underline-offset: 0.18em;
@@ -155,42 +86,45 @@ export const STYLESHEET = /* css */ `
   /* ---------- Blockquotes ---------- */
 
   blockquote {
-    margin: var(--block-gap) 0;
+    margin: 1.2em 0;
     padding: 0.1em 0 0.1em 1em;
-    border-left: 2px solid var(--rule);
-    color: var(--ink-soft);
+    border-left: 2px solid #000;
+    color: #3d3d3d;
     font-style: italic;
     break-inside: avoid;
   }
 
-  /* ---------- Code ---------- */
+  /* ---------- Inline code ---------- */
 
   code {
-    font-family: var(--mono-font);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.88em;
-    background: var(--code-inline-bg);
+    background: #efefef;
     padding: 1px 5px;
-    border-radius: 0;
   }
 
+  /* ---------- Code blocks (dark panel) ---------- */
+
   pre {
-    font-family: var(--mono-font);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 9.5pt;
-    background: var(--code-bg);
-    color: var(--ink);
-    padding: 1em 1.1em 0.95em;
-    margin: var(--block-gap) 0;
+    background: #111113;
+    color: #e8e8e8;
+    padding: 1.05em 1.1em 1em;
+    margin: 1.2em 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     break-inside: avoid;
-    line-height: 1.58;
-    border-left: 2px solid var(--accent);
+    line-height: 1.6;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
   }
 
   pre code {
     font-size: inherit;
     background: transparent;
     padding: 0;
+    color: inherit;
   }
 
   pre.shiki {
@@ -205,9 +139,9 @@ export const STYLESHEET = /* css */ `
     position: absolute;
     top: 0.65em;
     right: 1em;
-    font-family: var(--mono-font);
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     font-size: 0.72em;
-    color: var(--accent);
+    color: #888;
     text-transform: uppercase;
     letter-spacing: 0.16em;
     font-weight: 600;
@@ -218,11 +152,11 @@ export const STYLESHEET = /* css */ `
     content: "";
   }
 
-  /* ---------- Rule ---------- */
+  /* ---------- Horizontal rule ---------- */
 
   hr {
     border: none;
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid #c8c8c8;
     margin: 2.2em 0;
   }
 
@@ -231,7 +165,7 @@ export const STYLESHEET = /* css */ `
   table {
     border-collapse: collapse;
     width: 100%;
-    margin: var(--block-gap) 0;
+    margin: 1.2em 0;
     font-size: 0.95em;
   }
 
@@ -239,32 +173,32 @@ export const STYLESHEET = /* css */ `
 
   th {
     text-align: left;
-    font-family: var(--mono-font);
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     text-transform: uppercase;
     font-size: 0.78em;
     letter-spacing: 0.09em;
     font-weight: 600;
-    color: var(--accent);
+    color: #000;
     padding: 0.55em 0.75em;
-    border-top: 1.5px solid var(--ink);
-    border-bottom: 1px solid var(--ink);
+    border-top: 1.5px solid #000;
+    border-bottom: 1px solid #000;
     background: transparent;
   }
 
   td {
     padding: 0.5em 0.75em;
-    border-bottom: 1px solid var(--rule-soft);
+    border-bottom: 1px solid #e4e4e4;
     vertical-align: top;
   }
 
   tbody tr:last-child td {
-    border-bottom: 1.5px solid var(--ink);
+    border-bottom: 1.5px solid #000;
   }
 
   /* ---------- Strikethrough ---------- */
 
   del, s {
-    color: var(--muted);
+    color: #888;
     text-decoration: line-through;
   }
 
@@ -281,51 +215,41 @@ export const STYLESHEET = /* css */ `
     -webkit-appearance: none;
     width: 0.85em;
     height: 0.85em;
-    border: 1px solid var(--ink);
+    border: 1px solid #000;
     margin: 0 0.55em 0 0;
     vertical-align: -0.06em;
     position: relative;
-    background: transparent;
-  }
-  li.task-list-item input[type="checkbox"]:checked {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: #fff;
   }
   li.task-list-item input[type="checkbox"]:checked::after {
     content: "";
     position: absolute;
-    left: 0.18em;
-    top: 0.02em;
-    width: 0.22em;
-    height: 0.45em;
-    border: solid var(--paper);
-    border-width: 0 0.1em 0.1em 0;
-    transform: rotate(45deg);
+    inset: 0.12em;
+    background: #000;
   }
 
-  /* ---------- Callouts (bare) ---------- */
+  /* ---------- Callouts (bare, monochrome) ---------- */
 
   .callout {
-    margin: var(--block-gap) 0;
-    padding: 0.15em 0 0.15em 1.1em;
-    border-left: 2px solid var(--accent);
+    margin: 1.3em 0;
+    padding: 0.1em 0 0.1em 1em;
+    border-left: 2px solid #000;
     break-inside: avoid;
   }
 
   .callout__tag {
-    font-family: var(--mono-font);
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     font-size: 0.72em;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-weight: 600;
-    color: var(--accent);
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    color: #000;
     margin: 0 0 0.35em;
   }
 
   .callout > p { margin: 0 0 0.5em; }
   .callout > p:last-child { margin-bottom: 0; }
 
-  .callout--warn .callout__tag::after { content: " ·"; }
   .callout--system { border-left-style: dashed; }
 
   /* ---------- Images ---------- */
@@ -338,8 +262,8 @@ export const STYLESHEET = /* css */ `
 
   .footnotes {
     font-size: 9pt;
-    color: var(--ink-soft);
-    border-top: 1px solid var(--rule);
+    color: #3d3d3d;
+    border-top: 1px solid #c8c8c8;
     margin-top: 2.5em;
     padding-top: 0.8em;
   }
@@ -347,8 +271,6 @@ export const STYLESHEET = /* css */ `
   .footnotes p { margin: 0.2em 0; }
 
   /* ---------- Print ---------- */
-
-  @page { margin: 0; }
 
   pre, blockquote, .callout, table, figure {
     break-inside: avoid;

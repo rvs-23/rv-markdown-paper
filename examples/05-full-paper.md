@@ -8,8 +8,8 @@ date: "2026-04-18"
 
 Most document generators optimize for visual variety — icons, gradients,
 accent palettes, rounded corners, illustrated divider graphics. This one
-does not. It aims to produce the same kind of page, over and over, with as
-little chrome as the content will tolerate.
+does not. It aims to produce the same kind of page, over and over, with
+as little chrome as the content will tolerate.
 
 ## Why
 
@@ -23,46 +23,27 @@ When those decisions aren't yours to make, the reader can just read.
 
 ## What You Get
 
-| Element     | Treatment                                                 |
-|-------------|-----------------------------------------------------------|
-| H1          | Serif (IBM Plex Serif 700), ink-black, rule below         |
-| H2–H4       | Same serif family, tighter hierarchy                      |
-| Body        | Lora, 11pt, 1.62 leading, true-italic for emphasis        |
-| Code        | Light mono panel, accent keywords, language tag top-right |
-| Tables      | Uppercase-mono header in accent, no vertical borders      |
-| Links       | Accent-colored underline, restrained                      |
-| Callouts    | Thin accent rule on the left — no bar, no fill            |
-| Header      | Title left, author right, accent mono                     |
-| Footer      | `page / total` in accent mono, centered                   |
-
-## The Five Knobs
-
-Every document exposes the same five theme variables — two options each,
-built into the stylesheet, resolved from CLI, frontmatter, or project
-config:
-
-| Variable       | Values                          |
-|----------------|---------------------------------|
-| `paper-tone`   | `cool-white` · `pure-white`     |
-| `accent`       | `graphite` · `forest`           |
-| `body-font`    | `lora` · `inter`                |
-| `heading-font` | `plex-serif` · `lora`           |
-| `density`      | `normal` · `compact`            |
-
-Defaults are `cool-white`, `graphite`, `lora`, `plex-serif`, `normal` —
-the settings that need the least conscious override for most documents.
+| Element     | Treatment                                              |
+|-------------|--------------------------------------------------------|
+| H1          | IBM Plex Serif 700, ink-black, rule below              |
+| H2–H4       | Same serif family, tighter hierarchy                   |
+| Body        | Lora, 11pt, 1.6 leading, true-italic for emphasis      |
+| Code        | Dark panel, mono, language tag top-right               |
+| Tables      | Uppercase-mono header, no vertical borders             |
+| Links       | Ink-black, underlined                                  |
+| Callouts    | Thin black left rule, small mono tag — no bar, no fill |
+| Header      | Title left, author right, muted mono                   |
+| Footer      | `page / total` in mono, centered                       |
 
 ## How
 
 1. Extract frontmatter with `gray-matter`.
 2. Parse Markdown to an mdast tree (`remark-parse` + `remark-gfm`).
-3. Transform mdast → hast with `remark-rehype`.
-4. Syntax-highlight with `@shikijs/rehype`, using a Shiki theme built from
-   the resolved `paperTone` + `accent`.
-5. Stringify to HTML, wrap in a shell whose `<html>` carries
-   `data-paper-tone`, `data-accent`, `data-body-font`, `data-heading-font`,
-   and `data-density`; one stylesheet handles every combination.
-6. Drive headless Chromium through Playwright; emit the PDF.
+3. Transform mdast → hast with `remark-rehype`, running a small
+   `remarkCallouts` plugin along the way.
+4. Syntax-highlight with `@shikijs/rehype` using a grayscale theme.
+5. Stringify to HTML, wrap in a minimal shell, drive Chromium through
+   Playwright, emit the PDF.
 
 Nothing in that list is novel. The novelty, if any, is in what's left out.
 
@@ -72,18 +53,15 @@ Nothing in that list is novel. The novelty, if any, is in what's left out.
 const { content, frontmatter } = extractFrontmatter(raw);
 const resolved = resolveOptions({ cli, frontmatter, project });
 const tree = parseMarkdownToMdast(content);
-const body = await mdastToHtml(tree, {
-  paperTone: resolved.theme.paperTone,
-  accent: resolved.theme.accent,
-});
+const body = await mdastToHtml(tree);
 const html = wrapInDocumentShell(body, {
   title: resolved.title ?? deriveTitle(inputPath),
   baseUrl: pathToFileURL(dirname(inputPath) + "/").href,
-  theme: resolved.theme,
 });
 ```
 
-One call per stage, one layer of configuration.
+One call per stage. No theme registry, no plugin API — if a second output
+format ever arrives, we can add one then.
 
 ## Callouts
 
@@ -95,7 +73,7 @@ tag on the first line of a blockquote.
 > take or leave.
 
 > [!WARN]
-> Something the reader must not miss. The accent rule is enough signal;
+> Something the reader must not miss. The left rule is enough signal;
 > the tag above it is enough name.
 
 > [!SYSTEM]
@@ -105,7 +83,7 @@ tag on the first line of a blockquote.
 ## A Note on Checklists
 
 - [x] ~~Five accent palettes.~~
-- [x] Two accent options, disciplined use.
+- [x] Grayscale only — no accent color.
 - [x] Header and footer in the same typographic voice.
 - [ ] Cover page (Week 7).
 
