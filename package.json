@@ -1,0 +1,35 @@
+{
+  "name": "beautiful-md-pdf",
+  "version": "0.1.0",
+  "description": "A grayscale, terminal-inspired Markdown to PDF converter.",
+  "type": "module",
+  "bin": {
+    "mdpdf": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "mdpdf": "tsx src/cli/index.ts",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "playwright": "^1.59.1",
+    "rehype-stringify": "^10.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "eslint": "^10.2.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.58.2"
+  }
+}

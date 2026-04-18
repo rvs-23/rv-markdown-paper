@@ -1,0 +1,119 @@
+# ---------- Dependencies ----------
+node_modules/
+jspm_packages/
+bower_components/
+.pnp
+.pnp.js
+.pnp.cjs
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.log
+.yarn/install-state.gz
+.pnpm-store/
+
+# ---------- Build output ----------
+dist/
+build/
+out/
+lib/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.vercel/
+.output/
+
+# ---------- TypeScript ----------
+*.tsbuildinfo
+.tscache/
+
+# ---------- Caches ----------
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.rollup.cache/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.vite/
+
+# ---------- Logs ----------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+
+# ---------- Testing ----------
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+.vitest-cache/
+
+# ---------- Environment & secrets ----------
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+secrets.json
+.secrets/
+
+# ---------- Editors & IDEs ----------
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+nbproject/
+*.sublime-workspace
+*.sublime-project
+.history/
+
+# ---------- OS ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ---------- Project-specific (beautiful-md-pdf) ----------
+# Local scratch directories
+/tmp/
+/scratch/
+.mdpdf-debug/
+
+# Generated PDFs — ignore everywhere except checked-in examples
+*.pdf
+!examples/**/*.pdf
+!docs/**/*.pdf
+
+# Chromium download artifacts (Playwright manages its own cache, but just in case)
+.chromium/
+.playwright-browsers/
+
+# Font download cache (Week 5+ bundled fonts)
+.fonts-cache/

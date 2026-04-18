@@ -1,0 +1,157 @@
+const placeholderCss = `
+  :root {
+    color-scheme: light only;
+  }
+
+  body {
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 11pt;
+    line-height: 1.55;
+    color: #111;
+    margin: 0;
+  }
+
+  main {
+    max-width: 100%;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #000;
+    margin: 1.6em 0 0.5em;
+    line-height: 1.25;
+  }
+
+  h1 {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 22pt;
+    border-top: 1px solid #000;
+    padding-top: 0.6em;
+    margin-top: 0;
+  }
+
+  h2 { font-size: 17pt; }
+  h3 { font-size: 13pt; }
+  h4 { font-size: 11pt; }
+
+  p {
+    margin: 0 0 0.9em;
+  }
+
+  ul, ol {
+    margin: 0 0 1em;
+    padding-left: 1.4em;
+  }
+
+  li {
+    margin-bottom: 0.3em;
+  }
+
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  blockquote {
+    margin: 1em 0;
+    padding: 0.2em 0 0.2em 1em;
+    border-left: 2px solid #000;
+    color: #666;
+  }
+
+  code {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.95em;
+  }
+
+  pre {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 10pt;
+    background: #f2f2f2;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    padding: 12px 14px;
+    margin: 1em 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  pre code {
+    font-size: inherit;
+    background: transparent;
+    padding: 0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #c8c8c8;
+    margin: 2em 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  th {
+    text-align: left;
+    background: #ececec;
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    letter-spacing: 0.05em;
+    padding: 6px 10px;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+  }
+
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #c8c8c8;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+`;
+
+export type DocumentShellOptions = {
+  title?: string;
+  baseUrl?: string;
+};
+
+export function wrapInDocumentShell(htmlBody: string, options: DocumentShellOptions = {}): string {
+  const { title = "Document", baseUrl } = options;
+  const baseTag = baseUrl ? `    <base href="${escapeAttribute(baseUrl)}" />\n` : "";
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+${baseTag}    <title>${escapeAttribute(title)}</title>
+    <style>${placeholderCss}</style>
+  </head>
+  <body>
+    <main class="document">
+${htmlBody}
+    </main>
+  </body>
+</html>`;
+}
+
+function escapeAttribute(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
