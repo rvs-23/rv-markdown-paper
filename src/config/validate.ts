@@ -1,4 +1,18 @@
-import type { DocumentOptionsLayer, Margins } from "./options.js";
+import {
+  ACCENTS,
+  BODY_FONTS,
+  DENSITIES,
+  HEADING_FONTS,
+  PAPER_TONES,
+  type Accent,
+  type BodyFont,
+  type Density,
+  type DocumentOptionsLayer,
+  type HeadingFont,
+  type Margins,
+  type PaperTone,
+  type ThemeLayer,
+} from "./options.js";
 
 const CSS_LENGTH_RE = /^\d*\.?\d+(in|cm|mm|pt|px)$/;
 
@@ -24,6 +38,7 @@ export function validateOptions(raw: unknown, source: string): DocumentOptionsLa
   if ("margins" in r) out.margins = expectMargins(r.margins, `${source}.margins`);
   if ("showHeader" in r) out.showHeader = expectBool(r.showHeader, `${source}.showHeader`);
   if ("showFooter" in r) out.showFooter = expectBool(r.showFooter, `${source}.showFooter`);
+  if ("theme" in r) out.theme = expectTheme(r.theme, `${source}.theme`);
 
   return out;
 }
@@ -68,6 +83,27 @@ function expectMargins(value: unknown, path: string): Partial<Margins> {
     }
   }
   return out;
+}
+
+function expectTheme(value: unknown, path: string): ThemeLayer {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new ConfigError(`${path}: expected an object, got ${describe(value)}.`);
+  }
+  const t = value as Record<string, unknown>;
+  const out: ThemeLayer = {};
+  if ("paperTone" in t) out.paperTone = expectEnum(t.paperTone, PAPER_TONES, `${path}.paperTone`) as PaperTone;
+  if ("accent" in t) out.accent = expectEnum(t.accent, ACCENTS, `${path}.accent`) as Accent;
+  if ("bodyFont" in t) out.bodyFont = expectEnum(t.bodyFont, BODY_FONTS, `${path}.bodyFont`) as BodyFont;
+  if ("headingFont" in t) out.headingFont = expectEnum(t.headingFont, HEADING_FONTS, `${path}.headingFont`) as HeadingFont;
+  if ("density" in t) out.density = expectEnum(t.density, DENSITIES, `${path}.density`) as Density;
+  return out;
+}
+
+function expectEnum(value: unknown, allowed: readonly string[], path: string): string {
+  if (typeof value === "string" && (allowed as readonly string[]).includes(value)) return value;
+  const options = allowed.map((s) => `"${s}"`).join(" or ");
+  throw new ConfigError(`${path}: expected ${options}, got ${describe(value)}.`);
 }
 
 function describe(value: unknown): string {

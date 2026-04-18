@@ -32,15 +32,15 @@ const remarkCallouts: Plugin<[], Root> = () => {
         },
       };
 
-      const labelPara: Paragraph = {
+      const tag: Paragraph = {
         type: "paragraph",
         data: {
           hName: "div",
-          hProperties: { className: ["callout__label"] },
+          hProperties: { className: ["callout__tag"] },
         },
         children: [{ type: "text", value: type.toUpperCase() }],
       };
-      node.children.unshift(labelPara);
+      node.children.unshift(tag);
     });
   };
 };

@@ -4,6 +4,7 @@ import {
   DEFAULTS,
   type DocumentOptions,
   type DocumentOptionsLayer,
+  type Theme,
 } from "./options.js";
 import { validateOptions } from "./validate.js";
 
@@ -56,6 +57,26 @@ export function resolveOptions(layers: {
     },
     showHeader: pick(layers.cli.showHeader, layers.frontmatter.showHeader, project.showHeader) ?? DEFAULTS.showHeader,
     showFooter: pick(layers.cli.showFooter, layers.frontmatter.showFooter, project.showFooter) ?? DEFAULTS.showFooter,
+    theme: resolveTheme(layers),
+  };
+}
+
+function resolveTheme(layers: {
+  cli: DocumentOptionsLayer;
+  frontmatter: DocumentOptionsLayer;
+  project: DocumentOptionsLayer | null;
+}): Theme {
+  const project = layers.project ?? {};
+  const c = layers.cli.theme ?? {};
+  const f = layers.frontmatter.theme ?? {};
+  const p = project.theme ?? {};
+  const d = DEFAULTS.theme;
+  return {
+    paperTone: pick(c.paperTone, f.paperTone, p.paperTone) ?? d.paperTone,
+    accent: pick(c.accent, f.accent, p.accent) ?? d.accent,
+    bodyFont: pick(c.bodyFont, f.bodyFont, p.bodyFont) ?? d.bodyFont,
+    headingFont: pick(c.headingFont, f.headingFont, p.headingFont) ?? d.headingFont,
+    density: pick(c.density, f.density, p.density) ?? d.density,
   };
 }
 
