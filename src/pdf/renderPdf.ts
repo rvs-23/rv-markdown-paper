@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import type { Margins } from "../config/options.js";
 
 export type PdfMetadata = {
   title?: string;
@@ -9,12 +10,17 @@ export type PdfMetadata = {
 export type RenderPdfOptions = {
   html: string;
   outputPath: string;
-  pageSize?: "Letter" | "A4";
+  pageSize: "Letter" | "A4";
+  margins: Margins;
+  showHeader: boolean;
+  showFooter: boolean;
   metadata?: PdfMetadata;
 };
 
+const EMPTY_TEMPLATE = "<div></div>";
+
 export async function renderHtmlToPdf(options: RenderPdfOptions): Promise<void> {
-  const { html, outputPath, pageSize = "Letter", metadata = {} } = options;
+  const { html, outputPath, pageSize, margins, showHeader, showFooter, metadata = {} } = options;
 
   const browser = await chromium.launch();
   try {
@@ -24,10 +30,10 @@ export async function renderHtmlToPdf(options: RenderPdfOptions): Promise<void> 
       path: outputPath,
       format: pageSize,
       printBackground: true,
-      margin: { top: "1.05in", right: "0.85in", bottom: "0.95in", left: "0.85in" },
-      displayHeaderFooter: true,
-      headerTemplate: buildHeader(metadata),
-      footerTemplate: buildFooter(),
+      margin: margins,
+      displayHeaderFooter: showHeader || showFooter,
+      headerTemplate: showHeader ? buildHeader(metadata) : EMPTY_TEMPLATE,
+      footerTemplate: showFooter ? buildFooter() : EMPTY_TEMPLATE,
     });
   } finally {
     await browser.close();

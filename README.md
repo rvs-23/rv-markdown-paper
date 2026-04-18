@@ -9,14 +9,16 @@ no rounded corners, no shadows.
 
 ## Status
 
-Week 3 of 10 (part-time). The pipeline supports GFM (tables, task lists,
+Week 4 of 10 (part-time). The pipeline supports GFM (tables, task lists,
 strikethrough, autolinks), Shiki syntax highlighting through an inverted
 grayscale theme (dark code blocks with a language label in the top corner),
-YAML frontmatter (`title`, `author`, `date`), and a running page
-header/footer rendered via Playwright templates — an uppercase-mono header
-(title left, author right) and a `[ page / total ]` footer. Callouts
-(`[!NOTE]` / `[!WARN]` / `[!SYSTEM]`) were pulled forward from Week 6; they
-are the v1 design signature.
+YAML frontmatter (`title`, `author`, `date`, `pageSize`, `margins`,
+`showHeader`, `showFooter`), a running page header/footer rendered via
+Playwright templates — an uppercase-mono header (title left, author right)
+and a `[ page / total ]` footer — and a full options resolver with the
+precedence **CLI flags → frontmatter → `mdpdf.config.json` → defaults**.
+Callouts (`[!NOTE]` / `[!WARN]` / `[!SYSTEM]`) were pulled forward from
+Week 6; they are the v1 design signature.
 
 Internal boundaries are intact: `parser/` exposes the mdast AST as a
 first-class value, `html/` wraps the output in a minimal shell with a
@@ -63,30 +65,79 @@ npm run typecheck # tsc --noEmit
 npm run lint      # eslint
 ```
 
-## Frontmatter
+## Options
 
-Optional YAML at the top of the file. Supported keys:
+Every option can be set in three places, resolved in this order (first
+match wins):
+
+1. **CLI flags** on `mdpdf convert`
+2. **YAML frontmatter** at the top of the Markdown file
+3. **`mdpdf.config.json`** found by walking up from the input file
+4. **Built-in defaults** (Letter, 1.05in top / 0.85in sides / 0.95in
+   bottom, header and footer on)
+
+### Frontmatter
 
 ```yaml
 ---
 title: "A Short Case for Boring Output"
 author: "R. Sharma"
 date: "2026-04-18"
+pageSize: Letter       # or A4
+margins:
+  top: 1in
+  right: 0.85in
+  bottom: 0.95in
+  left: 0.85in
+showHeader: true
+showFooter: true
 ---
 ```
 
 `title` drives the `<title>` tag, the PDF's running header, and falls back
 to the filename when absent. `author` and `date` appear in the header
-(author preferred if both are set). CLI-level overrides arrive in Week 4.
+(author preferred if both are set).
+
+### Project config
+
+Drop an `mdpdf.config.json` anywhere up the directory tree from the input
+file to set defaults for a whole project:
+
+```json
+{
+  "author": "R. Sharma",
+  "pageSize": "A4",
+  "margins": { "top": "1in", "bottom": "1in" }
+}
+```
+
+### CLI flags
+
+```
+--title <text>            override title
+--author <text>           override author
+--date <text>             override date
+--page-size <Letter|A4>   override page size
+--margin-top <len>        e.g. 0.85in, 20mm, 72pt
+--margin-right <len>
+--margin-bottom <len>
+--margin-left <len>
+--no-header               hide the running header
+--no-footer               hide the running footer
+```
+
+Invalid values produce friendly errors pointing at the source, e.g.
+`frontmatter.pageSize: expected "Letter" or "A4", got "A5".`
 
 ## Structure
 
 ```
 src/
-  cli/       CLI entry (commander)
+  cli/       CLI entry (commander) with flag validation
+  config/    Options type, validator, precedence resolver (Week 4)
   core/      convertMarkdownToPdf orchestrator
   parser/    Markdown parsing (unified + GFM) and frontmatter extraction
-  transform/ AST transformations                 (Week 6+)
+  transform/ AST transformations — remarkCallouts
   html/      HTML shell + placeholder CSS
   themes/    Grayscale Shiki theme; Minimal CSS   (full theme, Week 5)
   pdf/       Playwright wrapper + header/footer templates
