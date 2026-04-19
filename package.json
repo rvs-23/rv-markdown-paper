@@ -1,7 +1,7 @@
 {
   "name": "rv-markdown-paper",
   "version": "0.1.0",
-  "description": "A grayscale, terminal-inspired Markdown to PDF converter.",
+  "description": "A disciplined, grayscale Markdown to PDF converter.",
   "type": "module",
   "bin": {
     "mdpdf": "./dist/cli/index.js"

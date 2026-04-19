@@ -1,38 +1,110 @@
 # rv-markdown-paper
 
-A disciplined, grayscale Markdown to PDF converter.
+Turn a Markdown file into a grayscale, editorial-style PDF — serif body, serif headings, mono reserved for code and callouts, black ink on white paper. No color, no theme to pick.
 
-The design goal is a printed technical dossier — serif body, serif
-headings, mono reserved for code, tables, callout tags, and running
-metadata. Black ink on pure-white paper. No color, no rounded corners,
-no shadows, no palette to shop from.
+![cover page preview](examples/05-full-paper.pdf)
 
-## Status
-
-Week 5 of 10 (part-time). The pipeline supports GFM (tables, task lists,
-strikethrough, autolinks), Shiki syntax highlighting through a grayscale
-dark theme (wide tonal range, bold keywords, italic comments, language
-tag in the corner), YAML frontmatter, a running page header/footer, and
-a full options resolver with the precedence **CLI flags → frontmatter →
-`mdpdf.config.json` → defaults**.
-
-Typography is editorial: **IBM Plex Serif** for headings, **Lora** for
-body, **JetBrains Mono** for code and signal elements. Callouts
-(`[!NOTE]` / `[!WARN]` / `[!SYSTEM]`) use a bare treatment — a thin black
-left rule, a small mono tag, nothing else; `SYSTEM` gets a dashed rule
-instead of solid.
-
-There is no theme to configure. That is a feature.
-
-## Quick start
+## Install
 
 ```bash
+git clone https://github.com/rvs-23/rv-markdown-paper.git
+cd rv-markdown-paper
 npm install
 npx playwright install chromium
-npm run mdpdf -- examples/01-hello.md examples/01-hello.pdf
 ```
 
-Render every example:
+The last step fetches the headless Chromium the renderer prints through — Node alone can't turn HTML into PDF. It's a one-time ~170 MB download.
+
+## Convert a file
+
+```bash
+npm run mdpdf -- ~/Desktop/notes.md ~/Desktop/notes.pdf
+```
+
+The two positional arguments are the input `.md` and the output `.pdf`. Relative paths also work:
+
+```bash
+npm run mdpdf -- notes.md notes.pdf
+```
+
+If your Markdown references local images (`![alt](./diagram.svg)`), keep them next to the `.md` — they're resolved relative to it.
+
+## What happens under the hood
+
+The pipeline is five small stages. Each does one thing; you can read them top-to-bottom in `src/core/convert.ts`.
+
+1. **Frontmatter** — `gray-matter` peels YAML off the top of the file.
+2. **Parse** — Markdown → mdast (`remark-parse` + `remark-gfm` for tables, task lists, strikethrough).
+3. **Transform** — small mdast plugins: smart quotes, heading slugs, `[!NOTE] / [!WARN] / [!SYSTEM]` callouts, auto-numbered `<figure>` blocks from standalone images.
+4. **Render** — mdast → HTML through `remark-rehype`, with Shiki highlighting code blocks using a grayscale theme.
+5. **Print** — Playwright loads the HTML, waits for webfonts, asks Chromium to save a PDF. If a cover page is enabled, it's rendered as a second PDF and prepended with `pdf-lib` (Chromium's running-header iframe can't be suppressed per-page any other way).
+
+## Options
+
+An option can be set in four places. They're resolved in this order, first match wins:
+
+1. **CLI flags**
+2. **YAML frontmatter** at the top of the Markdown file
+3. **`mdpdf.config.json`** — walked up from the input file's directory
+4. **Built-in defaults**
+
+That means a project-wide `mdpdf.config.json` sets the baseline, frontmatter overrides per-document, CLI overrides per-invocation.
+
+### Frontmatter
+
+```yaml
+---
+title: "A Short Case for Boring Output"
+subtitle: "Why the same page beats visual variety."
+section: "Essay 05 · Editorial Intent"
+author: "Rishav Sharma"
+date: "2026-04-18"
+readingTime: "7 min"     # auto-estimated from word count if omitted
+pageSize: Letter          # or A4
+margins: { top: 1in, right: 0.9in, bottom: 1in, left: 0.9in }
+showHeader: true
+showFooter: true
+showCover: true           # dedicated cover page on page 1
+---
+```
+
+### CLI flags
+
+| Flag                                | Effect                                  |
+|-------------------------------------|-----------------------------------------|
+| `--title <text>`                    | Document title                          |
+| `--subtitle <text>`                 | Deck line under the title               |
+| `--section <text>`                  | Small kicker above the title            |
+| `--author <text>` / `--date <text>` | Byline                                  |
+| `--reading-time <e.g. "7 min">`     | Override the auto-estimate              |
+| `--page-size <Letter\|A4>`          |                                         |
+| `--margin-{top,right,bottom,left}`  | CSS length: `0.85in`, `20mm`, `72pt`    |
+| `--no-header` / `--no-footer`       | Hide the running header/footer          |
+| `--no-cover`                        | Inline title block, no dedicated cover  |
+
+Invalid values fail loud with the source named: `frontmatter.pageSize: expected "Letter" or "A4", got "A5".`
+
+### Project config
+
+Drop an `mdpdf.config.json` anywhere above the input file:
+
+```json
+{ "author": "Rishav Sharma", "pageSize": "A4", "showCover": false }
+```
+
+## Examples
+
+Each file adds one layer on top of the previous. The checked-in PDFs let you compare source to output without rendering yourself.
+
+| File                       | What it teaches                                     |
+|----------------------------|-----------------------------------------------------|
+| `examples/01-hello.md`     | Minimum viable page — just the type system         |
+| `examples/02-typography.md`| Headings, emphasis, blockquote, links, rule         |
+| `examples/03-structured.md`| Ordered / nested / task lists, table                |
+| `examples/04-code.md`      | Shiki grayscale across TypeScript / Python / Bash   |
+| `examples/05-full-paper.md`| Cover page, callouts, figure, frontmatter — the lot |
+
+Render them all:
 
 ```bash
 for md in examples/*.md; do
@@ -40,104 +112,28 @@ for md in examples/*.md; do
 done
 ```
 
-## Examples
-
-Five fixtures of increasing complexity, each with a checked-in rendered PDF:
-
-| File                    | What it demonstrates                                   |
-|-------------------------|--------------------------------------------------------|
-| `01-hello.md`           | Minimal page — type system, nothing else               |
-| `02-typography.md`      | Headings, emphasis, blockquote, link, horizontal rule  |
-| `03-structured.md`      | Ordered / unordered / nested lists, task lists, table  |
-| `04-code.md`            | TypeScript / Python / Bash / JSON in grayscale Shiki   |
-| `05-full-paper.md`      | Frontmatter metadata + all of the above in one paper   |
-
-## Commands
-
-```bash
-npm run dev       # run the CLI via tsx
-npm run mdpdf     # alias for dev
-npm run build     # compile to dist/
-npm run typecheck # tsc --noEmit
-npm run lint      # eslint
-```
-
-## Options
-
-Every option can be set in four places, resolved in this order (first
-match wins):
-
-1. **CLI flags** on `mdpdf convert`
-2. **YAML frontmatter** at the top of the Markdown file
-3. **`mdpdf.config.json`** found by walking up from the input file
-4. **Built-in defaults**
-
-### Frontmatter
-
-```yaml
----
-title: "A Short Case for Boring Output"
-author: "Rishav Sharma"
-date: "2026-04-18"
-pageSize: Letter       # or A4
-margins:
-  top: 1in
-  right: 0.9in
-  bottom: 1in
-  left: 0.9in
-showHeader: true
-showFooter: true
----
-```
-
-### Project config
-
-Drop an `mdpdf.config.json` anywhere up the directory tree from the input
-file to set defaults for a whole project:
-
-```json
-{
-  "author": "Rishav Sharma",
-  "pageSize": "A4",
-  "margins": { "top": "1in", "bottom": "1in" }
-}
-```
-
-### CLI flags
-
-```
---title <text>            override title
---author <text>           override author
---date <text>             override date
---page-size <Letter|A4>   override page size
---margin-top <len>        e.g. 0.85in, 20mm, 72pt
---margin-right <len>
---margin-bottom <len>
---margin-left <len>
---no-header               hide the running header
---no-footer               hide the running footer
-```
-
-Invalid values produce friendly errors pointing at the source, e.g.
-`frontmatter.pageSize: expected "Letter" or "A4", got "A5".`
-
-## Structure
+## Source layout
 
 ```
 src/
-  cli/       CLI entry (commander) with flag validation
-  config/    Options types, validator, precedence resolver
-  core/      convertMarkdownToPdf orchestrator
-  parser/    Markdown parsing (unified + GFM) and frontmatter extraction
-  transform/ AST transformations — remarkCallouts
-  html/      HTML shell (webfont links + stylesheet)
-  themes/    Stylesheet + Shiki theme
-  pdf/       Playwright wrapper + header/footer templates
-  preview/   Local preview server                 (Week 8)
-  utils/
-examples/    Markdown fixtures + rendered PDFs
-tests/       Vitest + fixtures                    (Week 9)
-docs/        Teaching docs                        (Week 10)
+  cli/         Commander entry + flag validation
+  config/      Options types, precedence resolver, validator
+  core/        Pipeline orchestrator; reading-time estimator
+  parser/      Markdown → mdast; frontmatter extraction
+  transform/   mdast plugins: remarkCallouts, remarkFigures
+  html/        HTML shell + cover-page component
+  themes/      Stylesheet, Shiki grayscale theme
+  pdf/         Playwright render + pdf-lib merge; header/footer templates
+```
+
+## Development
+
+```bash
+npm run dev        # run the CLI via tsx (no build step)
+npm run mdpdf      # alias for dev
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint
+npm run build      # compile to dist/
 ```
 
 ## License

@@ -109,7 +109,6 @@ $RECYCLE.BIN/
 # Generated PDFs — ignore everywhere except checked-in examples
 *.pdf
 !examples/**/*.pdf
-!docs/**/*.pdf
 
 # Chromium download artifacts (Playwright manages its own cache, but just in case)
 .chromium/
