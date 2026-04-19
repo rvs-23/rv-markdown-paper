@@ -1,30 +1,36 @@
 import type { ThemeRegistrationRaw } from "shiki";
 
-// Grayscale code panel: dark background, ink-black and white tonal range,
-// italic comments, bold keywords. No color, no accent — distinguishable
-// tokens come from weight and italics alone.
+// Light code panel: warm off-white background, wide grayscale token range,
+// token identity conveyed by weight + italics + tone (not color).
+//
+//   #000   bold      — keywords, functions, types, numbers (strong signals)
+//   #1a1a1a normal   — identifiers / variables (body ink)
+//   #4a4a4a normal   — strings, regexes (readable but clearly quoted)
+//   #6a6a6a italic   — parameters (softly de-emphasized)
+//   #8a8a8a italic   — comments (most muted, still readable)
+//   #808080          — punctuation and operators (structural, not semantic)
 export const shikiTheme: ThemeRegistrationRaw = {
-  name: "rv-mono",
-  type: "dark",
+  name: "rv-paper",
+  type: "light",
   colors: {
-    "editor.background": "#111113",
-    "editor.foreground": "#e8e8e8",
+    "editor.background": "#f5f4f0",
+    "editor.foreground": "#1a1a1a",
   },
   settings: [
-    { scope: ["comment", "punctuation.definition.comment"], settings: { foreground: "#7a7a7a", fontStyle: "italic" } },
-    { scope: ["keyword", "storage", "storage.type", "keyword.control", "keyword.operator.new"], settings: { foreground: "#ffffff", fontStyle: "bold" } },
-    { scope: ["string", "string.quoted", "meta.string"], settings: { foreground: "#c8c8c8" } },
-    { scope: ["string.regexp", "constant.character.escape"], settings: { foreground: "#c8c8c8" } },
-    { scope: ["constant.numeric", "constant.language", "constant.language.boolean", "constant.language.null"], settings: { foreground: "#d8d8d8" } },
-    { scope: ["entity.name.function", "support.function", "meta.function-call"], settings: { foreground: "#ffffff" } },
-    { scope: ["entity.name.class", "entity.name.type", "support.class", "support.type"], settings: { foreground: "#ffffff", fontStyle: "bold" } },
-    { scope: ["variable", "variable.other", "meta.definition.variable"], settings: { foreground: "#e8e8e8" } },
-    { scope: ["variable.parameter"], settings: { foreground: "#dcdcdc", fontStyle: "italic" } },
-    { scope: ["entity.other.attribute-name", "entity.name.tag"], settings: { foreground: "#d0d0d0" } },
-    { scope: ["keyword.operator", "punctuation", "meta.brace", "punctuation.separator"], settings: { foreground: "#909090" } },
-    { scope: ["markup.bold"], settings: { foreground: "#ffffff", fontStyle: "bold" } },
-    { scope: ["markup.italic"], settings: { foreground: "#e8e8e8", fontStyle: "italic" } },
-    { scope: ["markup.heading"], settings: { foreground: "#ffffff", fontStyle: "bold" } },
-    { scope: ["invalid"], settings: { foreground: "#ffffff", fontStyle: "underline" } },
+    { scope: ["comment", "punctuation.definition.comment"], settings: { foreground: "#8a8a8a", fontStyle: "italic" } },
+    { scope: ["keyword", "storage", "storage.type", "keyword.control", "keyword.operator.new"], settings: { foreground: "#000000", fontStyle: "bold" } },
+    { scope: ["string", "string.quoted", "meta.string"], settings: { foreground: "#4a4a4a" } },
+    { scope: ["string.regexp", "constant.character.escape"], settings: { foreground: "#4a4a4a" } },
+    { scope: ["constant.numeric", "constant.language", "constant.language.boolean", "constant.language.null"], settings: { foreground: "#000000", fontStyle: "bold" } },
+    { scope: ["entity.name.function", "support.function", "meta.function-call"], settings: { foreground: "#000000", fontStyle: "bold" } },
+    { scope: ["entity.name.class", "entity.name.type", "support.class", "support.type"], settings: { foreground: "#000000", fontStyle: "bold" } },
+    { scope: ["variable", "variable.other", "meta.definition.variable"], settings: { foreground: "#1a1a1a" } },
+    { scope: ["variable.parameter"], settings: { foreground: "#6a6a6a", fontStyle: "italic" } },
+    { scope: ["entity.other.attribute-name", "entity.name.tag"], settings: { foreground: "#2a2a2a" } },
+    { scope: ["keyword.operator", "punctuation", "meta.brace", "punctuation.separator"], settings: { foreground: "#808080" } },
+    { scope: ["markup.bold"], settings: { foreground: "#000000", fontStyle: "bold" } },
+    { scope: ["markup.italic"], settings: { foreground: "#1a1a1a", fontStyle: "italic" } },
+    { scope: ["markup.heading"], settings: { foreground: "#000000", fontStyle: "bold" } },
+    { scope: ["invalid"], settings: { foreground: "#000000", fontStyle: "underline" } },
   ],
 };

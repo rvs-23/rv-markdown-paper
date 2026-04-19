@@ -1,9 +1,17 @@
 import { visit } from "unist-util-visit";
-import type { Root, Blockquote, Paragraph, Text } from "mdast";
+import type { Root, Blockquote, Text, Strong } from "mdast";
 import type { Plugin } from "unified";
 
 const MARKER_RE = /^\[!(NOTE|WARN|SYSTEM)\]\s*/;
 
+// Rewrite `> [!NOTE]\n> text...` blockquotes into run-in callouts:
+//
+//   <div class="callout callout--note">
+//     <p><span class="callout__tag">NOTE.</span> text...</p>
+//   </div>
+//
+// The tag lives inline inside the first paragraph (print-manual style),
+// not as a separate block label above the content.
 const remarkCallouts: Plugin<[], Root> = () => {
   return (tree) => {
     visit(tree, "blockquote", (node: Blockquote) => {
@@ -32,15 +40,25 @@ const remarkCallouts: Plugin<[], Root> = () => {
         },
       };
 
-      const tag: Paragraph = {
-        type: "paragraph",
+      const tag: Strong = {
+        type: "strong",
         data: {
-          hName: "div",
+          hName: "span",
           hProperties: { className: ["callout__tag"] },
         },
-        children: [{ type: "text", value: type.toUpperCase() }],
+        children: [{ type: "text", value: `${type.toUpperCase()}.` }],
       };
-      node.children.unshift(tag);
+
+      const target = node.children[0];
+      if (target && target.type === "paragraph") {
+        target.children.unshift(tag, { type: "text", value: " " });
+      } else {
+        // No paragraph left — insert a fresh one so the tag still appears.
+        node.children.unshift({
+          type: "paragraph",
+          children: [tag],
+        });
+      }
     });
   };
 };
