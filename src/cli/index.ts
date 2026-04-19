@@ -16,8 +16,11 @@ program
   .argument("<input>", "Path to the input Markdown file")
   .argument("<output>", "Path where the PDF should be written")
   .option("--title <title>", "Document title (overrides frontmatter)")
+  .option("--subtitle <subtitle>", "Subtitle / deck under the title")
+  .option("--section <section>", "Kicker above the title, e.g. LESSON 03")
   .option("--author <author>", "Document author (overrides frontmatter)")
   .option("--date <date>", "Document date (overrides frontmatter)")
+  .option("--reading-time <time>", "Reading time, e.g. '14 min'")
   .option("--page-size <size>", "Page size: Letter or A4", parsePageSize)
   .option("--margin-top <size>", "Top margin (CSS length)", parseCssLength)
   .option("--margin-right <size>", "Right margin (CSS length)", parseCssLength)
@@ -25,6 +28,7 @@ program
   .option("--margin-left <size>", "Left margin (CSS length)", parseCssLength)
   .option("--no-header", "Hide the running header")
   .option("--no-footer", "Hide the running footer")
+  .option("--no-cover", "Skip the dedicated cover page (title block goes inline)")
   .action(async (input: string, output: string, opts: OptionValues, cmd: Command) => {
     try {
       const cli = cliOptionsToLayer(opts, cmd);
@@ -41,8 +45,11 @@ program.parseAsync();
 function cliOptionsToLayer(opts: OptionValues, cmd: Command): DocumentOptionsLayer {
   const layer: DocumentOptionsLayer = {};
   if (typeof opts.title === "string") layer.title = opts.title;
+  if (typeof opts.subtitle === "string") layer.subtitle = opts.subtitle;
+  if (typeof opts.section === "string") layer.section = opts.section;
   if (typeof opts.author === "string") layer.author = opts.author;
   if (typeof opts.date === "string") layer.date = opts.date;
+  if (typeof opts.readingTime === "string") layer.readingTime = opts.readingTime;
   if (typeof opts.pageSize === "string") layer.pageSize = opts.pageSize as "Letter" | "A4";
 
   if (cmd.getOptionValueSource("header") === "cli") {
@@ -50,6 +57,9 @@ function cliOptionsToLayer(opts: OptionValues, cmd: Command): DocumentOptionsLay
   }
   if (cmd.getOptionValueSource("footer") === "cli") {
     layer.showFooter = Boolean(opts.footer);
+  }
+  if (cmd.getOptionValueSource("cover") === "cli") {
+    layer.showCover = Boolean(opts.cover);
   }
 
   const margins: Partial<Margins> = {};

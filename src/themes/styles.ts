@@ -33,11 +33,88 @@ export const STYLESHEET = /* css */ `
 
   main { max-width: 100%; }
 
+  /* ---------- Title block ---------- */
+
+  .doc-titleblock {
+    margin: 0 0 1.8em;
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  .doc-kicker {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 1em;
+  }
+
+  h1.doc-title {
+    font-family: "IBM Plex Serif", "Lora", Georgia, serif;
+    font-size: 34pt;
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+    color: #000;
+    margin: 0 0 0.4em;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .doc-deck {
+    font-family: "Lora", Georgia, serif;
+    font-size: 12.5pt;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.35;
+    color: #5a5a5a;
+    margin: 0 0 0.85em;
+    max-width: 42em;
+  }
+
+  .doc-sigrule {
+    width: 48px;
+    height: 0;
+    border-top: 1.5px solid #000;
+    margin: 0.75em 0 0.85em;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4em 1.8em;
+    align-items: baseline;
+    font-size: 9pt;
+    line-height: 1.3;
+  }
+
+  .doc-meta__cell {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+  }
+
+  .doc-meta__label {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #7a7a7a;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+  }
+
+  .doc-meta__value {
+    font-family: "Lora", Georgia, serif;
+    color: #1a1a1a;
+  }
+
   /* ---------- Headings ---------- */
 
   h1, h2, h3, h4, h5, h6 {
     font-family: "IBM Plex Serif", "Lora", Georgia, serif;
-    color: #000;
     margin: 1.25em 0 0.3em;
     line-height: 1.18;
     letter-spacing: -0.005em;
@@ -45,11 +122,14 @@ export const STYLESHEET = /* css */ `
     page-break-after: avoid;
   }
 
+  /* Subtle grayscale hierarchy: pure ink drops half a stop at each level so
+     the eye reads depth without color. All stay dark enough to print crisp. */
   h1 {
     font-size: 24pt;
     font-weight: 700;
     letter-spacing: -0.015em;
     margin-top: 0;
+    color: #000;
     padding-bottom: 0.25em;
     border-bottom: 2px solid #000;
     box-shadow: 0 3px 0 -2px #000; /* second rule below, 1pt below the main */
@@ -59,14 +139,16 @@ export const STYLESHEET = /* css */ `
     font-size: 15.5pt;
     font-weight: 700;
     margin-top: 1.5em;
+    color: #111;
     padding-bottom: 0.18em;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid #111;
   }
 
   h3 {
     font-size: 12pt;
     font-weight: 700;
     margin-top: 1.15em;
+    color: #1f1f1f;
   }
 
   h4 {
@@ -74,7 +156,23 @@ export const STYLESHEET = /* css */ `
     font-weight: 700;
     font-style: italic;
     margin-top: 1em;
-    color: #111;
+    color: #3a3a3a;
+  }
+
+  /* When a heading is immediately followed by a table or code block, the
+     heading's rule and the block's own top rule stack into a visible double
+     line. Drop the block's top rule so the heading's rule serves as both. */
+  h1 + pre, h2 + pre, h3 + pre { border-top: none; }
+  h1 + table thead tr th,
+  h2 + table thead tr th,
+  h3 + table thead tr th { border-top: none; }
+
+  /* Heading anchors (rehype-autolink-headings, behavior: wrap) stay
+     visually invisible — headings look plain, but are clickable in the PDF
+     and carry stable ids that the TOC will point at. */
+  h1 > a, h2 > a, h3 > a, h4 > a, h5 > a, h6 > a {
+    color: inherit;
+    text-decoration: none;
   }
 
   p {
@@ -280,14 +378,68 @@ export const STYLESHEET = /* css */ `
     margin-right: 0.45em;
   }
 
+  /* NOTE is the default voice: quiet tag, no chrome. */
+
+  /* WARN: reader must not miss — thick left rule in ink. */
   .callout--warn .callout__tag { color: #000; }
   .callout--warn { border-left: 2px solid #000; padding-left: 0.8em; }
-  .callout--system { color: #3a3a3a; font-style: italic; }
+
+  /* SYSTEM: a machine voice. Dashed left rule reads as "from the machine",
+     and the body itself renders in JetBrains Mono so it's unambiguously
+     distinct from the surrounding prose (and from a plain NOTE). */
+  .callout--system {
+    border-left: 1px dashed #3a3a3a;
+    padding-left: 0.8em;
+    color: #3a3a3a;
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.9em;
+    font-style: normal;
+    line-height: 1.5;
+  }
   .callout--system .callout__tag { font-style: normal; color: #000; }
 
-  /* ---------- Images ---------- */
+  /* ---------- Images & figures ---------- */
 
   img { max-width: 100%; height: auto; }
+
+  /* Auto-number figures. A counter runs across the whole document so Fig. 1
+     on page 2 and Fig. 2 on page 5 stay consistent in the print order. */
+  body { counter-reset: figure; }
+
+  figure.figure {
+    counter-increment: figure;
+    margin: 1.1em 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+
+  figure.figure img {
+    display: block;
+    margin: 0 auto;
+  }
+
+  figcaption.figure__caption {
+    margin-top: 0.5em;
+    font-family: "Lora", Georgia, serif;
+    font-style: italic;
+    font-size: 9pt;
+    color: #5a5a5a;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  figcaption.figure__caption::before {
+    content: "Fig. " counter(figure) ". ";
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #000;
+    margin-right: 0.35em;
+  }
 
   sup, sub { font-size: 0.72em; }
 
@@ -305,16 +457,139 @@ export const STYLESHEET = /* css */ `
 
   /* ---------- Print ---------- */
 
-  pre, blockquote, .callout, table, figure {
+  /* Keep atomic blocks on one page — a code sample or table split mid-way
+     reads as a printing accident, not as design. */
+  pre, blockquote, .callout, table, figure, .doc-titleblock {
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  h1, h2, h3 {
+
+  /* Never orphan a heading at the bottom of a page. */
+  h1, h2, h3, h4, h5, h6 {
     break-after: avoid-page;
     page-break-after: avoid;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
+
+  /* Figcaption must stay with its image. */
+  figure.figure img { break-after: avoid-page; page-break-after: avoid; }
+  figcaption.figure__caption { break-before: avoid-page; page-break-before: avoid; }
+
+  /* Paragraphs: leave at least 3 lines on each side of a page break so a
+     single orphaned word or dangling last line never sits alone. */
+  p, li, td, th { orphans: 3; widows: 3; }
+
+  /* Don't strand the first row of a table or the first paragraph of a
+     blockquote at the bottom of a page. */
+  thead { break-after: avoid-page; page-break-after: avoid; }
+  blockquote > :first-child { break-after: avoid-page; page-break-after: avoid; }
+
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+`;
+
+// Cover page styles — emitted only when the document has a cover.
+//
+// The cover page is rendered as its own separate PDF (without Playwright
+// header/footer) and prepended to the body PDF at merge time. That's the
+// only reliable way to suppress the running header on page 1 — Chromium's
+// print engine paints header/footer iframes independent of any CSS @page
+// override, so it has to be disabled at the pdf() call level.
+export const COVER_PAGE_STYLES = /* css */ `
+  .cover-page {
+    padding: 25mm 10mm 15mm;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  .cover-titleblock {
+    max-width: 44em;
+  }
+
+  .cover-kicker {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 9pt;
+    font-weight: 700;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 1.4em;
+  }
+
+  h1.cover-title {
+    font-family: "IBM Plex Serif", "Lora", Georgia, serif;
+    font-size: 46pt;
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    color: #000;
+    margin: 0 0 0.55em;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .cover-deck {
+    font-family: "Lora", Georgia, serif;
+    font-size: 14pt;
+    font-weight: 400;
+    line-height: 1.35;
+    color: #3a3a3a;
+    margin: 0 0 1.2em;
+    max-width: 38em;
+  }
+
+  .cover-sigrule {
+    width: 64px;
+    height: 0;
+    border-top: 1.5px solid #000;
+    margin: 1em 0 1.3em;
+  }
+
+  .cover-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4em 2em;
+    align-items: baseline;
+    font-size: 9.5pt;
+    line-height: 1.3;
+  }
+
+  .cover-meta__cell {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5em;
+  }
+
+  .cover-meta__label {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #7a7a7a;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .cover-meta__value {
+    font-family: "Lora", Georgia, serif;
+    color: #1a1a1a;
+  }
+
+  .cover-colophon {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 7.5pt;
+    color: #8a8a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    text-align: right;
+    margin-top: auto;
+    padding-top: 2em;
+    border-top: 0.5px solid #c8c8c8;
   }
 `;

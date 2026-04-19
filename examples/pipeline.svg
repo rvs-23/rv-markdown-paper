@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" width="720" height="180" font-family="JetBrains Mono, ui-monospace, Menlo, monospace">
+  <style>
+    .box { fill: #f5f4f0; stroke: #000; stroke-width: 1.2; }
+    .box-label { font-size: 13px; font-weight: 700; fill: #000; text-anchor: middle; }
+    .box-sub { font-size: 10px; fill: #5a5a5a; text-anchor: middle; letter-spacing: 0.06em; text-transform: uppercase; }
+    .arrow { stroke: #000; stroke-width: 1.2; fill: none; }
+    .arrow-head { fill: #000; }
+    .stage-num { font-size: 9px; font-weight: 700; fill: #7a7a7a; letter-spacing: 0.14em; }
+  </style>
+
+  <g transform="translate(10, 45)">
+    <rect class="box" x="0" y="0" width="128" height="70" />
+    <text class="stage-num" x="64" y="16" text-anchor="middle">01</text>
+    <text class="box-label" x="64" y="38">Markdown</text>
+    <text class="box-sub" x="64" y="56">source</text>
+  </g>
+
+  <g transform="translate(160, 45)">
+    <rect class="box" x="0" y="0" width="128" height="70" />
+    <text class="stage-num" x="64" y="16" text-anchor="middle">02</text>
+    <text class="box-label" x="64" y="38">mdast</text>
+    <text class="box-sub" x="64" y="56">parse · gfm</text>
+  </g>
+
+  <g transform="translate(310, 45)">
+    <rect class="box" x="0" y="0" width="128" height="70" />
+    <text class="stage-num" x="64" y="16" text-anchor="middle">03</text>
+    <text class="box-label" x="64" y="38">hast</text>
+    <text class="box-sub" x="64" y="56">rehype · shiki</text>
+  </g>
+
+  <g transform="translate(460, 45)">
+    <rect class="box" x="0" y="0" width="128" height="70" />
+    <text class="stage-num" x="64" y="16" text-anchor="middle">04</text>
+    <text class="box-label" x="64" y="38">HTML</text>
+    <text class="box-sub" x="64" y="56">document shell</text>
+  </g>
+
+  <g transform="translate(610, 45)">
+    <rect class="box" x="0" y="0" width="100" height="70" />
+    <text class="stage-num" x="50" y="16" text-anchor="middle">05</text>
+    <text class="box-label" x="50" y="38">PDF</text>
+    <text class="box-sub" x="50" y="56">chromium</text>
+  </g>
+
+  <g class="arrow-group">
+    <line class="arrow" x1="138" y1="80" x2="158" y2="80" />
+    <polygon class="arrow-head" points="158,76 164,80 158,84" />
+    <line class="arrow" x1="288" y1="80" x2="308" y2="80" />
+    <polygon class="arrow-head" points="308,76 314,80 308,84" />
+    <line class="arrow" x1="438" y1="80" x2="458" y2="80" />
+    <polygon class="arrow-head" points="458,76 464,80 458,84" />
+    <line class="arrow" x1="588" y1="80" x2="608" y2="80" />
+    <polygon class="arrow-head" points="608,76 614,80 608,84" />
+  </g>
+</svg>

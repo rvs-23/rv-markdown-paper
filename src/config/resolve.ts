@@ -41,8 +41,11 @@ export function resolveOptions(layers: {
   const project = layers.project ?? {};
   return {
     title: pick(layers.cli.title, layers.frontmatter.title, project.title),
+    subtitle: pick(layers.cli.subtitle, layers.frontmatter.subtitle, project.subtitle),
+    section: pick(layers.cli.section, layers.frontmatter.section, project.section),
     author: pick(layers.cli.author, layers.frontmatter.author, project.author),
     date: pick(layers.cli.date, layers.frontmatter.date, project.date),
+    readingTime: pick(layers.cli.readingTime, layers.frontmatter.readingTime, project.readingTime),
     pageSize: pick(
       layers.cli.pageSize,
       layers.frontmatter.pageSize,
@@ -56,6 +59,7 @@ export function resolveOptions(layers: {
     },
     showHeader: pick(layers.cli.showHeader, layers.frontmatter.showHeader, project.showHeader) ?? DEFAULTS.showHeader,
     showFooter: pick(layers.cli.showFooter, layers.frontmatter.showFooter, project.showFooter) ?? DEFAULTS.showFooter,
+    showCover: pick(layers.cli.showCover, layers.frontmatter.showCover, project.showCover) ?? DEFAULTS.showCover,
   };
 }
 

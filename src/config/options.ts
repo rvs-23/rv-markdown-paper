@@ -7,32 +7,41 @@ export type Margins = {
 
 export type DocumentOptions = {
   title?: string;
+  subtitle?: string;
+  section?: string;
   author?: string;
   date?: string;
+  readingTime?: string;
   pageSize: "Letter" | "A4";
   margins: Margins;
   showHeader: boolean;
   showFooter: boolean;
+  showCover: boolean;
 };
 
 export type DocumentOptionsLayer = {
   title?: string;
+  subtitle?: string;
+  section?: string;
   author?: string;
   date?: string;
+  readingTime?: string;
   pageSize?: "Letter" | "A4";
   margins?: Partial<Margins>;
   showHeader?: boolean;
   showFooter?: boolean;
+  showCover?: boolean;
 };
 
 export const DEFAULTS: DocumentOptions = {
-  pageSize: "Letter",
+  pageSize: "A4",
   margins: {
-    top: "1in",
-    right: "0.9in",
-    bottom: "1in",
-    left: "0.9in",
+    top: "22mm",
+    right: "20mm",
+    bottom: "25mm",
+    left: "20mm",
   },
   showHeader: true,
   showFooter: true,
+  showCover: true,
 };

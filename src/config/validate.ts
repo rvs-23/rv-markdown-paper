@@ -18,12 +18,16 @@ export function validateOptions(raw: unknown, source: string): DocumentOptionsLa
   const out: DocumentOptionsLayer = {};
 
   if ("title" in r) out.title = expectString(r.title, `${source}.title`);
+  if ("subtitle" in r) out.subtitle = expectString(r.subtitle, `${source}.subtitle`);
+  if ("section" in r) out.section = expectString(r.section, `${source}.section`);
   if ("author" in r) out.author = expectString(r.author, `${source}.author`);
   if ("date" in r) out.date = expectDate(r.date, `${source}.date`);
+  if ("readingTime" in r) out.readingTime = expectString(r.readingTime, `${source}.readingTime`);
   if ("pageSize" in r) out.pageSize = expectPageSize(r.pageSize, `${source}.pageSize`);
   if ("margins" in r) out.margins = expectMargins(r.margins, `${source}.margins`);
   if ("showHeader" in r) out.showHeader = expectBool(r.showHeader, `${source}.showHeader`);
   if ("showFooter" in r) out.showFooter = expectBool(r.showFooter, `${source}.showFooter`);
+  if ("showCover" in r) out.showCover = expectBool(r.showCover, `${source}.showCover`);
 
   return out;
 }
