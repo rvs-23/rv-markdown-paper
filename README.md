@@ -2,18 +2,23 @@
 
 Turn a Markdown file into a grayscale, editorial-style PDF — serif body, serif headings, mono reserved for code and callouts, black ink on white paper. No color, no theme to pick.
 
-![cover page preview](examples/05-full-paper.pdf)
-
 ## Install
 
 ```bash
 git clone https://github.com/rvs-23/rv-markdown-paper.git
 cd rv-markdown-paper
 npm install
-npx playwright install chromium
 ```
 
-The last step fetches the headless Chromium the renderer prints through — Node alone can't turn HTML into PDF. It's a one-time ~170 MB download.
+One external dependency: the [Typst](https://github.com/typst/typst) compiler has to be on your `PATH`. The runner shells out to `typst compile` — Node alone can't typeset a page.
+
+```bash
+brew install typst        # macOS
+# or: cargo install --locked typst-cli
+# or download a prebuilt binary from github.com/typst/typst/releases
+```
+
+Fonts are bundled under `assets/fonts/` (IBM Plex Serif, Lora, JetBrains Mono) and passed to Typst via `--font-path --ignore-system-fonts`, so the output is identical on every machine regardless of what's installed.
 
 ## Convert a file
 
@@ -31,13 +36,14 @@ If your Markdown references local images (`![alt](./diagram.svg)`), keep them ne
 
 ## What happens under the hood
 
-The pipeline is five small stages. Each does one thing; you can read them top-to-bottom in `src/core/convert.ts`.
+The pipeline is four small stages. Each does one thing; you can read them top-to-bottom in `src/core/convert.ts`.
 
 1. **Frontmatter** — `gray-matter` peels YAML off the top of the file.
 2. **Parse** — Markdown → mdast (`remark-parse` + `remark-gfm` for tables, task lists, strikethrough).
-3. **Transform** — small mdast plugins: smart quotes, heading slugs, `[!NOTE] / [!WARN] / [!SYSTEM]` callouts, auto-numbered `<figure>` blocks from standalone images.
-4. **Render** — mdast → HTML through `remark-rehype`, with Shiki highlighting code blocks using a grayscale theme.
-5. **Print** — Playwright loads the HTML, waits for webfonts, asks Chromium to save a PDF. If a cover page is enabled, it's rendered as a second PDF and prepended with `pdf-lib` (Chromium's running-header iframe can't be suppressed per-page any other way).
+3. **Generate** — an mdast walker in `src/typst/generate.ts` emits Typst markup directly: headings, lists, tables, figures, callouts, fenced code, inline styles. Escaping lives in `src/typst/escape.ts`.
+4. **Compile** — `src/typst/render.ts` writes the generated body into a temp directory alongside `template.typ` (the design system) and `theme.tmTheme` (the grayscale syntax theme), then spawns `typst compile` with the bundled fonts.
+
+The template is the only place that knows what the document looks like. It's pure Typst `set` / `show` rules — the old CSS stylesheet collapsed into one file you can read in ten minutes: `src/typst/template.typ`.
 
 ## Options
 
@@ -98,10 +104,10 @@ Each file adds one layer on top of the previous. The checked-in PDFs let you com
 
 | File                       | What it teaches                                     |
 |----------------------------|-----------------------------------------------------|
-| `examples/01-hello.md`     | Minimum viable page — just the type system         |
+| `examples/01-hello.md`     | Minimum viable page — just the type system          |
 | `examples/02-typography.md`| Headings, emphasis, blockquote, links, rule         |
 | `examples/03-structured.md`| Ordered / nested / task lists, table                |
-| `examples/04-code.md`      | Shiki grayscale across TypeScript / Python / Bash   |
+| `examples/04-code.md`      | Grayscale syntax across TypeScript / Python / Bash  |
 | `examples/05-full-paper.md`| Cover page, callouts, figure, frontmatter — the lot |
 
 Render them all:
@@ -120,10 +126,9 @@ src/
   config/      Options types, precedence resolver, validator
   core/        Pipeline orchestrator; reading-time estimator
   parser/      Markdown → mdast; frontmatter extraction
-  transform/   mdast plugins: remarkCallouts, remarkFigures
-  html/        HTML shell + cover-page component
-  themes/      Stylesheet, Shiki grayscale theme
-  pdf/         Playwright render + pdf-lib merge; header/footer templates
+  typst/       mdast → Typst generator; escape rules; template.typ; theme.tmTheme; compiler runner
+assets/
+  fonts/       IBM Plex Serif, Lora, JetBrains Mono (bundled, passed to Typst)
 ```
 
 ## Development
@@ -133,7 +138,6 @@ npm run dev        # run the CLI via tsx (no build step)
 npm run mdpdf      # alias for dev
 npm run typecheck  # tsc --noEmit
 npm run lint       # eslint
-npm run build      # compile to dist/
 ```
 
 ## License

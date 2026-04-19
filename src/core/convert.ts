@@ -1,15 +1,14 @@
 import { readFile, mkdir } from "node:fs/promises";
-import { basename, dirname, extname, resolve as resolvePath } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, resolve as resolvePath } from "node:path";
 import { toString as mdastToString } from "mdast-util-to-string";
 import type { Root as MdastRoot } from "mdast";
-import { parseMarkdownToMdast, mdastToHtml } from "../parser/parseMarkdown.js";
+import { parseMarkdownToMdast } from "../parser/parseMarkdown.js";
 import { extractFrontmatter } from "../parser/frontmatter.js";
-import { wrapInDocumentShell, wrapCoverInShell } from "../html/documentShell.js";
-import { renderHtmlToPdf } from "../pdf/renderPdf.js";
 import { loadProjectConfig, resolveOptions } from "../config/resolve.js";
-import type { DocumentOptionsLayer } from "../config/options.js";
+import type { DocumentOptions, DocumentOptionsLayer } from "../config/options.js";
 import { estimateReadingTime } from "./readingTime.js";
+import { generateTypst } from "../typst/generate.js";
+import { renderTypstToPdf } from "../typst/render.js";
 
 export type ConvertOptions = {
   inputPath: string;
@@ -33,56 +32,24 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
   });
 
   const tree = parseMarkdownToMdast(content);
-  const explicitTitle = resolved.title;
-  const title = explicitTitle ?? deriveTitle(inputAbsolute);
-  // Avoid printing the title twice: if an explicit title was provided and the
-  // body opens with an H1 that matches it, drop the H1 so the editorial title
-  // block is the only one.
-  if (explicitTitle) stripRedundantLeadingH1(tree, explicitTitle);
-  const htmlBody = await mdastToHtml(tree);
+  if (resolved.title) stripRedundantLeadingH1(tree, resolved.title);
 
-  const baseUrl = pathToFileURL(inputDir + "/").href;
-  // The title block is only emitted when the user supplied a real title —
-  // otherwise we'd print the filename and an orphan sigrule. When showCover
-  // is on AND there's an explicit title, we render the title block as its own
-  // cover PDF (rendered separately so Playwright's header/footer can be off
-  // for it) and prepend it to the body PDF; otherwise it sits inline at the
-  // top of the body.
-  const titleBlockFields = explicitTitle
-    ? {
-        title: explicitTitle,
-        subtitle: resolved.subtitle,
-        section: resolved.section,
-        author: resolved.author,
-        date: resolved.date,
-        readingTime: resolved.readingTime ?? estimateReadingTime(tree),
-      }
-    : undefined;
-  const useCover = resolved.showCover && titleBlockFields !== undefined;
-  const html = wrapInDocumentShell(htmlBody, {
-    title,
-    baseUrl,
-    titleBlock: !useCover ? titleBlockFields : undefined,
-  });
-  const coverHtml = useCover
-    ? wrapCoverInShell({ baseUrl, cover: titleBlockFields! })
-    : undefined;
+  // The template only renders the editorial title block when `title` is set,
+  // so an untitled file stays clean — no orphan sigrule, no filename posing
+  // as a title.
+  const templateOptions: DocumentOptions = {
+    ...resolved,
+    readingTime:
+      resolved.readingTime ?? (resolved.title ? estimateReadingTime(tree) : undefined),
+  };
+
+  const body = generateTypst(tree, { sourceDir: inputDir });
 
   await mkdir(dirname(outputAbsolute), { recursive: true });
-  await renderHtmlToPdf({
-    html,
-    coverHtml,
+  await renderTypstToPdf({
+    body,
     outputPath: outputAbsolute,
-    pageSize: resolved.pageSize,
-    margins: resolved.margins,
-    showHeader: resolved.showHeader,
-    showFooter: resolved.showFooter,
-    metadata: {
-      title: explicitTitle,
-      section: resolved.section,
-      author: resolved.author,
-      date: resolved.date,
-    },
+    options: templateOptions,
   });
 }
 
@@ -95,8 +62,4 @@ function stripRedundantLeadingH1(tree: MdastRoot, title: string): void {
 
 function normalize(s: string): string {
   return s.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function deriveTitle(filePath: string): string {
-  return basename(filePath, extname(filePath));
 }
