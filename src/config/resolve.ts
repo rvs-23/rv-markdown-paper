@@ -46,6 +46,13 @@ export function resolveOptions(layers: {
     author: pick(layers.cli.author, layers.frontmatter.author, project.author),
     date: pick(layers.cli.date, layers.frontmatter.date, project.date),
     readingTime: pick(layers.cli.readingTime, layers.frontmatter.readingTime, project.readingTime),
+    chapter: pick(layers.cli.chapter, layers.frontmatter.chapter, project.chapter),
+    part: pick(layers.cli.part, layers.frontmatter.part, project.part),
+    edition: pick(layers.cli.edition, layers.frontmatter.edition, project.edition),
+    volume: pick(layers.cli.volume, layers.frontmatter.volume, project.volume),
+    pageStart: pick(layers.cli.pageStart, layers.frontmatter.pageStart, project.pageStart),
+    pageEnd: pick(layers.cli.pageEnd, layers.frontmatter.pageEnd, project.pageEnd),
+    cover: pick(layers.cli.cover, layers.frontmatter.cover, project.cover),
     pageSize: pick(
       layers.cli.pageSize,
       layers.frontmatter.pageSize,

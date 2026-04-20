@@ -1,4 +1,10 @@
-import type { DocumentOptionsLayer, Margins } from "./options.js";
+import type {
+  Cover,
+  DocumentOptionsLayer,
+  Margins,
+  MetaPair,
+  TocEntry,
+} from "./options.js";
 
 const CSS_LENGTH_RE = /^\d*\.?\d+(in|cm|mm|pt|px)$/;
 
@@ -23,6 +29,15 @@ export function validateOptions(raw: unknown, source: string): DocumentOptionsLa
   if ("author" in r) out.author = expectString(r.author, `${source}.author`);
   if ("date" in r) out.date = expectDate(r.date, `${source}.date`);
   if ("readingTime" in r) out.readingTime = expectString(r.readingTime, `${source}.readingTime`);
+  if ("chapter" in r) out.chapter = expectStringOrNumber(r.chapter, `${source}.chapter`);
+  if ("part" in r) out.part = expectString(r.part, `${source}.part`);
+  if ("edition" in r) out.edition = expectString(r.edition, `${source}.edition`);
+  if ("volume" in r) out.volume = expectString(r.volume, `${source}.volume`);
+  if ("page-start" in r) out.pageStart = expectNumber(r["page-start"], `${source}.page-start`);
+  if ("page-end" in r) out.pageEnd = expectNumber(r["page-end"], `${source}.page-end`);
+  if ("pageStart" in r) out.pageStart = expectNumber(r.pageStart, `${source}.pageStart`);
+  if ("pageEnd" in r) out.pageEnd = expectNumber(r.pageEnd, `${source}.pageEnd`);
+  if ("cover" in r) out.cover = expectCover(r.cover, `${source}.cover`);
   if ("pageSize" in r) out.pageSize = expectPageSize(r.pageSize, `${source}.pageSize`);
   if ("margins" in r) out.margins = expectMargins(r.margins, `${source}.margins`);
   if ("showHeader" in r) out.showHeader = expectBool(r.showHeader, `${source}.showHeader`);
@@ -37,6 +52,16 @@ function expectString(value: unknown, path: string): string {
     throw new ConfigError(`${path}: expected a string, got ${describe(value)}.`);
   }
   return value;
+}
+
+function expectStringOrNumber(value: unknown, path: string): string | number {
+  if (typeof value === "string" || typeof value === "number") return value;
+  throw new ConfigError(`${path}: expected a string or number, got ${describe(value)}.`);
+}
+
+function expectNumber(value: unknown, path: string): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  throw new ConfigError(`${path}: expected a number, got ${describe(value)}.`);
 }
 
 function expectBool(value: unknown, path: string): boolean {
@@ -72,6 +97,65 @@ function expectMargins(value: unknown, path: string): Partial<Margins> {
     }
   }
   return out;
+}
+
+function expectCover(value: unknown, path: string): Cover {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new ConfigError(`${path}: expected an object, got ${describe(value)}.`);
+  }
+  const c = value as Record<string, unknown>;
+  const out: Cover = {};
+  if ("kicker" in c) out.kicker = expectString(c.kicker, `${path}.kicker`);
+  if ("title" in c) out.title = expectString(c.title, `${path}.title`);
+  if ("subtitle" in c) out.subtitle = expectString(c.subtitle, `${path}.subtitle`);
+  if ("meta" in c) out.meta = expectMeta(c.meta, `${path}.meta`);
+  if ("toc" in c) out.toc = expectToc(c.toc, `${path}.toc`);
+  return out;
+}
+
+function expectMeta(value: unknown, path: string): MetaPair[] {
+  // Accept either an ordered object `{Topic: "...", Language: "..."}` or an
+  // array of `{label, value}` pairs. Objects preserve insertion order in YAML
+  // parsers (js-yaml does), so we can trust the iteration order.
+  if (value === null || value === undefined) return [];
+  if (Array.isArray(value)) {
+    return value.map((entry, idx) => {
+      if (typeof entry !== "object" || entry === null) {
+        throw new ConfigError(`${path}[${idx}]: expected an object, got ${describe(entry)}.`);
+      }
+      const e = entry as Record<string, unknown>;
+      return {
+        label: expectString(e.label, `${path}[${idx}].label`),
+        value: expectString(e.value, `${path}[${idx}].value`),
+      };
+    });
+  }
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).map(([k, v]) => ({
+      label: k,
+      value: expectString(v, `${path}.${k}`),
+    }));
+  }
+  throw new ConfigError(`${path}: expected an object or array, got ${describe(value)}.`);
+}
+
+function expectToc(value: unknown, path: string): TocEntry[] {
+  if (!Array.isArray(value)) {
+    throw new ConfigError(`${path}: expected an array, got ${describe(value)}.`);
+  }
+  return value.map((entry, idx) => {
+    if (typeof entry !== "object" || entry === null) {
+      throw new ConfigError(`${path}[${idx}]: expected an object, got ${describe(entry)}.`);
+    }
+    const e = entry as Record<string, unknown>;
+    const out: TocEntry = {
+      id: expectString(e.id, `${path}[${idx}].id`),
+      title: expectString(e.title, `${path}[${idx}].title`),
+    };
+    if ("ref" in e) out.ref = expectString(e.ref, `${path}[${idx}].ref`);
+    return out;
+  });
 }
 
 function describe(value: unknown): string {

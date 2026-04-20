@@ -3,19 +3,14 @@ import { writeFile, mkdtemp, rm, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { DocumentOptions } from "../config/options.js";
+import type { Cover, DocumentOptions } from "../config/options.js";
 
-// The template and theme files that ship with the package. Resolved relative
-// to this file so the paths are valid whether the runner executes from source
-// (tsx) or from dist/.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolvePath(HERE, "./template.typ");
 const THEME_PATH = resolvePath(HERE, "./theme.tmTheme");
 const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
 
 export type TypstRenderOptions = {
-  // Typst source emitted by the generator (body markup only — the preamble
-  // is built here from the resolved document options).
   body: string;
   outputPath: string;
   options: DocumentOptions;
@@ -24,9 +19,6 @@ export type TypstRenderOptions = {
 export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> {
   const tempDir = await mkdtemp(join(tmpdir(), "mdpdf-"));
   try {
-    // Copy the template + theme next to the generated document so Typst's
-    // path resolution (relative to the source .typ) finds them without
-    // needing `--root`.
     const tempTemplate = join(tempDir, "template.typ");
     const tempTheme = join(tempDir, "theme.tmTheme");
     await copyFile(TEMPLATE_PATH, tempTemplate);
@@ -45,15 +37,25 @@ export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> 
 
 function buildPreamble(options: DocumentOptions): string {
   const lines: string[] = [];
-  lines.push(`#import "template.typ": paper, note, warn, system, task-box`);
+  lines.push(
+    `#import "template.typ": paper, note, tip, warning, danger, warn, system, ` +
+      `marg, eyebrow, dropcap, epigraph, exbox, code-block, task-box`,
+  );
   lines.push("");
   lines.push("#show: paper.with(");
-  pushOptional(lines, "title", options.title);
-  pushOptional(lines, "subtitle", options.subtitle);
-  pushOptional(lines, "section", options.section);
-  pushOptional(lines, "author", options.author);
-  pushOptional(lines, "date", options.date);
-  pushOptional(lines, "reading-time", options.readingTime);
+  pushOptionalString(lines, "title", options.title);
+  pushOptionalString(lines, "subtitle", options.subtitle);
+  pushOptionalString(lines, "section", options.section);
+  pushOptionalString(lines, "author", options.author);
+  pushOptionalString(lines, "date", options.date);
+  pushOptionalString(lines, "reading-time", options.readingTime);
+  pushOptionalScalar(lines, "chapter", options.chapter);
+  pushOptionalString(lines, "part", options.part);
+  pushOptionalString(lines, "edition", options.edition);
+  pushOptionalString(lines, "volume", options.volume);
+  pushOptionalNumber(lines, "page-start", options.pageStart);
+  pushOptionalNumber(lines, "page-end", options.pageEnd);
+  if (options.cover) lines.push(`  cover: ${renderCover(options.cover)},`);
   lines.push(`  page-size: ${quote(pageSizeToTypst(options.pageSize))},`);
   lines.push(`  margin-top: ${cssLengthToTypst(options.margins.top)},`);
   lines.push(`  margin-right: ${cssLengthToTypst(options.margins.right)},`);
@@ -67,9 +69,48 @@ function buildPreamble(options: DocumentOptions): string {
   return lines.join("\n");
 }
 
-function pushOptional(lines: string[], key: string, value: string | undefined): void {
+function pushOptionalString(lines: string[], key: string, value: string | undefined): void {
   if (value === undefined) return;
   lines.push(`  ${key}: ${quote(value)},`);
+}
+
+function pushOptionalScalar(
+  lines: string[],
+  key: string,
+  value: string | number | undefined,
+): void {
+  if (value === undefined) return;
+  if (typeof value === "number") lines.push(`  ${key}: ${value},`);
+  else lines.push(`  ${key}: ${quote(value)},`);
+}
+
+function pushOptionalNumber(lines: string[], key: string, value: number | undefined): void {
+  if (value === undefined) return;
+  lines.push(`  ${key}: ${value},`);
+}
+
+function renderCover(cover: Cover): string {
+  const fields: string[] = [];
+  if (cover.kicker !== undefined) fields.push(`kicker: ${quote(cover.kicker)}`);
+  if (cover.title !== undefined) fields.push(`title: ${quote(cover.title)}`);
+  if (cover.subtitle !== undefined) fields.push(`subtitle: ${quote(cover.subtitle)}`);
+  if (cover.meta !== undefined) {
+    const pairs = cover.meta
+      .map((p) => `(label: ${quote(p.label)}, value: ${quote(p.value)})`)
+      .join(", ");
+    fields.push(`meta: (${pairs}${cover.meta.length === 1 ? "," : ""})`);
+  }
+  if (cover.toc !== undefined) {
+    const entries = cover.toc
+      .map((e) => {
+        const parts = [`id: ${quote(e.id)}`, `title: ${quote(e.title)}`];
+        if (e.ref) parts.push(`ref: ${quote(e.ref)}`);
+        return `(${parts.join(", ")})`;
+      })
+      .join(", ");
+    fields.push(`toc: (${entries}${cover.toc.length === 1 ? "," : ""})`);
+  }
+  return `(${fields.join(", ")})`;
 }
 
 function quote(s: string): string {
@@ -80,14 +121,10 @@ function pageSizeToTypst(size: "Letter" | "A4"): string {
   return size === "Letter" ? "us-letter" : "a4";
 }
 
-// mdpdf accepts CSS lengths ("1in", "22mm", "72pt"). Typst accepts the same
-// unit tokens without quotes: 1in, 22mm, 72pt — so we can pass them through
-// as identifiers after validating they match the expected shape.
 function cssLengthToTypst(value: string): string {
   const match = value.match(/^(\d*\.?\d+)(in|cm|mm|pt|px)$/);
   if (!match) throw new Error(`Invalid length: ${value}`);
   const [, num, unit] = match;
-  // Typst doesn't understand `px`; convert to pt (1px = 0.75pt at 96 DPI).
   if (unit === "px") {
     const pt = parseFloat(num!) * 0.75;
     return `${pt}pt`;
@@ -101,9 +138,6 @@ function runTypst(inputPath: string, outputPath: string): Promise<void> {
       "typst",
       [
         "compile",
-        // `--root /` lets the generated .typ (which lives in a temp dir)
-        // reference absolute image paths the user wrote in their Markdown —
-        // otherwise Typst rejects paths outside the input file's directory.
         "--root", "/",
         "--font-path", FONTS_DIR,
         "--ignore-system-fonts",

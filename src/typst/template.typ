@@ -1,113 +1,351 @@
-// rv-markdown-paper — Typst design system.
+// rv-markdown-paper — Editorial + Swiss template.
 //
-// The mdast-to-Typst generator emits a call to `paper(...)` that captures
-// every document-level setting. Everything that was CSS in the old Chromium
-// pipeline lives here as `set` / `show` rules.
+// Design language: warm page tone (#EFEDE7), single-ink ramp, three-font
+// system. Body sans is Archivo; ornament voice is Instrument Serif Italic
+// (folios, dropcaps, pull quotes, equation tags); code is JetBrains Mono.
+//
+// Layout: A4, two columns. Content column runs the main flow; a 35mm
+// marginalia rail sits in the right page margin. Fenced-div `:::margin`
+// notes are rendered there and auto-align to the paragraph that follows.
 
-// ---------- helpers (defined first so `paper` can reference them) ----------
+// ---------- color tokens ----------
 
-#let _meta-cell(label, value) = box[
-  #text(
-    font: "JetBrains Mono", size: 7.5pt, weight: 600,
-    tracking: 1.4pt, fill: rgb("#8a8a8a"),
-  )[#upper(label)]
-  #h(0.5em)
-  #text(
-    font: "IBM Plex Serif", size: 10pt, fill: rgb("#1a1a1a"),
-  )[#value]
-]
+#let c-paper     = rgb("#EFEDE7")  // warm background
+#let c-ink       = rgb("#11131A")  // primary text
+#let c-ink-2     = rgb("#2A2D36")  // secondary text (eyebrows, labels)
+#let c-muted     = rgb("#686C76")  // captions, margin notes, meta cells
+#let c-hairline  = rgb("#C5C2BC")  // dividers, thin rules
+#let c-accent    = rgb("#11131A")  // reserved for single color event (e.g. danger)
+#let c-danger-bg = rgb("#11131A")  // danger block inverts to ink-on-paper
+#let c-danger-fg = rgb("#EFEDE7")
 
-#let _meta-row(author: none, date: none, reading-time: none) = {
-  let cells = ()
-  if author != none { cells.push(_meta-cell("By", author)) }
-  if date != none { cells.push(_meta-cell("On", date)) }
-  if reading-time != none { cells.push(_meta-cell("Read", reading-time)) }
-  if cells.len() > 0 {
-    stack(dir: ltr, spacing: 2em, ..cells)
-  }
+// ---------- fonts ----------
+// Lists are tried in order; the first installed family wins. Fallbacks keep
+// the template compiling even when Archivo / Instrument Serif are not yet
+// staged in assets/fonts/.
+
+#let f-sans   = ("Archivo", "IBM Plex Sans", "Helvetica", "Arial")
+#let f-serif  = ("Instrument Serif", "IBM Plex Serif", "Lora", "Georgia")
+#let f-mono   = ("JetBrains Mono", "Menlo", "Courier New")
+
+// ---------- geometry ----------
+// `rail-width` = 35mm, `rail-gap` = 5mm between content column and rail,
+// `rail-outer` = 22mm from rail to page edge. Right margin of the page is
+// their sum. The `place(dx:, dy:)` offset in `marg()` is `content-width +
+// rail-gap` so the note lands at the left edge of the rail.
+
+#let rail-width = 35mm
+#let rail-gap   = 5mm
+#let rail-outer = 22mm
+
+// ---------- marginalia ----------
+// `#marg(label, body)` places a labelled note in the right rail, anchored to
+// its vertical position in source flow. The generator emits `#marg(...)`
+// BEFORE its anchor paragraph so `dy` lands at the anchor's top. State on
+// `_marg-bottom` tracks the last note's bottom y on the current page; if a
+// following note's anchor sits above that, we push it down by `gap`.
+//
+// The state is reset on every page-break via `#set page(background: ...)`.
+
+#let _marg-bottom = state("marg-bottom", 0pt)
+
+#let marg(label: none, body) = context {
+  let note-content = block(width: rail-width, above: 0pt, below: 0pt)[
+    #line(length: 100%, stroke: 0.4pt + c-hairline)
+    #v(4pt)
+    #if label != none {
+      text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-ink-2)[
+        #upper(label)
+      ]
+      v(3pt)
+    }
+    #set par(leading: 0.45em)
+    #text(font: f-sans, size: 8.5pt, fill: c-muted)[#body]
+  ]
+  let here-y = here().position().y
+  let last-bottom = _marg-bottom.get()
+  let gap = 8pt
+  let actual-y = calc.max(here-y, last-bottom + gap)
+  let shift = actual-y - here-y
+  let h = measure(note-content).height
+  // dx = content-column width + rail-gap. For A4 @ (left 22mm, right 62mm),
+  // content width = 210 − 22 − 62 = 126mm, so dx lands at 131mm — the left
+  // edge of the rail. If page size / margins change, update this constant.
+  place(dx: 131mm, dy: shift, note-content)
+  _marg-bottom.update(actual-y + h)
 }
 
-#let _titleblock(
-  title: none, subtitle: none, section: none,
-  author: none, date: none, reading-time: none,
-) = block(below: 2em)[
-  #if section != none {
-    text(
-      font: "JetBrains Mono", size: 8.5pt, weight: 600,
-      tracking: 2pt, fill: rgb("#5a5a5a"),
-    )[#upper(section)]
-    v(0.6em)
-  }
-  #text(font: "IBM Plex Serif", weight: 700, size: 26pt, fill: rgb("#000"))[#title]
-  #if subtitle != none {
-    v(0.3em)
-    text(
-      font: "IBM Plex Serif", size: 13pt, style: "italic", fill: rgb("#3a3a3a"),
-    )[#subtitle]
-  }
-  #v(0.6em)
-  #line(length: 60pt, stroke: 0.8pt + rgb("#000"))
-  #v(0.6em)
-  #_meta-row(author: author, date: date, reading-time: reading-time)
+// ---------- ornamental helpers ----------
+
+// Eyebrow: an uppercase mono-ish kicker above a section. Driven by
+// `::: eyebrow ... :::` in markdown.
+#let eyebrow(body) = block(above: 1.2em, below: 0.6em)[
+  #text(
+    font: f-sans, size: 8pt, weight: 600, tracking: 0.18em, fill: c-ink-2,
+  )[#upper(body)]
+  #v(4pt)
+  #line(length: 100%, stroke: 0.5pt + c-hairline)
 ]
 
-// ---------- callouts ----------
-// One function per kind. The mdast generator emits `#note[...]`, `#warn[...]`,
-// or `#system[...]` depending on the `[!NOTE]` / `[!WARN]` / `[!SYSTEM]` tag.
+// Dropcap: the first paragraph of a chapter opener. The generator splits
+// the leading letter off the paragraph and passes it as the first argument;
+// the rest of the body flows as normal paragraph text after it.
+//
+// The big letter sits in a box with `baseline: 0.55em` so it protrudes
+// upward by roughly two baselines while the inline layout treats it as a
+// single glyph. Not a true text-wrapping lettrine (Typst doesn't do that),
+// but visually distinctive and unambiguously editorial.
+#let dropcap(letter, body) = block(above: 0.3em, below: 1em)[
+  #set par(first-line-indent: 0em, justify: true)
+  #box(baseline: 0.55em, text(
+    font: f-serif, style: "italic", weight: 400, size: 52pt, fill: c-ink,
+  )[#letter])
+  #h(1pt)
+  #body
+]
 
-#let _tag(name) = text(
-  font: "JetBrains Mono", weight: 700, size: 0.88em, tracking: 0.6pt,
-)[#upper(name).]
+// Pull quote / epigraph: italic serif, indented, hairline rule above and
+// below. Used by `::: epigraph`.
+#let epigraph(body) = block(above: 1.6em, below: 1.6em)[
+  #line(length: 40%, stroke: 0.5pt + c-hairline)
+  #v(0.8em)
+  #set par(leading: 0.7em, justify: false)
+  #text(font: f-serif, style: "italic", size: 13pt, fill: c-ink-2)[#body]
+  #v(0.8em)
+  #line(length: 40%, stroke: 0.5pt + c-hairline)
+]
 
-#let note(body) = block(above: 1em, below: 1em)[#_tag("note") #body]
+// Admonitions — note / tip / warning / danger.
+// Note: neutral hairline box.
+// Tip: same box, different label.
+// Warning: heavier left rule, ink label.
+// Danger: inverted block — ink fill, paper text. Only color event allowed.
 
-#let warn(body) = block(
+#let _admonition-label(label) = text(
+  font: f-sans, size: 8pt, weight: 700, tracking: 0.14em, fill: c-ink,
+)[#upper(label)]
+
+#let note(body) = block(
   above: 1em, below: 1em,
-  stroke: (left: 1pt + rgb("#000")),
-  inset: (left: 0.8em, top: 0.2em, bottom: 0.2em),
-)[#_tag("warn") #body]
-
-#let system(body) = block(
-  above: 1em, below: 1em,
-  stroke: (left: (paint: rgb("#3a3a3a"), thickness: 1pt, dash: "dashed")),
-  inset: (left: 0.8em, top: 0.25em, bottom: 0.25em),
+  stroke: (left: 1pt + c-hairline),
+  inset: (left: 0.8em, top: 0.4em, bottom: 0.4em),
 )[
-  #text(
-    font: "JetBrains Mono", size: 9pt, fill: rgb("#3a3a3a"),
-  )[#_tag("system") #body]
+  #_admonition-label("note")
+  #v(3pt)
+  #body
+]
+
+#let tip(body) = block(
+  above: 1em, below: 1em,
+  stroke: (left: 1pt + c-hairline),
+  inset: (left: 0.8em, top: 0.4em, bottom: 0.4em),
+)[
+  #_admonition-label("tip")
+  #v(3pt)
+  #body
+]
+
+#let warning(body) = block(
+  above: 1em, below: 1em,
+  stroke: (left: 1.5pt + c-ink),
+  inset: (left: 0.8em, top: 0.4em, bottom: 0.4em),
+)[
+  #_admonition-label("warning")
+  #v(3pt)
+  #body
+]
+
+#let danger(body) = block(
+  above: 1em, below: 1em,
+  fill: c-danger-bg,
+  inset: (x: 0.9em, y: 0.7em),
+)[
+  #set text(fill: c-danger-fg)
+  // Inline-code chips default to a light fill on dark text; invert here so
+  // they stay readable against the danger block.
+  #show raw.where(block: false): it => box(
+    fill: rgb("#2A2D36"),
+    inset: (x: 3pt, y: 0pt),
+    outset: (y: 2pt),
+    radius: 1.5pt,
+    text(font: f-mono, size: 0.92em, fill: c-danger-fg, it),
+  )
+  #text(font: f-sans, size: 8pt, weight: 700, tracking: 0.14em)[#upper("danger")]
+  #v(3pt)
+  #body
+]
+
+// Exercise box: numbered, tagged, hairline outline. Driven by
+// `::: {.exbox number="01" tag="..."}`.
+#let exbox(number: none, tag: none, body) = block(
+  above: 1.4em, below: 1.4em,
+  stroke: 0.6pt + c-hairline,
+  inset: (x: 1em, y: 0.8em),
+)[
+  #grid(
+    columns: (auto, 1fr, auto),
+    column-gutter: 0.8em,
+    if number != none {
+      text(font: f-serif, style: "italic", size: 22pt, fill: c-ink)[#number]
+    } else [],
+    [],
+    if tag != none {
+      text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-muted)[
+        #upper(tag)
+      ]
+    } else [],
+  )
+  #v(0.3em)
+  #body
+]
+
+// ---------- code block with filename / lang-label header ----------
+// Pandoc-style attributes on a fenced block (`{.python filename="x.py"
+// lang-label="Python 3.12"}`) surface in the generator as a wrapper call:
+//   #code-block(filename: "x.py", lang-label: "Python 3.12")[```python ... ```]
+// The header strip only renders when at least one of the two is set.
+
+#let code-block(filename: none, lang-label: none, body) = block(
+  above: 1em, below: 1em,
+  stroke: 0.4pt + c-hairline,
+)[
+  #if filename != none or lang-label != none {
+    block(
+      fill: rgb("#DDD9D1"),
+      inset: (x: 10pt, y: 4pt),
+      width: 100%,
+      stroke: (bottom: 0.4pt + c-hairline),
+    )[
+      #grid(
+        columns: (1fr, auto),
+        text(font: f-mono, size: 8pt, weight: 500, fill: c-ink-2)[
+          #if filename != none { filename } else []
+        ],
+        text(font: f-sans, size: 7pt, weight: 500, tracking: 0.14em, fill: c-muted)[
+          #if lang-label != none { upper(lang-label) } else []
+        ],
+      )
+    ]
+  }
+  #block(inset: 0pt)[#body]
 ]
 
 // ---------- task list markers ----------
-// GFM renders `- [x]` / `- [ ]` as task list items. Typst doesn't have a
-// native widget for it, so we emit a small stroked box with an optional
-// checkmark.
 
 #let task-box(checked) = box(
   width: 0.78em, height: 0.78em, baseline: 0.1em,
-  stroke: 0.6pt + rgb("#1a1a1a"),
+  stroke: 0.6pt + c-ink,
   inset: 0pt,
 )[
   #if checked {
     align(center + horizon, text(
-      font: "JetBrains Mono", size: 0.7em, weight: 700, fill: rgb("#000"),
+      font: f-mono, size: 0.7em, weight: 700, fill: c-ink,
     )[x])
   }
+]
+
+// ---------- legacy callouts ----------
+// The old v0.2 generator emitted `#warn[...]` and `#system[...]`. Keep them
+// as thin aliases so any existing markdown continues to render.
+#let warn(body) = warning(body)
+#let system(body) = note(body)
+
+// ---------- cover page ----------
+// Rendered when `show-cover = true` and a cover config was passed. Three
+// stacked blocks: kicker (Part · Chapter), display title (mixed upright sans
+// + italic serif accent), meta column + TOC column on a single grid row.
+
+#let _cover-page(
+  kicker: none, title: none, subtitle: none,
+  meta: (), toc: (),
+  chapter: none, part: none, edition: none, volume: none,
+  page-start: none, page-end: none,
+) = [
+  #set page(
+    margin: (top: 24mm, right: 22mm, bottom: 22mm, left: 22mm),
+    header: none, footer: none,
+  )
+  #block(height: 100%)[
+    // Top: kicker line + ghosted chapter numeral.
+    #if kicker != none {
+      text(font: f-sans, size: 9pt, weight: 600, tracking: 0.18em, fill: c-ink-2)[
+        #upper(kicker)
+      ]
+    }
+    #v(1.6em)
+
+    // Display title: two-line mixed voice.
+    #if title != none {
+      par(leading: 0.32em, text(
+        font: f-serif, size: 52pt, weight: 400, fill: c-ink, tracking: -0.5pt,
+      )[#title])
+    }
+    #if subtitle != none {
+      v(0.8em)
+      par(leading: 0.48em, text(
+        font: f-serif, style: "italic", size: 18pt, fill: c-ink-2,
+      )[#subtitle])
+    }
+
+    #v(2.4em)
+    #line(length: 60pt, stroke: 1.2pt + c-ink)
+    #v(2.4em)
+
+    // Two-column footer grid: meta | toc.
+    #grid(
+      columns: (1fr, 1fr),
+      column-gutter: 3em,
+      // Meta column.
+      if meta.len() > 0 {
+        stack(spacing: 0.9em, ..meta.map(pair => [
+          #text(font: f-sans, size: 7.5pt, weight: 600, tracking: 0.14em, fill: c-muted)[
+            #upper(pair.label)
+          ] \
+          #text(font: f-serif, size: 11pt, fill: c-ink)[#pair.value]
+        ]))
+      } else [],
+      // TOC column.
+      if toc.len() > 0 {
+        stack(spacing: 0.7em, ..toc.map(entry => [
+          #grid(
+            columns: (auto, 1fr),
+            column-gutter: 1em,
+            text(font: f-serif, style: "italic", size: 10pt, fill: c-ink-2)[#entry.id],
+            text(font: f-sans, size: 10pt, fill: c-ink)[#entry.title],
+          )
+        ]))
+      } else [],
+    )
+
+    // Ghosted chapter numeral — pinned bottom-right, weight 300, light tone.
+    #v(1fr)
+    #if chapter != none {
+      align(right)[
+        #text(font: f-serif, style: "italic", size: 140pt, fill: c-hairline, weight: 300)[
+          #chapter
+        ]
+      ]
+    }
+  ]
+  #pagebreak(weak: true)
 ]
 
 // ---------- the document function ----------
 
 #let paper(
-  title: none,
-  subtitle: none,
-  section: none,
-  author: none,
-  date: none,
-  reading-time: none,
-  page-size: "us-letter",
-  margin-top: 1in,
-  margin-right: 0.9in,
-  margin-bottom: 1in,
-  margin-left: 0.9in,
+  // classic
+  title: none, subtitle: none, section: none,
+  author: none, date: none, reading-time: none,
+  // editorial
+  chapter: none, part: none, edition: none, volume: none,
+  page-start: none, page-end: none,
+  cover: none,
+  // layout
+  page-size: "a4",
+  margin-top: 24mm,
+  margin-right: 22mm,
+  margin-bottom: 22mm,
+  margin-left: 22mm,
   show-header: true,
   show-footer: true,
   show-cover: true,
@@ -115,116 +353,118 @@
   body,
 ) = {
   // --------- Base typography ---------
-  set text(font: "Lora", size: 10.5pt, fill: rgb("#1a1a1a"), hyphenate: false)
-  set par(leading: 0.62em, spacing: 1em, justify: false)
+  set text(font: f-sans, size: 10.5pt, fill: c-ink, hyphenate: false)
+  set par(leading: 0.62em, spacing: 1em, justify: true, first-line-indent: 0em)
 
-  // --------- Headings: grayscale ladder, IBM Plex Serif ---------
+  // --------- Page ---------
+  // Right margin reserves the rail. The `marg()` helper places into that
+  // reserved band.
+  let effective-right = rail-gap + rail-width + rail-outer
+  set page(
+    paper: page-size,
+    fill: c-paper,
+    margin: (top: margin-top, right: effective-right, bottom: margin-bottom, left: margin-left),
+    background: context {
+      _marg-bottom.update(0pt)
+      []
+    },
+  )
+
+  // --------- Headings: sans display ladder ---------
   set heading(numbering: none)
 
-  show heading.where(level: 1): it => block(above: 1.6em, below: 1em, breakable: false,
-    stack(spacing: 0.3em,
-      text(font: "IBM Plex Serif", weight: 700, size: 20pt, fill: rgb("#000"))[#it.body],
-      stack(spacing: 1.5pt,
-        line(length: 100%, stroke: 1.2pt + rgb("#000")),
-        line(length: 100%, stroke: 0.5pt + rgb("#000")),
-      ),
-    ),
-  )
-
-  show heading.where(level: 2): it => block(above: 1.4em, below: 0.8em, breakable: false,
-    stack(spacing: 0.3em,
-      text(font: "IBM Plex Serif", weight: 700, size: 14pt, fill: rgb("#111"))[#it.body],
-      line(length: 100%, stroke: 0.5pt + rgb("#111")),
-    ),
-  )
-
-  show heading.where(level: 3): set text(
-    font: "IBM Plex Serif", weight: 600, size: 12pt, fill: rgb("#1f1f1f"),
-  )
-  show heading.where(level: 4): set text(
-    font: "IBM Plex Serif", weight: 600, size: 10.5pt, fill: rgb("#3a3a3a"),
-  )
+  show heading.where(level: 1): it => block(above: 1.8em, below: 1em, breakable: false)[
+    #text(font: f-sans, weight: 600, size: 22pt, fill: c-ink, tracking: -0.2pt)[
+      #it.body
+    ]
+  ]
+  show heading.where(level: 2): it => block(above: 1.6em, below: 0.8em, breakable: false)[
+    #text(font: f-sans, weight: 600, size: 16pt, fill: c-ink)[#it.body]
+  ]
+  show heading.where(level: 3): it => block(above: 1.2em, below: 0.4em, breakable: false)[
+    #text(font: f-sans, weight: 600, size: 11.5pt, fill: c-ink)[#it.body]
+  ]
+  show heading.where(level: 4): it => block(above: 1em, below: 0.3em)[
+    #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink-2)[#it.body]
+  ]
+  show heading.where(level: 5): it => block(above: 1.2em, below: 0.3em)[
+    #text(font: f-sans, size: 8pt, weight: 600, tracking: 0.14em, fill: c-ink-2)[
+      #upper(it.body)
+    ]
+  ]
 
   // --------- Inline ---------
-  show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: rgb("#000"), it))
-  show strong: set text(font: "IBM Plex Serif", weight: 700)
-  show emph: set text(style: "italic")
+  show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: c-ink, it))
+  show strong: set text(weight: 700)
+  show emph: set text(font: f-serif, style: "italic", fill: c-ink-2)
 
-  // --------- Tables: top+bottom rule, uppercase mono header, no verticals ---------
-  set table(
-    stroke: none,
-    inset: (x: 8pt, y: 6pt),
-    align: left + horizon,
-  )
+  // --------- Tables ---------
+  set table(stroke: none, inset: (x: 8pt, y: 6pt), align: left + horizon)
   show table: it => block(
-    stroke: (top: 0.8pt + rgb("#111"), bottom: 0.8pt + rgb("#111")),
+    stroke: (top: 0.8pt + c-ink, bottom: 0.8pt + c-ink),
     inset: 0pt,
     it,
   )
   show table.cell.where(y: 0): it => text(
-    font: "JetBrains Mono", size: 8.5pt, weight: 600, tracking: 0.4pt, fill: rgb("#111"),
+    font: f-sans, size: 8.5pt, weight: 600, tracking: 0.14em, fill: c-ink,
   )[#upper(it)]
 
-  // --------- Figures: auto-numbered "Fig. N. caption" ---------
+  // --------- Figures ---------
   set figure(supplement: [Fig.], numbering: "1")
   show figure.caption: it => block(width: 100%)[
     #set align(left)
-    #text(
-      font: "IBM Plex Serif", size: 9pt, style: "italic", fill: rgb("#3a3a3a"),
-    )[#it.supplement #context it.counter.display(it.numbering). #it.body]
+    #text(font: f-serif, style: "italic", size: 9pt, fill: c-muted)[
+      #it.supplement #context it.counter.display(it.numbering). #it.body
+    ]
   ]
 
   // --------- Code ---------
-  // `set raw(theme: ...)` scopes to the enclosing block, so we set it at the
-  // top of paper's body — this propagates to every raw node in `body`. The
-  // generator always supplies theme-path, so no conditional is needed.
-  set raw(theme: theme-path)
+  if theme-path != none { set raw(theme: theme-path) }
   show raw.where(block: true): it => block(
-    fill: rgb("#FAF9F6"),
+    fill: rgb("#E8E5DF"),
     inset: 10pt,
     radius: 2pt,
     width: 100%,
-    text(font: "JetBrains Mono", size: 9pt, it),
+    text(font: f-mono, size: 9pt, it),
   )
   show raw.where(block: false): it => box(
-    fill: rgb("#FAF9F6"),
+    fill: rgb("#E8E5DF"),
     inset: (x: 3pt, y: 0pt),
     outset: (y: 2pt),
     radius: 1.5pt,
-    text(font: "JetBrains Mono", size: 0.92em, it),
+    text(font: f-mono, size: 0.92em, it),
   )
 
   // --------- Blockquote ---------
   show quote.where(block: true): it => block(
-    inset: (left: 1em, y: 0.4em),
-    spacing: 1em,
-    text(style: "italic", fill: rgb("#3a3a3a"), it.body),
+    inset: (left: 1.2em, y: 0.5em),
+    spacing: 1.2em,
+    stroke: (left: 2pt + c-hairline),
+    text(font: f-serif, style: "italic", size: 12pt, fill: c-ink-2, it.body),
   )
 
-  // --------- Page (header/footer suppressed on cover) ---------
-  // No point in a running header for an untitled document — the three cells
-  // would all be empty and leave an orphan rule at the top of every page.
-  let header-has-content = title != none or section != none or date != none or author != none
-  let footer-page-offset = if show-cover and title != none { 1 } else { 0 }
-  let cover-active = show-cover and title != none
-  let header-fn = if show-header and header-has-content {
+  // --------- Math ---------
+  set math.equation(numbering: "(1)", supplement: [Eq.])
+
+  // --------- Running header/footer ---------
+  let cover-active = show-cover and cover != none
+  let footer-page-offset = if cover-active { 1 } else { 0 }
+
+  let header-fn = if show-header {
     context {
       let p = counter(page).get().first()
       let on-cover = cover-active and p <= 1
       if on-cover { [] } else {
-        set text(
-          font: "IBM Plex Serif", size: 7.5pt, weight: 600,
-          tracking: 1pt, fill: rgb("#5a5a5a"),
-        )
+        set text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-muted)
         block(
-          stroke: (bottom: 0.5pt + rgb("#c8c8c8")),
+          stroke: (bottom: 0.4pt + c-hairline),
           inset: (bottom: 5pt),
           grid(
             columns: (1fr, 1fr, 1fr),
             align: (left, center, right),
-            upper(if section != none { section } else { "" }),
+            upper(if part != none { part } else if section != none { section } else { "" }),
             upper(if title != none { title } else { "" }),
-            upper(if date != none { date } else if author != none { author } else { "" }),
+            upper(if edition != none { edition } else if date != none { date } else { "" }),
           ),
         )
       }
@@ -236,64 +476,50 @@
       let p = counter(page).get().first()
       let on-cover = cover-active and p <= 1
       if on-cover { [] } else {
-        set align(center)
-        set text(
-          font: "JetBrains Mono", size: 7.5pt, tracking: 0.4pt, fill: rgb("#5a5a5a"),
-        )
         let current = counter(page).get().first()
-        let total = counter(page).final().first()
-        // When a cover sits ahead of the body, the first body page should
-        // still read "1 / N" — offset both current and total by one.
-        [#(current - footer-page-offset) / #(total - footer-page-offset)]
+        let display-num = current - footer-page-offset + (
+          if page-start != none { page-start - 1 } else { 0 }
+        )
+        set align(center)
+        text(font: f-serif, style: "italic", size: 9pt, fill: c-muted)[#display-num]
       }
     }
   } else { none }
 
-  set page(
-    paper: page-size,
-    margin: (top: margin-top, right: margin-right, bottom: margin-bottom, left: margin-left),
-    header: header-fn,
-    footer: footer-fn,
-  )
+  set page(header: header-fn, footer: footer-fn)
 
-  // --------- Cover page ---------
-  if show-cover and title != none {
-    block(height: 100% - 30pt)[
-      #set align(horizon + left)
-      #stack(spacing: 1.2em,
-        if section != none {
-          text(
-            font: "JetBrains Mono", size: 9pt, weight: 600,
-            tracking: 2.2pt, fill: rgb("#5a5a5a"),
-          )[#upper(section)]
-        },
-        // Give the 46pt display type enough leading that descenders
-        // (`g`, `p`, `y`) clear the italic subtitle below it.
-        par(leading: 0.38em, text(
-          font: "IBM Plex Serif", weight: 700, size: 46pt, fill: rgb("#000"),
-          tracking: -0.5pt,
-        )[#title]),
-        if subtitle != none {
-          text(
-            font: "IBM Plex Serif", size: 14pt, style: "italic", fill: rgb("#3a3a3a"),
-          )[#subtitle]
-        },
-        line(length: 70pt, stroke: 1pt + rgb("#000")),
-        _meta-row(author: author, date: date, reading-time: reading-time),
-      )
-    ]
-    align(right + bottom)[
-      #text(
-        font: "JetBrains Mono", size: 7.5pt, fill: rgb("#8a8a8a"),
-        tracking: 2.5pt,
-      )[#upper("rv · markdown · paper")]
-    ]
-    pagebreak(weak: true)
-  } else if title != none {
-    _titleblock(
-      title: title, subtitle: subtitle, section: section,
-      author: author, date: date, reading-time: reading-time,
+  // --------- Cover ---------
+  if cover-active {
+    _cover-page(
+      kicker: cover.at("kicker", default: none),
+      title: cover.at("title", default: none),
+      subtitle: cover.at("subtitle", default: none),
+      meta: cover.at("meta", default: ()),
+      toc: cover.at("toc", default: ()),
+      chapter: chapter,
+      part: part,
+      edition: edition,
+      volume: volume,
+      page-start: page-start,
+      page-end: page-end,
     )
+  } else if title != none {
+    // Lighter editorial title block for documents without a full cover.
+    block(below: 2em)[
+      #if section != none {
+        text(font: f-sans, size: 8.5pt, weight: 600, tracking: 0.18em, fill: c-ink-2)[
+          #upper(section)
+        ]
+        v(0.6em)
+      }
+      #text(font: f-serif, weight: 400, size: 30pt, fill: c-ink)[#title]
+      #if subtitle != none {
+        v(0.3em)
+        text(font: f-serif, style: "italic", size: 14pt, fill: c-ink-2)[#subtitle]
+      }
+      #v(0.6em)
+      #line(length: 60pt, stroke: 1pt + c-ink)
+    ]
   }
 
   body
