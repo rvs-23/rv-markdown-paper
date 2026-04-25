@@ -166,9 +166,15 @@ function renderParagraph(node: Paragraph, ctx: Ctx): string {
 }
 
 function renderHeading(node: Heading, ctx: Ctx): string {
+  const attrs = getAttrs(node);
+  // Opener heading (`## Heading {#chapter-opener}`) is structural only — the
+  // visible page chrome comes from the eyebrow + dropcap blocks below it.
+  // Emit just the cross-ref label so the `#` anchor still resolves.
+  if (attrs?.id === "chapter-opener" || attrs?.classes?.includes("chapter-opener")) {
+    return attrs?.id ? `#metadata("opener") <${attrs.id}>` : "";
+  }
   const prefix = "=".repeat(node.depth);
   const body = renderInlines(node.children, ctx);
-  const attrs = getAttrs(node);
   const label = attrs?.id ? ` <${attrs.id}>` : "";
   return `${prefix} ${body}${label}`;
 }

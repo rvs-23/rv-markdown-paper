@@ -380,27 +380,45 @@
   // --------- Headings: sans display ladder ---------
   set heading(numbering: none)
 
-  // Heading ladder mirrors the mockup CSS: uniformly weight 500, mixed-case,
-  // single-ink color. Size falls off quickly so a section title outranks its
-  // sub-heads visually without any weight change.
+  // Heading ladder follows the mockup's editorial remap (not a 1:1
+  // size-by-level cascade):
+  //   H1 → chapter title (28pt body fallback when no cover is shown)
+  //   H2 → small section eyebrow + hairline rule (NOT a display heading)
+  //   H3 → display heading for that section (21pt — the visual H2)
+  //   H4 → sub-heading (14pt)
+  //   H5 → small inline label (10.5pt mixed case)
+  //   H6 → tiny italic serif aside
+  // The author writes ## for the section number and ### for the actual
+  // visible title. The mockup CSS does the same: h2 is the "7.1 · TITLE"
+  // eyebrow line, h3 is the "Why a pool" display.
+
   show heading.where(level: 1): it => block(above: 1.8em, below: 0.8em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 28pt, fill: c-ink, tracking: -0.4pt)[
       #it.body
     ]
   ]
-  show heading.where(level: 2): it => block(above: 1.4em, below: 0.5em, breakable: false)[
+  show heading.where(level: 2): it => block(above: 1.6em, below: 0.4em, breakable: false)[
+    #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
+      #upper(it.body)
+    ]
+    #v(4pt, weak: true)
+    #line(length: 100%, stroke: 0.4pt + c-hairline)
+  ]
+  show heading.where(level: 3): it => block(above: 0.8em, below: 0.4em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 21pt, fill: c-ink, tracking: -0.25pt)[
       #it.body
     ]
   ]
-  show heading.where(level: 3): it => block(above: 1.2em, below: 0.35em, breakable: false)[
+  show heading.where(level: 4): it => block(above: 1.2em, below: 0.3em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink)[#it.body]
-  ]
-  show heading.where(level: 4): it => block(above: 1em, below: 0.3em, breakable: false)[
-    #text(font: f-sans, weight: 500, size: 11.5pt, fill: c-ink)[#it.body]
   ]
   show heading.where(level: 5): it => block(above: 0.9em, below: 0.2em)[
     #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
+  ]
+  show heading.where(level: 6): it => block(above: 0.8em, below: 0.2em)[
+    #text(font: f-serif, style: "italic", weight: 400, size: 10pt, fill: c-ink-2)[
+      #it.body
+    ]
   ]
 
   // --------- Inline ---------
