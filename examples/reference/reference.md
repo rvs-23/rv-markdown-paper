@@ -249,8 +249,6 @@ it runs.
 - **Beazley, D.** *Python Concurrency From the Ground Up.* PyCon US, 2015.
 - **CPython source** — `Lib/concurrent/futures/thread.py`.
 
-### Notes
-
 [^cpu-process-pool]: For CPU-bound work, substitute `ProcessPoolExecutor`;
     the API is identical, the cost model is not.
 
