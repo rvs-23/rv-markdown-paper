@@ -401,19 +401,19 @@
       #it.body
     ]
   ]
-  show heading.where(level: 2): it => block(above: 1.6em, below: 0.4em, breakable: false)[
+  show heading.where(level: 2): it => block(above: 2em, below: 0.9em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
       #upper(it.body)
     ]
     #v(4pt, weak: true)
     #line(length: 100%, stroke: 0.4pt + c-hairline)
   ]
-  show heading.where(level: 3): it => block(above: 0.8em, below: 0.4em, breakable: false)[
+  show heading.where(level: 3): it => block(above: 1em, below: 0.8em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 21pt, fill: c-ink, tracking: -0.25pt)[
       #it.body
     ]
   ]
-  show heading.where(level: 4): it => block(above: 1.2em, below: 0.3em, breakable: false)[
+  show heading.where(level: 4): it => block(above: 1.6em, below: 0.5em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink)[#it.body]
   ]
   show heading.where(level: 5): it => block(above: 0.9em, below: 0.2em)[

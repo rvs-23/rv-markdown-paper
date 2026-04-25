@@ -898,3 +898,46 @@ The **big event** is the Editorial + Swiss design refactor (§12). Near-total re
 **Acceptance.** `npm run mdpdf -- examples/editorial-swiss/reference.md examples/editorial-swiss/out.pdf` produces a clean 5-page PDF. Dropcap, code-block header, admonition inline-code chip, marginalia auto-alignment, figure + equation cross-refs all render. Directionally matches `mockup.pdf`; pixel-matching remains for later phases.
 
 **Next.** Phase 3 polish — cover page fidelity against p1 of mockup; opener-page single-column layout; per-component fixture tests under `examples/components/`; pixel-level review against `mockup.pdf` per §13.2 checklist.
+
+---
+
+## 16. Backlog — Mermaid diagrams
+
+**Goal.** Render fenced ` ```mermaid ` blocks as figures so authors can keep diagrams alongside the prose instead of pre-baking SVGs in `figures/`.
+
+**Approach.** Pre-process the mdast: walk code nodes with `lang === "mermaid"`, hand the source to `@mermaid-js/mermaid-cli` (`mmdc`) to emit an SVG into the temp dir alongside `template.typ`, then replace the code node with an `image` node pointing at the SVG. Caption + `{#fig:x}` cross-ref attrs from the trailing attribute block continue to work via the existing figure pipeline. Cache by content hash so repeated renders are free.
+
+**Open questions.**
+- `mmdc` requires Chromium. Adds a heavy optional dependency; gate behind a `--mermaid` flag or auto-detect availability and degrade to a code block with a "(mermaid not installed)" caption.
+- Theme — pass `--theme neutral` plus a custom CSS so the diagram inherits the warm-paper palette (ink lines on `#EFEDE7`, hairline strokes), not Mermaid's default blues.
+- Math inside Mermaid labels: defer; if needed, render as Typst-side caption.
+
+**Acceptance.** A ` ```mermaid ` fence followed by `{#fig:flow caption="..."}` renders a figure indistinguishable from an `![](./flow.svg){#fig:flow}` reference, with the same caption/cross-ref behaviour and palette.
+
+---
+
+## 17. Execution log — Phase 3 polish pass (2026-04-25)
+
+**Shipped since 2026-04-20.**
+
+- **Heading ladder remap.** `template.typ` now maps `##` → small-caps tracked eyebrow + hairline (the "7.1 · TITLE" line), `###` → 21 pt display heading, `####` → 14 pt sub-heading. Reasoning in README §"What you can write": the source `##` becomes a section-marker, not a display heading; the actual on-page heading is `###`. Numerals are author-typed (`## 7.1 · Threads & the GIL`), not template-generated — matches §14.2 #8.
+- **Opener page suppression.** `## Heading {#chapter-opener}` collapses the heading text entirely so the eyebrow + dropcap below carry the page. Implemented as a `show heading.where(...)` that inspects `it.label` and emits `none`.
+- **Pixel pass.** Tables (hairline rule weight + spacing), figure captions (eyebrow label + italic caption), equation hairlines, exbox restyle (numeral + tag header, body indent), admonition labels promoted to weight 500 for legibility on warm paper.
+- **Duplicate-eyebrow regression fixed (commit `d7bfef7`).** The reference fixture had both `## 7.4 Sizing the pool` and a manual `::: eyebrow 7.4 · Sizing the pool :::`; the H2 show rule was already rendering the eyebrow, so both stacked. Fix: fold the `·` separator into the H2 text and drop the manual `::: eyebrow` blocks at section openers. One source of truth for the section marker.
+- **Orphan "Notes" heading dropped (commit `80b938f`).** `### Notes` followed by footnote definitions, but `generate.ts` pre-collects footnotes and inlines them at the reference site — Typst then renders them as page-bottom footnotes. The heading pointed at nothing.
+- **Heading spacing tightened.** H2 above 2em / below 0.9em (eyebrow → next H4 was cramped); H3 above 1em / below 0.8em (display → body line "Why a pool, and why bounded." was kissing the paragraph below); H4 above 1.6em / below 0.5em. Values arrived at by visual review of the reference render.
+- **Examples reorganized.** Canonical fixture moved to `examples/reference/` (md + html + pdf together); the five short demos remain at `examples/0X-*.md`.
+- **Mermaid backlog captured** as §16 above — not implemented; documented so it doesn't get lost.
+
+**Open issues found during demo verification (not yet fixed).**
+- Empty hairline at top of demo pages 01–04 when `section`/`title`/`date` columns are all empty — the running header bottom-rule still draws. Either suppress when all three columns are empty, or rely on `--no-header` for these demos.
+- `examples/01-hello.md` body prose still says "IBM Plex Sans at 11pt" — stale from before the font system swap. Should reflect Archivo at 10.5 pt.
+- `examples/05-full-paper.md` running header three-column layout has overlap: left "ESSAY 05 · EDITORIAL INTENT" abuts center "A SHORT CASE FOR BORING OUTPUT". Either widen the center column or shorten the left kicker.
+
+**Verified during this pass.**
+- `theme.tmTheme` is true grayscale (#000000, #1A1A1A, #2A2A2A, #3A3A3A, #6B6B6B, #8A8A8A) — earlier color-tint impression on `04-code.pdf` at 130 dpi was an aliasing artifact; at 180 dpi the syntax ramp reads pure ink.
+
+**Next.**
+- Address the three demo issues above.
+- Phase 4 work from §13.3: per-component fixture tests under `examples/components/`.
+- `--root /` path-traversal hardening (§14.2 #4) — still outstanding.
