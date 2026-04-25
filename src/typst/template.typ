@@ -520,18 +520,26 @@
       let p = counter(page).get().first()
       let on-cover = cover-active and p <= 1
       if on-cover { [] } else {
-        set text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-muted)
-        block(
-          stroke: (bottom: 0.4pt + c-hairline),
-          inset: (bottom: 5pt),
-          grid(
-            columns: (1fr, 1fr, 1fr),
-            align: (left, center, right),
-            upper(if part != none { part } else if section != none { section } else { "" }),
-            upper(if title != none { title } else { "" }),
-            upper(if edition != none { edition } else if date != none { date } else { "" }),
-          ),
-        )
+        let left-cell = if part != none { part } else if section != none { section } else { "" }
+        let center-cell = if title != none { title } else { "" }
+        let right-cell = if edition != none { edition } else if date != none { date } else { "" }
+        if left-cell == "" and center-cell == "" and right-cell == "" {
+          []
+        } else {
+          set text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-muted)
+          block(
+            stroke: (bottom: 0.4pt + c-hairline),
+            inset: (bottom: 5pt),
+            grid(
+              columns: (auto, 1fr, auto),
+              column-gutter: 1.5em,
+              align: (left + horizon, center + horizon, right + horizon),
+              upper(left-cell),
+              upper(center-cell),
+              upper(right-cell),
+            ),
+          )
+        }
       }
     }
   } else { none }

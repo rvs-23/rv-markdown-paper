@@ -1,7 +1,7 @@
 ---
 title: "A Short Case for Boring Output"
 subtitle: "Why the same page, over and over, beats visual variety when the goal is to be read."
-section: "Essay 05 · Editorial Intent"
+section: "Essay 05"
 author: "Rishav Sharma"
 date: "2026-04-18"
 readingTime: "7 min"
