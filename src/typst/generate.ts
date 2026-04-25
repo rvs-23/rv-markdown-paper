@@ -443,18 +443,15 @@ type DefListNode = {
 };
 
 function renderDefList(node: DefListNode, ctx: Ctx): string {
+  // Term and definition both render at body weight (matches mockup's
+  // `dt { font-weight: 500 }`). The hairline rule above each row carries the
+  // visual distinction — the term itself is set in body sans, weight 500.
   const cells: string[] = [];
   for (const child of node.children) {
-    // `defListTerm` holds phrasing content directly (no wrapping paragraph).
-    // `defListDescription` usually wraps its content in a paragraph.
     const rendered = renderDefListChild(child, ctx);
-    if (child.type === "defListTerm") {
-      cells.push(`  [*${rendered}*]`);
-    } else if (child.type === "defListDescription") {
-      cells.push(`  [${rendered}]`);
-    }
+    cells.push(`  [${rendered}]`);
   }
-  return `#grid(\n  columns: (auto, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.6em,\n${cells.join(",\n")},\n)`;
+  return `#grid(\n  columns: (auto, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.55em,\n  stroke: (top: 0.3pt + rgb("#C5C2BC")),\n  inset: (top: 4pt),\n${cells.join(",\n")},\n)`;
 }
 
 function renderDefListChild(

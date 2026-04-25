@@ -13,8 +13,12 @@
 #let c-paper     = rgb("#EFEDE7")  // warm background
 #let c-ink       = rgb("#11131A")  // primary text
 #let c-ink-2     = rgb("#2A2D36")  // secondary text (eyebrows, labels)
+#let c-ink-3     = rgb("#4A4D57")  // tertiary (kickers, eyebrow fills)
 #let c-muted     = rgb("#686C76")  // captions, margin notes, meta cells
+#let c-mute-2    = rgb("#8B8E97")  // very-light labels (lang-label, numerals)
 #let c-hairline  = rgb("#C5C2BC")  // dividers, thin rules
+#let c-surface   = rgb("#E4E1DA")  // code-block body, subtle panels
+#let c-surface-2 = rgb("#DBD8D1")  // code-block header, warning panels
 #let c-accent    = rgb("#11131A")  // reserved for single color event (e.g. danger)
 #let c-danger-bg = rgb("#11131A")  // danger block inverts to ink-on-paper
 #let c-danger-fg = rgb("#EFEDE7")
@@ -205,29 +209,32 @@
 //   #code-block(filename: "x.py", lang-label: "Python 3.12")[```python ... ```]
 // The header strip only renders when at least one of the two is set.
 
+// The wrapper adds a header strip above the raw block. It does NOT set fill
+// or stroke — the raw show-rule below already paints the body panel with
+// `c-surface` and hairline borders. This keeps bare ``` blocks and wrapped
+// blocks visually identical.
 #let code-block(filename: none, lang-label: none, body) = block(
-  above: 1em, below: 1em,
-  stroke: 0.4pt + c-hairline,
+  above: 1em, below: 1em, breakable: true,
 )[
   #if filename != none or lang-label != none {
     block(
-      fill: rgb("#DDD9D1"),
-      inset: (x: 10pt, y: 4pt),
+      fill: c-surface-2,
+      inset: (x: 12pt, y: 6pt),
       width: 100%,
-      stroke: (bottom: 0.4pt + c-hairline),
+      stroke: 0.5pt + c-hairline,
     )[
       #grid(
         columns: (1fr, auto),
-        text(font: f-mono, size: 8pt, weight: 500, fill: c-ink-2)[
+        text(font: f-sans, size: 8pt, weight: 500, fill: c-ink-2)[
           #if filename != none { filename } else []
         ],
-        text(font: f-sans, size: 7pt, weight: 500, tracking: 0.14em, fill: c-muted)[
-          #if lang-label != none { upper(lang-label) } else []
+        text(font: f-mono, size: 7.5pt, weight: 400, fill: c-mute-2)[
+          #if lang-label != none { lang-label } else []
         ],
       )
     ]
   }
-  #block(inset: 0pt)[#body]
+  #body
 ]
 
 // ---------- task list markers ----------
@@ -373,29 +380,32 @@
   // --------- Headings: sans display ladder ---------
   set heading(numbering: none)
 
-  show heading.where(level: 1): it => block(above: 1.8em, below: 1em, breakable: false)[
-    #text(font: f-sans, weight: 600, size: 22pt, fill: c-ink, tracking: -0.2pt)[
+  // Heading ladder mirrors the mockup CSS: uniformly weight 500, mixed-case,
+  // single-ink color. Size falls off quickly so a section title outranks its
+  // sub-heads visually without any weight change.
+  show heading.where(level: 1): it => block(above: 1.8em, below: 0.8em, breakable: false)[
+    #text(font: f-sans, weight: 500, size: 28pt, fill: c-ink, tracking: -0.4pt)[
       #it.body
     ]
   ]
-  show heading.where(level: 2): it => block(above: 1.6em, below: 0.8em, breakable: false)[
-    #text(font: f-sans, weight: 600, size: 16pt, fill: c-ink)[#it.body]
-  ]
-  show heading.where(level: 3): it => block(above: 1.2em, below: 0.4em, breakable: false)[
-    #text(font: f-sans, weight: 600, size: 11.5pt, fill: c-ink)[#it.body]
-  ]
-  show heading.where(level: 4): it => block(above: 1em, below: 0.3em)[
-    #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink-2)[#it.body]
-  ]
-  show heading.where(level: 5): it => block(above: 1.2em, below: 0.3em)[
-    #text(font: f-sans, size: 8pt, weight: 600, tracking: 0.14em, fill: c-ink-2)[
-      #upper(it.body)
+  show heading.where(level: 2): it => block(above: 1.4em, below: 0.5em, breakable: false)[
+    #text(font: f-sans, weight: 500, size: 21pt, fill: c-ink, tracking: -0.25pt)[
+      #it.body
     ]
+  ]
+  show heading.where(level: 3): it => block(above: 1.2em, below: 0.35em, breakable: false)[
+    #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink)[#it.body]
+  ]
+  show heading.where(level: 4): it => block(above: 1em, below: 0.3em, breakable: false)[
+    #text(font: f-sans, weight: 500, size: 11.5pt, fill: c-ink)[#it.body]
+  ]
+  show heading.where(level: 5): it => block(above: 0.9em, below: 0.2em)[
+    #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
   ]
 
   // --------- Inline ---------
   show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: c-ink, it))
-  show strong: set text(weight: 700)
+  show strong: set text(weight: 600)
   show emph: set text(font: f-serif, style: "italic", fill: c-ink-2)
 
   // --------- Tables ---------
@@ -420,19 +430,25 @@
 
   // --------- Code ---------
   if theme-path != none { set raw(theme: theme-path) }
+  // Raw block: no own fill/stroke — the wrapper provides the panel chrome.
+  // A bare ``` fence without attributes still gets a subtle panel via the
+  // outer block set on top of this rule; to guarantee one even when called
+  // standalone, we give it a light surface fill only when NOT already inside
+  // a `code-block` wrapper (which it detects via parent fill). Simplest: keep
+  // the standalone case visually identical to the wrapped case.
   show raw.where(block: true): it => block(
-    fill: rgb("#E8E5DF"),
-    inset: 10pt,
-    radius: 2pt,
+    fill: c-surface,
+    inset: (x: 12pt, y: 10pt),
     width: 100%,
-    text(font: f-mono, size: 9pt, it),
+    stroke: 0.5pt + c-hairline,
+    text(font: f-mono, size: 8.6pt, it),
   )
   show raw.where(block: false): it => box(
-    fill: rgb("#E8E5DF"),
-    inset: (x: 3pt, y: 0pt),
+    fill: c-surface,
+    inset: (x: 4pt, y: 0pt),
     outset: (y: 2pt),
-    radius: 1.5pt,
-    text(font: f-mono, size: 0.92em, it),
+    radius: 0pt,
+    text(font: f-mono, size: 0.88em, fill: c-ink, it),
   )
 
   // --------- Blockquote ---------
