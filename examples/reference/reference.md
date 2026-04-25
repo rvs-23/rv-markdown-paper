@@ -86,11 +86,7 @@ We cover *thread* pools specifically. Process pools (`ProcessPoolExecutor`)
 are touched on in §7.4 only to contrast sizing rules. ~~Async pools~~ are
 deferred to chapter 8.
 
-## 7.1 Threads & the GIL {#sec-threads-gil}
-
-::: eyebrow
-7.1 · Threads & the GIL
-:::
+## 7.1 · Threads & the GIL {#sec-threads-gil}
 
 ### Why a pool, and why bounded.
 
@@ -136,20 +132,12 @@ default, reason as if the GIL is there.
 - [x] Am I willing to cap memory with a worker count?
 - [ ] Can I tolerate out-of-order completion?
 
-## 7.2 What a pool actually is {#sec-pool-is}
-
-::: eyebrow
-7.2 · What a pool actually is
-:::
+## 7.2 · What a pool actually is {#sec-pool-is}
 
 *(This section is listed in the chapter TOC but its content lives in the
 companion reference card; see Appendix A.)*
 
-## 7.3 Submitting & collecting work {#sec-submitting}
-
-::: eyebrow
-7.3 · Submitting & collecting work
-:::
+## 7.3 · Submitting & collecting work {#sec-submitting}
 
 ### The minimal executor.
 
@@ -195,11 +183,7 @@ Do not share an unsynchronised mutable (a `list`, `dict`) across workers.
 The GIL protects bytecode, not your invariants.
 :::
 
-## 7.4 Sizing the pool {#sec-sizing}
-
-::: eyebrow
-7.4 · Sizing the pool
-:::
+## 7.4 · Sizing the pool {#sec-sizing}
 
 ### How many workers?
 
@@ -223,11 +207,7 @@ average time a worker spends per request (mostly blocked on I/O).
 | DNS lookups       |           16 |      64 | Resolver cache      |
 | Pure Python CPU   |            1 |       1 | GIL                 |
 
-## 7.5 Exercises {#sec-exercises}
-
-::: eyebrow
-7.5 · Exercises
-:::
+## 7.5 · Exercises {#sec-exercises}
 
 ### Work these before 7.6.
 
@@ -259,7 +239,7 @@ it runs.
 — Rob Pike · *Concurrency is not parallelism* (2012)
 :::
 
-## 7.6 Further reading {#sec-further}
+## 7.6 · Further reading {#sec-further}
 
 ::: margin
 **See also.** Ch. 8 · asyncio; Ch. 9 · process pools.

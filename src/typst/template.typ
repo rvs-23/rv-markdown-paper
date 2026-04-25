@@ -126,7 +126,7 @@
 // Danger: inverted block — ink fill, paper text. Only color event allowed.
 
 #let _admonition-label(label) = text(
-  font: f-sans, size: 8pt, weight: 700, tracking: 0.14em, fill: c-ink,
+  font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-ink,
 )[#upper(label)]
 
 #let note(body) = block(
@@ -174,23 +174,27 @@
     radius: 1.5pt,
     text(font: f-mono, size: 0.92em, fill: c-danger-fg, it),
   )
-  #text(font: f-sans, size: 8pt, weight: 700, tracking: 0.14em)[#upper("danger")]
+  #text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em)[#upper("danger")]
   #v(3pt)
   #body
 ]
 
-// Exercise box: numbered, tagged, hairline outline. Driven by
-// `::: {.exbox number="01" tag="..."}`.
+// Exercise box: top hairline rule (no surrounding box), italic-serif numeral
+// on the left, optional uppercase tracked tag on the right, body below.
+// Driven by `::: {.exbox number="01" tag="..."}`.
 #let exbox(number: none, tag: none, body) = block(
-  above: 1.4em, below: 1.4em,
-  stroke: 0.6pt + c-hairline,
-  inset: (x: 1em, y: 0.8em),
+  above: 1.2em, below: 1.2em,
+  stroke: (top: 0.4pt + c-hairline),
+  inset: (top: 12pt, bottom: 4pt),
 )[
   #grid(
     columns: (auto, 1fr, auto),
-    column-gutter: 0.8em,
+    column-gutter: 1em,
+    align: (left + horizon, left + horizon, right + horizon),
     if number != none {
-      text(font: f-serif, style: "italic", size: 22pt, fill: c-ink)[#number]
+      text(font: f-serif, style: "italic", weight: 400, size: 32pt, fill: c-ink)[
+        #number
+      ]
     } else [],
     [],
     if tag != none {
@@ -427,22 +431,42 @@
   show emph: set text(font: f-serif, style: "italic", fill: c-ink-2)
 
   // --------- Tables ---------
-  set table(stroke: none, inset: (x: 8pt, y: 6pt), align: left + horizon)
-  show table: it => block(
-    stroke: (top: 0.8pt + c-ink, bottom: 0.8pt + c-ink),
-    inset: 0pt,
-    it,
+  // Mockup: no surrounding box; header row gets a 0.75pt ink rule below it;
+  // every body row gets a 0.4pt hairline below. First column is sans, the
+  // rest is mono with tabular numerals so digits line up.
+  set table(
+    stroke: (x, y) => (
+      bottom: if y == 0 { 0.75pt + c-ink } else { 0.4pt + c-hairline },
+    ),
+    inset: (x: 10pt, y: 7pt),
+    align: left + horizon,
   )
-  show table.cell.where(y: 0): it => text(
-    font: f-sans, size: 8.5pt, weight: 600, tracking: 0.14em, fill: c-ink,
-  )[#upper(it)]
+  show table.cell: it => {
+    if it.y == 0 {
+      text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, it)
+    } else if it.x == 0 {
+      text(font: f-sans, size: 9.3pt, fill: c-ink, it)
+    } else {
+      text(font: f-mono, size: 9.3pt, fill: c-ink, it)
+    }
+  }
 
   // --------- Figures ---------
-  set figure(supplement: [Fig.], numbering: "1")
-  show figure.caption: it => block(width: 100%)[
+  // Caption: hairline rule above, then a two-column grid — italic-serif
+  // `Fig. X.Y` lead in ink, sans body in muted gray. Mirrors the mockup's
+  // figcaption row.
+  set figure(supplement: [Fig.], numbering: "1.1")
+  show figure.caption: it => block(width: 100%, above: 0.6em)[
     #set align(left)
-    #text(font: f-serif, style: "italic", size: 9pt, fill: c-muted)[
-      #it.supplement #context it.counter.display(it.numbering). #it.body
+    #block(stroke: (top: 0.3pt + c-hairline), inset: (top: 5pt))[
+      #grid(
+        columns: (auto, 1fr),
+        column-gutter: 10pt,
+        text(font: f-serif, style: "italic", size: 10pt, fill: c-ink)[
+          #it.supplement #context it.counter.display(it.numbering)
+        ],
+        text(font: f-sans, size: 8.5pt, fill: c-muted)[#it.body],
+      )
     ]
   ]
 
@@ -479,6 +503,13 @@
 
   // --------- Math ---------
   set math.equation(numbering: "(1)", supplement: [Eq.])
+  show math.equation.where(block: true): it => block(
+    above: 1em, below: 1em,
+    stroke: (top: 0.3pt + c-hairline, bottom: 0.3pt + c-hairline),
+    inset: (top: 8pt, bottom: 8pt),
+    width: 100%,
+    it,
+  )
 
   // --------- Running header/footer ---------
   let cover-active = show-cover and cover != none
