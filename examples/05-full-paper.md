@@ -30,17 +30,18 @@ Matthew Butterick's [*Typography for Lawyers*](https://typographyforlawyers.com)
 
 ## What You Get
 
-| Element     | Treatment                                              |
-|-------------|--------------------------------------------------------|
-| H1          | IBM Plex Serif 700, ink-black, double rule below       |
-| H2–H4       | Same serif family, tighter hierarchy                   |
-| Body        | Lora 10.5pt, 1.46 leading, true-italic for emphasis    |
-| Code        | Warm off-white panel, mono, language tag top-right     |
-| Tables      | Uppercase-mono header, no vertical borders             |
-| Links       | Ink-black, underlined                                  |
-| Callouts    | Three voices: note (plain), warn (rule), system (mono) |
-| Header      | Section · Title · Date in IBM Plex Serif, uppercase    |
-| Footer      | `page / total` in mono, centered                       |
+| Element     | Treatment                                                  |
+|-------------|------------------------------------------------------------|
+| H1 / H3     | Archivo 500, ink, used as the on-page display heading      |
+| H2          | Tracked uppercase eyebrow with a hairline rule below       |
+| H4          | Archivo 500 at 14pt — sub-heading inside a section         |
+| Body        | Archivo 10.5pt, 0.62em leading, italic emphasis stays sans |
+| Code        | Warm surface panel, JetBrains Mono, lang/filename header   |
+| Tables      | Tracked uppercase header, hairline rule, no verticals      |
+| Links       | Ink, underlined                                            |
+| Callouts    | Note, tip, warning, danger — left rule + 500-weight label  |
+| Header      | Section · Title · Date, tracked sans uppercase, hairline   |
+| Footer      | Folio in italic Instrument Serif, centered                 |
 
 ## How
 

@@ -14,14 +14,22 @@ When the default is restraint, an accent — `inline code`, a blockquote, a rule
 
 ### On Mono
 
-The `JetBrains Mono` face is reserved for code, the H1, labels, and the page
-number. Used everywhere, it would read as terminal output. Used here, it marks
-the signals of "system": things the reader is meant to parse precisely.
+The `JetBrains Mono` face is reserved for code, filenames, and tracked labels.
+Used everywhere, it would read as terminal output. Used here, it marks the
+signals of "system": things the reader is meant to parse precisely.
 
 ### On Sans
 
-IBM Plex Sans carries the body. It is a reading face, not a display face. Its
-job is to get out of the way.
+Archivo carries the body and the headings — one family, one voice. It is a
+reading face that scales up cleanly to a 21pt display heading without changing
+character. Its job, at body size, is to get out of the way.
+
+### On Serif
+
+Instrument Serif appears only as ornament: the italic folio at the foot of
+the page, pull quotes, the suffix of a cover title. It is never used for
+running prose — italics inside a paragraph stay in Archivo, so the serif keeps
+its rarity.
 
 ## The Quote
 
