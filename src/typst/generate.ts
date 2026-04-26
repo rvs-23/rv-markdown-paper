@@ -1,4 +1,4 @@
-import { resolve as resolvePath, isAbsolute } from "node:path";
+import { resolve as resolvePath, isAbsolute, relative as relativePath } from "node:path";
 import type {
   Root,
   RootContent,
@@ -585,10 +585,35 @@ function renderInlineImage(image: Image, ctx: Ctx): string {
 
 // ---- helpers ----
 
+// Image paths are constrained to the source markdown's directory tree.
+// Remote URLs, absolute paths, and any relative path that escapes the source
+// dir via `..` are rejected at generation time so a hostile markdown file
+// cannot exfiltrate `/etc/passwd` or fetch from the network. The returned
+// string is a Typst project-root-relative path (with leading `/`) so the
+// compiler resolves it against `--root <sourceDir>` rather than the host
+// filesystem root.
 function resolveImagePath(url: string, ctx: Ctx): string {
-  if (/^[a-z]+:\/\//i.test(url)) return url;
-  if (isAbsolute(url)) return url;
-  return resolvePath(ctx.sourceDir, url);
+  if (/^(https?|ftp|file|data):/i.test(url)) {
+    throw new Error(
+      `Remote or non-filesystem image URL is not supported: ${url}\n` +
+        `Download the asset and reference it by relative path next to the markdown source.`,
+    );
+  }
+  if (isAbsolute(url)) {
+    throw new Error(
+      `Absolute image path is not allowed: ${url}\n` +
+        `Use a relative path under the markdown source directory.`,
+    );
+  }
+  const abs = resolvePath(ctx.sourceDir, url);
+  const rel = relativePath(ctx.sourceDir, abs);
+  if (rel.startsWith("..") || isAbsolute(rel)) {
+    throw new Error(
+      `Image path escapes the source directory: ${url}\n` +
+        `Resolved to ${abs}, which is outside ${ctx.sourceDir}.`,
+    );
+  }
+  return "/" + rel.split(/[\\/]/).join("/");
 }
 
 function indent(text: string, spaces: number): string {

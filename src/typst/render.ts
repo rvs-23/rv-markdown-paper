@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { writeFile, mkdtemp, rm, copyFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join, dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Cover, DocumentOptions } from "../config/options.js";
@@ -14,10 +13,14 @@ export type TypstRenderOptions = {
   body: string;
   outputPath: string;
   options: DocumentOptions;
+  // Source markdown's directory. Used as Typst's `--root` so the compiler
+  // can only read files under the document's own tree. The temp build dir
+  // is created inside it so template.typ + theme.tmTheme are reachable.
+  sourceDir: string;
 };
 
 export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> {
-  const tempDir = await mkdtemp(join(tmpdir(), "mdpdf-"));
+  const tempDir = await mkdtemp(join(opts.sourceDir, ".mdpdf-"));
   try {
     const tempTemplate = join(tempDir, "template.typ");
     const tempTheme = join(tempDir, "theme.tmTheme");
@@ -29,7 +32,7 @@ export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> 
     const docPath = join(tempDir, "document.typ");
     await writeFile(docPath, source, "utf8");
 
-    await runTypst(docPath, opts.outputPath);
+    await runTypst(docPath, opts.outputPath, opts.sourceDir);
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
@@ -132,13 +135,17 @@ function cssLengthToTypst(value: string): string {
   return `${num}${unit}`;
 }
 
-function runTypst(inputPath: string, outputPath: string): Promise<void> {
+// Tail buffer kept for compile errors. 64 KB is well above what any real
+// Typst error needs, while bounding memory if a runaway compile floods stderr.
+const STDERR_TAIL_BYTES = 64 * 1024;
+
+function runTypst(inputPath: string, outputPath: string, root: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(
       "typst",
       [
         "compile",
-        "--root", "/",
+        "--root", root,
         "--font-path", FONTS_DIR,
         "--ignore-system-fonts",
         inputPath,
@@ -147,15 +154,21 @@ function runTypst(inputPath: string, outputPath: string): Promise<void> {
       { stdio: ["ignore", "pipe", "pipe"] },
     );
     let stderr = "";
+    let truncated = false;
     child.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
+      if (stderr.length > STDERR_TAIL_BYTES) {
+        stderr = stderr.slice(-STDERR_TAIL_BYTES);
+        truncated = true;
+      }
     });
     child.on("error", reject);
     child.on("close", (code) => {
       if (code === 0) {
         resolve();
       } else {
-        const msg = stderr.trim() || `typst compile exited with code ${code}`;
+        const tail = stderr.trim() || `typst compile exited with code ${code}`;
+        const msg = truncated ? `[stderr truncated; tail follows]\n${tail}` : tail;
         reject(new Error(msg));
       }
     });

@@ -50,6 +50,7 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     body,
     outputPath: outputAbsolute,
     options: templateOptions,
+    sourceDir: inputDir,
   });
 }
 

@@ -428,7 +428,13 @@
   // --------- Inline ---------
   show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: c-ink, it))
   show strong: set text(weight: 600)
-  show emph: set text(font: f-serif, style: "italic", fill: c-ink-2)
+  // Emphasis stays in the body family (Archivo Italic). Instrument Serif
+  // italic is reserved for ornamental slots — cover subtitle, dropcap,
+  // epigraphs, equation tags, figure captions — not running prose. The
+  // font is re-asserted in an explicit `text()` wrapper because `set text`
+  // inside a `show emph` rule does not always commit Typst to the Italic
+  // variant in the font registry.
+  show emph: it => text(font: f-sans, style: "italic")[#it.body]
 
   // --------- Tables ---------
   // Mockup: no surrounding box; header row gets a 0.75pt ink rule below it;
