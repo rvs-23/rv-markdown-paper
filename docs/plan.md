@@ -929,10 +929,12 @@ The **big event** is the Editorial + Swiss design refactor (§12). Near-total re
 - **Examples reorganized.** Canonical fixture moved to `examples/reference/` (md + html + pdf together); the five short demos remain at `examples/0X-*.md`.
 - **Mermaid backlog captured** as §16 above — not implemented; documented so it doesn't get lost.
 
-**Open issues found during demo verification (not yet fixed).**
-- Empty hairline at top of demo pages 01–04 when `section`/`title`/`date` columns are all empty — the running header bottom-rule still draws. Either suppress when all three columns are empty, or rely on `--no-header` for these demos.
-- `examples/01-hello.md` body prose still says "IBM Plex Sans at 11pt" — stale from before the font system swap. Should reflect Archivo at 10.5 pt.
-- `examples/05-full-paper.md` running header three-column layout has overlap: left "ESSAY 05 · EDITORIAL INTENT" abuts center "A SHORT CASE FOR BORING OUTPUT". Either widen the center column or shorten the left kicker.
+**Demo issues from the previous pass — now resolved.**
+- Empty hairline at top of demos 01–04 — fixed in `4d0da14` (running header rule suppressed when section/title/date are all empty).
+- `examples/01-hello.md` stale "IBM Plex Sans at 11pt" prose — fixed in `a4a7a23` (now reads Archivo 10.5pt).
+- `examples/05-full-paper.md` running-header column overlap — fixed in `4d0da14` (header layout unwrapped).
+
+**Font fallbacks dropped (2026-04-26).** `template.typ` previously listed IBM Plex / Lora / Helvetica as fallbacks behind Archivo and Instrument Serif. Combined with `--ignore-system-fonts`, the fallbacks were dead code on a clean machine — but on a machine where stale `IBMPlexSerif-*.ttf` / `Lora-*.ttf` were still in `assets/fonts/`, Typst would silently substitute when a glyph was missing, drifting the render away from the reference with no warning. Now: single-family declarations (`f-sans = "Archivo"`, etc.) and the stale TTFs deleted. A missing face fails loud.
 
 **Verified during this pass.**
 - `theme.tmTheme` is true grayscale (#000000, #1A1A1A, #2A2A2A, #3A3A3A, #6B6B6B, #8A8A8A) — earlier color-tint impression on `04-code.pdf` at 130 dpi was an aliasing artifact; at 180 dpi the syntax ramp reads pure ink.

@@ -24,13 +24,13 @@
 #let c-danger-fg = rgb("#EFEDE7")
 
 // ---------- fonts ----------
-// Lists are tried in order; the first installed family wins. Fallbacks keep
-// the template compiling even when Archivo / Instrument Serif are not yet
-// staged in assets/fonts/.
+// All three families ship in `assets/fonts/` and are loaded with
+// `--ignore-system-fonts`. No fallbacks: a missing face must fail loud,
+// not silently substitute and drift from the reference.
 
-#let f-sans   = ("Archivo", "IBM Plex Sans", "Helvetica", "Arial")
-#let f-serif  = ("Instrument Serif", "IBM Plex Serif", "Lora", "Georgia")
-#let f-mono   = ("JetBrains Mono", "Menlo", "Courier New")
+#let f-sans   = "Archivo"
+#let f-serif  = "Instrument Serif"
+#let f-mono   = "JetBrains Mono"
 
 // ---------- geometry ----------
 // `rail-width` = 35mm, `rail-gap` = 5mm between content column and rail,
