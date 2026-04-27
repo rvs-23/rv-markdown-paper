@@ -293,57 +293,84 @@
     }
     #v(1.6em)
 
-    // Display title: two-line mixed voice.
+    // Display title — comma-split per spec §12.6: head ("Thread pools")
+    // is upright Archivo 500 at 44pt; tail (everything from the first comma
+    // on) is Instrument Serif italic at the same size, the ornament voice.
     #if title != none {
-      par(leading: 0.32em, text(
-        font: f-serif, size: 52pt, weight: 400, fill: c-ink, tracking: -0.5pt,
-      )[#title])
+      let parts = title.split(",")
+      let head = parts.at(0)
+      let tail = if parts.len() > 1 { "," + parts.slice(1).join(",") } else { "" }
+      par(leading: 0.32em)[
+        #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
+      ]
     }
     #if subtitle != none {
-      v(0.8em)
+      v(0.6em)
       par(leading: 0.48em, text(
-        font: f-serif, style: "italic", size: 18pt, fill: c-ink-2,
+        font: f-serif, style: "italic", size: 17pt, fill: c-ink-2,
       )[#subtitle])
     }
 
-    #v(2.4em)
-    #line(length: 60pt, stroke: 1.2pt + c-ink)
-    #v(2.4em)
+    #v(2em)
+    #line(length: 60pt, stroke: 1pt + c-ink)
+    #v(1.6em)
 
-    // Two-column footer grid: meta | toc.
-    #grid(
-      columns: (1fr, 1fr),
-      column-gutter: 3em,
-      // Meta column.
-      if meta.len() > 0 {
-        stack(spacing: 0.9em, ..meta.map(pair => [
-          #text(font: f-sans, size: 7.5pt, weight: 600, tracking: 0.14em, fill: c-muted)[
+    // Meta — 3-col grid: (label / value) per cell, side by side.
+    #if meta.len() > 0 {
+      grid(
+        columns: (1fr,) * meta.len(),
+        column-gutter: 14mm,
+        ..meta.map(pair => stack(spacing: 6pt,
+          text(font: f-sans, size: 8pt, weight: 600, tracking: 0.16em, fill: c-mute-2)[
             #upper(pair.label)
-          ] \
-          #text(font: f-serif, size: 11pt, fill: c-ink)[#pair.value]
-        ]))
-      } else [],
-      // TOC column.
-      if toc.len() > 0 {
-        stack(spacing: 0.7em, ..toc.map(entry => [
-          #grid(
-            columns: (auto, 1fr),
-            column-gutter: 1em,
-            text(font: f-serif, style: "italic", size: 10pt, fill: c-ink-2)[#entry.id],
-            text(font: f-sans, size: 10pt, fill: c-ink)[#entry.title],
-          )
-        ]))
-      } else [],
-    )
+          ],
+          text(font: f-sans, size: 10pt, fill: c-ink-2)[#pair.value],
+        )),
+      )
+      v(1.6em)
+    }
 
-    // Ghosted chapter numeral — pinned bottom-right, weight 300, light tone.
-    #v(1fr)
-    #if chapter != none {
-      align(right)[
-        #text(font: f-serif, style: "italic", size: 140pt, fill: c-hairline, weight: 300)[
-          #chapter
-        ]
+    // "In this chapter" — section list as 3-col grid (id / title / page).
+    #if toc.len() > 0 {
+      line(length: 100%, stroke: 1pt + c-ink)
+      v(0.6em)
+      text(font: f-sans, size: 9pt, weight: 600, tracking: 0.16em, fill: c-ink-2)[
+        #upper("In this chapter")
       ]
+      v(0.8em)
+      stack(spacing: 0.55em, ..toc.map(entry => grid(
+        columns: (52pt, 1fr, auto),
+        column-gutter: 1em,
+        text(font: f-sans, size: 9pt, weight: 500, tracking: 0.04em, fill: c-ink-2)[#entry.id],
+        text(font: f-sans, size: 10pt, fill: c-ink)[#entry.title],
+        text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
+          #entry.at("page", default: "")
+        ],
+      )))
+    }
+
+    // Cover-foot per spec §12.6: edition · "Ch. NN" · page-range, hairline
+    // above. No ghost numeral — sig-numeral is suppressed on the cover.
+    #v(1fr)
+    #line(length: 100%, stroke: 0.4pt + c-hairline)
+    #v(0.6em)
+    #{
+      let chapter-str = if chapter != none {
+        let n = str(chapter)
+        if n.len() == 1 { "Ch. 0" + n } else { "Ch. " + n }
+      } else { "" }
+      let page-range = if page-start != none and page-end != none {
+        "pp. " + str(page-start) + " – " + str(page-end)
+      } else { "" }
+      grid(
+        columns: (1fr, auto, 1fr),
+        align: (left, center, right),
+        text(font: f-sans, size: 8.5pt, fill: c-muted)[
+          #if edition != none { edition } else []
+        ],
+        text(font: f-serif, style: "italic", size: 13pt, fill: c-ink)[#chapter-str],
+        text(font: f-sans, size: 8.5pt, fill: c-muted)[#page-range],
+      )
     }
   ]
   #pagebreak(weak: true)

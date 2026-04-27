@@ -1042,3 +1042,29 @@ The visual diff is now `paper.pdf` ↔ `mockup.pdf`. The mockup-regen command in
 Reads as a difficulty curve: each file adds one more system, with the all-encompassing `06-full-paper` as the closing demo. Future per-component fixtures (lists, figures, math, …) slot in before `06-full-paper`, pushing it further out — the contract is "06-full-paper is always the last numbered demo."
 
 Re-rendered every PDF per the §19 rule.
+
+---
+
+## 23. Cover-page rebuild + paper.pdf → output.pdf (2026-04-27)
+
+**Rename.** `examples/editorial-swiss/paper.pdf` (our pipeline render) → `output.pdf`. Sitting next to `paper.md`, `mockup.html`, `mockup.pdf`, the old name made it ambiguous which PDF was our output and which was the target. New mental model:
+
+```
+paper.md      source
+output.pdf    our pipeline render            ─── diff target ───┐
+mockup.html   executable design spec                            │
+mockup.pdf    browser print of mockup.html  ←──────────────────┘
+figures/
+```
+
+**Cover bugs fixed (image review of v1).**
+
+1. **Whole title rendering in serif italic.** Spec §12.6 calls for the title to comma-split — head ("Thread pools") in upright Archivo 500 at 44pt, tail (",  or how to share a bounded crew.") in Instrument Serif italic at the same size, the ornament voice. The template was using `f-serif` for the entire title at 52pt. Now: split on first comma, render two `text(...)` blocks concatenated.
+2. **140pt ghost numeral on cover.** The template was emitting `#chapter` as a 140pt italic-serif "7" pinned bottom-right. Not in the spec at all — sig-numeral is "Suppressed on cover and opener" per §12.5. Replaced with the proper cover-foot per §12.6: a 3-col strip with edition L, "Ch. 07" (zero-padded, 13pt Instrument Serif italic ink) center, "pp. 85 – 98" R, hairline above.
+3. **Meta and TOC layout.** Was: 2-col grid with all meta stacked vertically on the left and TOC on the right. Now: meta is a horizontal 3-col grid (`Topic | Language | Runtime`, label over value), then below that the "In this chapter" header rule + h4 + 3-col TOC grid (52pt id / 1fr title / auto page).
+
+**Re-rendered all 7 PDFs** per §19. README updated to reflect `output.pdf` naming.
+
+Open issues still remaining for the cover (deferred — none are blockers; cover already reads correctly):
+- Edition strip at the very top of the cover (§12.6) not yet implemented — the kicker is currently the topmost element.
+- TOC `page` field has no source in current frontmatter (`toc[*]` only exposes `id`, `title`, `ref`); page numbers default to empty strings. Either add `page` to each TOC entry in `paper.md` or resolve via Typst `counter(page).at(label)`.

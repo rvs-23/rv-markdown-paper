@@ -130,7 +130,7 @@ npm run lint
 
 - [`docs/technical-reference.md`](docs/technical-reference.md) for implementation details, data model, and supported syntax mapping.
 - [`docs/plan.md`](docs/plan.md) for the existing code-review log and design notes.
-- [`examples/editorial-swiss/`](examples/editorial-swiss/) — canonical fixture for the design language. `paper.md` is the source document; `paper.pdf` is what the pipeline produces; `mockup.html` is the executable design spec and `mockup.pdf` is its browser print — the visual target. Diff `paper.pdf` against `mockup.pdf`. `figures/` holds image assets.
+- [`examples/editorial-swiss/`](examples/editorial-swiss/) — canonical fixture for the design language. `paper.md` is the source document; `output.pdf` is what the pipeline produces; `mockup.html` is the executable design spec and `mockup.pdf` is its browser print — the visual target. Diff `output.pdf` against `mockup.pdf`. `figures/` holds image assets.
 - [`examples/demos/`](examples/demos/) — short progressive demos exercising one capability at a time. Numbered `01-hello` … `06-full-paper`; `05-admonitions` is the per-component fixture for the four callout flavours.
 
 ## License
