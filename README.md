@@ -131,6 +131,7 @@ npm run lint
 - [`docs/technical-reference.md`](docs/technical-reference.md) for implementation details, data model, and supported syntax mapping.
 - [`docs/plan.md`](docs/plan.md) for the existing code-review log and design notes.
 - [`examples/reference/reference.md`](examples/reference/reference.md) for the canonical fixture.
+- [`examples/components/`](examples/components/) for per-component fixtures (one block type per file) used for visual regression review.
 
 ## License
 

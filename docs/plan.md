@@ -943,3 +943,13 @@ The **big event** is the Editorial + Swiss design refactor (§12). Near-total re
 - Address the three demo issues above.
 - Phase 4 work from §13.3: per-component fixture tests under `examples/components/`.
 - `--root /` path-traversal hardening (§14.2 #4) — still outstanding.
+
+---
+
+## 18. Execution log — Phase 4 begins (2026-04-27)
+
+**Stale demo retired.** `examples/05-full-paper.md` still used the legacy GFM blockquote callout syntax (`> [!NOTE]`, `> [!WARN]`, `> [!SYSTEM]`) and described the long-retired Chromium / Playwright pipeline in its "How" section and "Code, For Flavor" snippet. The pipeline (`renderBlockquote` at `src/typst/generate.ts:241`) wraps blockquotes in `#quote()` with no marker detection, so those callouts have been rendering as plain quotes since the Editorial+Swiss refactor. Rewrote the section to use the four supported fenced-div admonitions (`:::note` / `:::tip` / `:::warning` / `:::danger` — `[!SYSTEM]` dropped, no slot for it in §12.6); refreshed the "How" prose and the flavour snippet to match the current remark + Typst pipeline.
+
+**Phase 4 fixture #1 — admonitions.** Added `examples/components/admonitions.md` (and rendered `.pdf`) exercising all four admonition flavours individually plus a stacked sequence. Inline code inside an admonition body confirmed working. README "Technical Documentation" section now points to `examples/components/` so reviewers can find the per-component fixtures.
+
+**Next (Phase 4 continuing).** Headings (h1–h6) → body prose / inline marks → lists (ul / ol / nested / task) → definition list → blockquote + epigraph → code block → figure → table → math → exbox → footnotes → marginalia. One commit per fixture; visual diff each against `examples/reference/reference.pdf`.

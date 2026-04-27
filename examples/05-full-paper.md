@@ -46,12 +46,14 @@ Matthew Butterick's [*Typography for Lawyers*](https://typographyforlawyers.com)
 ## How
 
 1. Extract frontmatter with `gray-matter`.
-2. Parse Markdown to an mdast tree (`remark-parse` + `remark-gfm`).
-3. Transform mdast → hast with `remark-rehype`, running a small
-   `remarkCallouts` plugin along the way.
-4. Syntax-highlight with `@shikijs/rehype` using a grayscale theme.
-5. Stringify to HTML, wrap in a minimal shell, drive Chromium through
-   Playwright, emit the PDF.
+2. Parse Markdown to an mdast tree (`remark-parse` + `remark-gfm` +
+   `remark-directive` + `remark-math` + `remark-definition-list`),
+   normalising Pandoc-dialect surface forms in a pre-parse pass.
+3. Walk the tree and emit Typst source — admonitions become `#callout`
+   blocks, code fences carry through filename + lang attrs, math maps
+   to native Typst symbols.
+4. Spawn `typst compile` against the bundled fonts, with
+   `--ignore-system-fonts` so the output is identical on every machine.
 
 Nothing in that list is novel. The novelty, if any, is in what's left out.
 
@@ -63,11 +65,8 @@ Nothing in that list is novel. The novelty, if any, is in what's left out.
 const { content, frontmatter } = extractFrontmatter(raw);
 const resolved = resolveOptions({ cli, frontmatter, project });
 const tree = parseMarkdownToMdast(content);
-const body = await mdastToHtml(tree);
-const html = wrapInDocumentShell(body, {
-  title: resolved.title ?? deriveTitle(inputPath),
-  baseUrl: pathToFileURL(dirname(inputPath) + "/").href,
-});
+const typst = generateTypst(tree, { sourceDir: dirname(inputPath) });
+await compileTypst(typst, { outputPath, fontPath: "assets/fonts" });
 ```
 
 One call per stage. No theme registry, no plugin API — if a second output
@@ -75,21 +74,28 @@ format ever arrives, we can add one then.
 
 ## Callouts
 
-Three types, one source format — a `[!NOTE]`, `[!WARN]`, or `[!SYSTEM]`
-tag on the first line of a blockquote.
+Four kinds, one source format — a Pandoc fenced div, named for the
+intent: `:::note`, `:::tip`, `:::warning`, `:::danger`.
 
-> [!NOTE]
-> Useful context that isn't load-bearing. A quiet aside the reader can
-> take or leave.
+:::note
+Useful context that isn't load-bearing. A quiet aside the reader can
+take or leave.
+:::
 
-> [!WARN]
-> Something the reader must not miss. The left rule is enough signal;
-> the tag above it is enough name.
+:::tip
+A practical hint — non-essential, but the document is better if the
+reader picks it up in passing.
+:::
 
-> [!SYSTEM]
-> A diagnostic, an engineering invariant, or a pre-condition. The mono
-> face and the dashed rule together read as "from the machine, not the
-> author" — without needing a label to say so.
+:::warning
+Something the reader must not miss. The hairline frame and the tracked
+label carry the signal without resorting to color.
+:::
+
+:::danger
+The single inversion in the system — page-colored text on ink. Reserved
+for the warning the reader cannot afford to skim.
+:::
 
 ## A Note on Checklists
 
