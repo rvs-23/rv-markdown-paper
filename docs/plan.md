@@ -993,3 +993,18 @@ All four now use `width: 100%` so the fill spans the column, and consistent inse
 **Re-rendered all 7 PDFs** per the §19 rule.
 
 **Phase 4 fixture order, restated.** Headings → body inlines → lists → def-list → blockquote / epigraph → code block → figure → table → math → exbox → footnotes → marginalia. Continues at `07-headings.md`.
+
+---
+
+## 21. Target PDF restored (2026-04-27)
+
+The plan (§13.1) calls for a `mockup.pdf` — Chrome print-to-PDF of `reference.html` — as the visual north star to diff `reference.pdf` (our render) against. Only the HTML was committed; the target PDF was missing. Generated `examples/reference/mockup.pdf` via headless Brave (Chromium-based, same engine as Chrome's print path):
+
+```bash
+"/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+  --headless --disable-gpu --no-pdf-header-footer \
+  --print-to-pdf="$PWD/examples/reference/mockup.pdf" \
+  "file://$PWD/examples/reference/reference.html"
+```
+
+When `reference.html` changes, regenerate `mockup.pdf` with the same command. Two-PDF visual diff: `mockup.pdf` (target) vs `reference.pdf` (current render) — both side by side, page by page, against the §13.2 component checklist.
