@@ -972,3 +972,24 @@ Numbered demos and `pipeline.svg` lived loose at `examples/` while components an
 **Rendering rule (going forward).** Whenever a template, generator, or font change touches the rendering path, **every** PDF under `examples/` gets re-rendered in the same commit — not just the file under active edit. The committed PDFs are the visual regression surface; they only have value if they all reflect the same pipeline state. A loop over `examples/{demos,components,reference}/*.md` is the standard refresh.
 
 **README updated** to point at the three subdirectories.
+
+---
+
+## 20. Admonition style fix + components/ flattened (2026-04-27)
+
+**Bug.** `note` and `tip` rendered identically — same hairline left rule, same blank background, only the label differed. Spec §12.6 calls for the same surface fill behind both, distinguished by the left-rule colour and weight (ink-3 vs full ink). `warning` was also off-spec — needed surface-2 fill plus hairline top + bottom in addition to the heavier left rule.
+
+**Fix.** Rewrote the four admonition `#let` blocks in `template.typ`:
+
+- `note` — `c-surface` fill, `1pt + c-ink-3` left rule.
+- `tip` — `c-surface` fill, `2pt + c-ink` left rule. (The visible "step up" from note, without leaving the same surface family.)
+- `warning` — `c-surface-2` (warmer) fill, `2pt + c-ink-2` left rule, plus `0.4pt + c-hairline` top + bottom — the extra borders elevate it without spending colour.
+- `danger` — unchanged. Still the only inversion event.
+
+All four now use `width: 100%` so the fill spans the column, and consistent insets (`0.9em` x, `0.7em` y) so the label sits the same distance from the rule.
+
+**`components/` flattened.** `examples/components/admonitions.md` → `examples/demos/06-admonitions.md`. Treating per-component fixtures as a separate organisational silo was over-engineering for a project of this size — they are just more examples. README points at the two surviving folders (`reference/`, `demos/`); future fixtures continue the demo numbering (`07-` headings, `08-` lists, …).
+
+**Re-rendered all 7 PDFs** per the §19 rule.
+
+**Phase 4 fixture order, restated.** Headings → body inlines → lists → def-list → blockquote / epigraph → code block → figure → table → math → exbox → footnotes → marginalia. Continues at `07-headings.md`.

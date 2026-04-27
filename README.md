@@ -131,8 +131,7 @@ npm run lint
 - [`docs/technical-reference.md`](docs/technical-reference.md) for implementation details, data model, and supported syntax mapping.
 - [`docs/plan.md`](docs/plan.md) for the existing code-review log and design notes.
 - [`examples/reference/`](examples/reference/) — canonical Editorial+Swiss fixture (md + html + rendered pdf, with figures/).
-- [`examples/components/`](examples/components/) — per-component fixtures (one block type per file) for visual regression review.
-- [`examples/demos/`](examples/demos/) — five short progressive demos (`01-hello` through `05-full-paper`).
+- [`examples/demos/`](examples/demos/) — short progressive demos (`01-hello` through `05-full-paper`) plus per-component fixtures (`06-admonitions`, …).
 
 ## License
 

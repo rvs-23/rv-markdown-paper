@@ -120,19 +120,21 @@
 ]
 
 // Admonitions — note / tip / warning / danger.
-// Note: neutral hairline box.
-// Tip: same box, different label.
-// Warning: heavier left rule, ink label.
-// Danger: inverted block — ink fill, paper text. Only color event allowed.
+// Per spec §12.6: same surface fill behind note + tip, distinguished by
+// left-rule weight + colour (ink-3 vs ink). Warning steps up to a warmer
+// surface (surface-2) with an ink-2 left rule plus top/bottom hairlines —
+// the extra borders elevate it without spending colour. Danger is the only
+// inversion: ink fill, paper-coloured text.
 
 #let _admonition-label(label) = text(
   font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-ink,
 )[#upper(label)]
 
 #let note(body) = block(
-  above: 1em, below: 1em,
-  stroke: (left: 1pt + c-hairline),
-  inset: (left: 0.8em, top: 0.4em, bottom: 0.4em),
+  above: 1em, below: 1em, width: 100%,
+  fill: c-surface,
+  stroke: (left: 1pt + c-ink-3),
+  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
 )[
   #_admonition-label("note")
   #v(3pt)
@@ -140,9 +142,10 @@
 ]
 
 #let tip(body) = block(
-  above: 1em, below: 1em,
-  stroke: (left: 1pt + c-hairline),
-  inset: (left: 0.8em, top: 0.4em, bottom: 0.4em),
+  above: 1em, below: 1em, width: 100%,
+  fill: c-surface,
+  stroke: (left: 2pt + c-ink),
+  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
 )[
   #_admonition-label("tip")
   #v(3pt)
@@ -150,9 +153,14 @@
 ]
 
 #let warning(body) = block(
-  above: 1em, below: 1em,
-  stroke: (left: 1.5pt + c-ink),
-  inset: (left: 0.8em, top: 0.4em, bottom: 0.4em),
+  above: 1em, below: 1em, width: 100%,
+  fill: c-surface-2,
+  stroke: (
+    left: 2pt + c-ink-2,
+    top: 0.4pt + c-hairline,
+    bottom: 0.4pt + c-hairline,
+  ),
+  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
 )[
   #_admonition-label("warning")
   #v(3pt)
