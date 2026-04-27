@@ -99,7 +99,7 @@ function reorderMarginDirectives(nodes: RootContent[]): void {
     }
   }
 
-  // In `editorial-swiss-reference.md`, the convention is that `:::margin`
+  // In `examples/editorial-swiss/paper.md`, the convention is that `:::margin`
   // appears BEFORE the paragraph it annotates — so the natural source order
   // already has notes preceding their anchor. We still provide this helper
   // as an idempotent pass; if a future fixture moves notes after their
