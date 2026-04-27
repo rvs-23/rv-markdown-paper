@@ -953,3 +953,22 @@ The **big event** is the Editorial + Swiss design refactor (§12). Near-total re
 **Phase 4 fixture #1 — admonitions.** Added `examples/components/admonitions.md` (and rendered `.pdf`) exercising all four admonition flavours individually plus a stacked sequence. Inline code inside an admonition body confirmed working. README "Technical Documentation" section now points to `examples/components/` so reviewers can find the per-component fixtures.
 
 **Next (Phase 4 continuing).** Headings (h1–h6) → body prose / inline marks → lists (ul / ol / nested / task) → definition list → blockquote + epigraph → code block → figure → table → math → exbox → footnotes → marginalia. One commit per fixture; visual diff each against `examples/reference/reference.pdf`.
+
+---
+
+## 19. Examples reorganisation (2026-04-27)
+
+**New layout.**
+
+```
+examples/
+  reference/    canonical Editorial+Swiss fixture (md + html + pdf + figures/)
+  components/   one fixture per design-system component (Phase 4 output)
+  demos/        the five short progressive demos (01-hello … 05-full-paper) + pipeline.svg
+```
+
+Numbered demos and `pipeline.svg` lived loose at `examples/` while components and the reference fixture were already in subdirs — inconsistent and getting worse as Phase 4 fills out. All three categories now sit under their own folder. `examples/editorial-swiss.pdf` (a duplicate render of `reference.md` left over from the pre-reorg layout) deleted; `reference/reference.pdf` is the single canonical render.
+
+**Rendering rule (going forward).** Whenever a template, generator, or font change touches the rendering path, **every** PDF under `examples/` gets re-rendered in the same commit — not just the file under active edit. The committed PDFs are the visual regression surface; they only have value if they all reflect the same pipeline state. A loop over `examples/{demos,components,reference}/*.md` is the standard refresh.
+
+**README updated** to point at the three subdirectories.

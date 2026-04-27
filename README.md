@@ -28,7 +28,7 @@ npm install
 3. Run one conversion.
 
 ```bash
-npm run mdpdf -- examples/01-hello.md output/01-hello.pdf
+npm run mdpdf -- examples/demos/01-hello.md output/01-hello.pdf
 ```
 
 ## CLI Usage
@@ -130,8 +130,9 @@ npm run lint
 
 - [`docs/technical-reference.md`](docs/technical-reference.md) for implementation details, data model, and supported syntax mapping.
 - [`docs/plan.md`](docs/plan.md) for the existing code-review log and design notes.
-- [`examples/reference/reference.md`](examples/reference/reference.md) for the canonical fixture.
-- [`examples/components/`](examples/components/) for per-component fixtures (one block type per file) used for visual regression review.
+- [`examples/reference/`](examples/reference/) — canonical Editorial+Swiss fixture (md + html + rendered pdf, with figures/).
+- [`examples/components/`](examples/components/) — per-component fixtures (one block type per file) for visual regression review.
+- [`examples/demos/`](examples/demos/) — five short progressive demos (`01-hello` through `05-full-paper`).
 
 ## License
 
