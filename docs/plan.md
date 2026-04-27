@@ -1008,3 +1008,37 @@ The plan (§13.1) calls for a `mockup.pdf` — Chrome print-to-PDF of `reference
 ```
 
 When `reference.html` changes, regenerate `mockup.pdf` with the same command. Two-PDF visual diff: `mockup.pdf` (target) vs `reference.pdf` (current render) — both side by side, page by page, against the §13.2 component checklist.
+
+---
+
+## 22. Renamed reference/ → editorial-swiss/; demos reordered (2026-04-27)
+
+**Renaming.** "Reference" was overloaded — it was the name of the folder, the source markdown (`reference.md`), our pipeline output (`reference.pdf`), and the design spec (`reference.html`), so a sentence like "compare reference.pdf to reference.pdf" was actually meaningful and that's the problem. New layout matches the §13.4 plan phrasing:
+
+```
+examples/editorial-swiss/
+  paper.md       canonical source
+  paper.pdf      what our pipeline produces
+  mockup.html    executable design spec (CSS source of truth)
+  mockup.pdf     browser print of mockup.html — the visual target
+  figures/       image assets referenced from paper.md
+```
+
+The visual diff is now `paper.pdf` ↔ `mockup.pdf`. The mockup-regen command in §21 updates accordingly:
+
+```bash
+"/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+  --headless --disable-gpu --no-pdf-header-footer \
+  --print-to-pdf="$PWD/examples/editorial-swiss/mockup.pdf" \
+  "file://$PWD/examples/editorial-swiss/mockup.html"
+```
+
+**Demo reorder.** `05-full-paper` (the longest demo) now sits at the end of the progression after the per-component fixture for admonitions. Sequence:
+
+```
+01-hello → 02-typography → 03-structured → 04-code → 05-admonitions → 06-full-paper
+```
+
+Reads as a difficulty curve: each file adds one more system, with the all-encompassing `06-full-paper` as the closing demo. Future per-component fixtures (lists, figures, math, …) slot in before `06-full-paper`, pushing it further out — the contract is "06-full-paper is always the last numbered demo."
+
+Re-rendered every PDF per the §19 rule.
