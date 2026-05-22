@@ -488,7 +488,12 @@
     inset: (x: 10pt, y: 7pt),
     align: left + horizon,
   )
+  // Document-level `set par(justify: true)` propagates into table cells,
+  // producing ugly inter-word gaps in narrow columns (visible in the Notes
+  // columns of 03-structured.pdf and 06-full-paper.pdf before this rule).
+  // Tabular content should ragged-right; turn justification off here.
   show table.cell: it => {
+    set par(justify: false)
     if it.y == 0 {
       text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, it)
     } else if it.x == 0 {
