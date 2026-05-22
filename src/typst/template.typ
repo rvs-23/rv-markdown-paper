@@ -582,7 +582,12 @@
     context {
       let p = counter(page).get().first()
       let on-cover = cover-active and p <= 1
-      if on-cover { [] } else {
+      // Suppress the header on page 1 when an editorial title block is
+      // doing the chrome (no full cover, but `title` is set). Otherwise
+      // p.1 stacks the running header AND the title block, both carrying
+      // the same kicker/title — visible in 06-full-paper.pdf before this.
+      let on-title-page = not cover-active and title != none and p == 1
+      if on-cover or on-title-page { [] } else {
         let left-cell = if part != none { part } else if section != none { section } else { "" }
         let center-cell = if title != none { title } else { "" }
         let right-cell = if edition != none { edition } else if date != none { date } else { "" }
