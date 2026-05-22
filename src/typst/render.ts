@@ -97,7 +97,7 @@ function renderCover(cover: Cover): string {
   const fields: string[] = [];
   if (cover.kicker !== undefined) fields.push(`kicker: ${quote(cover.kicker)}`);
   if (cover.title !== undefined) fields.push(`title: ${quote(cover.title)}`);
-  if (cover.subtitle !== undefined) fields.push(`subtitle: ${quote(cover.subtitle)}`);
+  if (cover.subtitle !== undefined) fields.push(`subtitle: ${typstContentWithBackticks(cover.subtitle)}`);
   if (cover.meta !== undefined) {
     const pairs = cover.meta
       .map((p) => `(label: ${quote(p.label)}, value: ${quote(p.value)})`)
@@ -120,6 +120,37 @@ function renderCover(cover: Cover): string {
 
 function quote(s: string): string {
   return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+// Narrow markdown-in-cover-field support: only backtick code spans are
+// recognised. The cover template renders the result as content (not a
+// string), so we emit `[text #raw(block: false, "code") text]` instead
+// of `"...with literal backticks..."`. Anything outside backticks goes
+// through Typst's markup-mode special-character escaper so the result
+// is safe even when the input contains `#`, `[`, `]`, `*`, `_`, `$`, etc.
+// Bold/italic/links and other markdown features are NOT recognised
+// (they're not in the canonical fixture's cover fields; broader support
+// is a separate commit if/when needed).
+function escapeTypstMarkupText(s: string): string {
+  // Escape every Typst-meaningful symbol at the start of a sequence: `\`,
+  // `#`, `[`, `]`, `*`, `_`, `$`, `@`, `<`, `>`, `~`, ``` ` ```, `'`,
+  // `"`. A leading backslash is sufficient in markup mode.
+  return s.replace(/[\\#\[\]*_$@<>~`'"]/g, "\\$&");
+}
+
+function typstContentWithBackticks(s: string): string {
+  // Split on backtick code spans. Even indices are text, odd indices are
+  // raw code. The regex requires non-greedy match between matching
+  // backticks; a stray single backtick falls through as escaped text.
+  const parts = s.split(/`([^`]+)`/);
+  const out = parts
+    .map((segment, i) =>
+      i % 2 === 0
+        ? escapeTypstMarkupText(segment)
+        : `#raw(block: false, ${quote(segment)})`,
+    )
+    .join("");
+  return `[${out}]`;
 }
 
 function pageSizeToTypst(size: "Letter" | "A4"): string {
