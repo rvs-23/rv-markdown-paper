@@ -519,6 +519,11 @@
   // subsequent raw blocks. `none` is Typst's no-op for `set raw(theme:)`,
   // so an unconditional set is safe even when no theme was passed.
   set raw(theme: theme-path)
+  // Disable contextual + standard ligatures inside raw so JetBrains Mono
+  // does not collapse `->`, `==`, `>=`, `--`, `!=`, `<=` into `→`, `=`,
+  // `≥`, `–`, `≠`, `≤`. Code copied out of the PDF must round-trip back
+  // to its source form character-for-character.
+  show raw: set text(features: ("calt": 0, "liga": 0))
   // Raw block: no own fill/stroke — the wrapper provides the panel chrome.
   // A bare ``` fence without attributes still gets a subtle panel via the
   // outer block set on top of this rule; to guarantee one even when called
