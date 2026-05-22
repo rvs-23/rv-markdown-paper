@@ -210,10 +210,35 @@ function longestBacktickRun(s: string): number {
 }
 
 function renderList(node: List, ctx: Ctx): string {
+  // GFM task items carry a non-null `checked` (true | false). If any item
+  // in this list is a task, take the whole list out of the native bullet
+  // path and emit a custom #task-list with #task-item rows — otherwise
+  // checked items end up with both a list bullet AND a checkbox glyph.
+  const isTaskList = node.children.some(
+    (c) => c.type === "listItem" && c.checked != null,
+  );
+  if (isTaskList) return renderTaskList(node, ctx);
   const items = node.children.map((item, idx) =>
     renderListItem(item, ctx, node.ordered ?? false, idx),
   );
   return items.join("\n");
+}
+
+function renderTaskList(node: List, ctx: Ctx): string {
+  const rows = node.children.map((item) => {
+    const inline = item.children
+      .map((child, i) => {
+        if (child.type === "paragraph" && i === 0) {
+          return renderInlines(child.children, ctx);
+        }
+        return renderBlock(child as RootContent, ctx);
+      })
+      .filter((s) => s !== "")
+      .join("\n\n");
+    const checked = item.checked === true ? "true" : "false";
+    return `  task-item(${checked}, [${inline}]),`;
+  });
+  return `#task-list(\n${rows.join("\n")}\n)`;
 }
 
 function renderListItem(
@@ -226,10 +251,7 @@ function renderListItem(
   const body = item.children
     .map((child, i) => {
       if (child.type === "paragraph" && i === 0) {
-        const inline = renderInlines(child.children, ctx);
-        if (item.checked === true) return `#task-box(true) ${inline}`;
-        if (item.checked === false) return `#task-box(false) ${inline}`;
-        return inline;
+        return renderInlines(child.children, ctx);
       }
       return indent(renderBlock(child as RootContent, ctx), 2);
     })

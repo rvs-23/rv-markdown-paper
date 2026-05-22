@@ -255,18 +255,36 @@
   #body
 ]
 
-// ---------- task list markers ----------
+// ---------- task list ----------
+// Per spec §12.6: square ink-bordered checkbox; checked items invert to a
+// filled ink box with a page-coloured tick, and their body text drops to
+// muted to read as "done". Rendered as an explicit stack of grid rows so
+// the items do NOT carry the native Typst list bullet — otherwise checked
+// items doubled up as `• ☑ Text`.
 
 #let task-box(checked) = box(
   width: 0.78em, height: 0.78em, baseline: 0.1em,
   stroke: 0.6pt + c-ink,
+  fill: if checked { c-ink } else { none },
   inset: 0pt,
 )[
   #if checked {
     align(center + horizon, text(
-      font: f-mono, size: 0.7em, weight: 700, fill: c-ink,
+      font: f-mono, size: 0.7em, weight: 700, fill: c-paper,
     )[x])
   }
+]
+
+#let task-item(checked, body) = grid(
+  columns: (auto, 1fr),
+  column-gutter: 0.6em,
+  align: (top, top),
+  task-box(checked),
+  if checked { text(fill: c-muted, body) } else { body },
+)
+
+#let task-list(..items) = block(above: 0.6em, below: 0.6em)[
+  #stack(spacing: 0.45em, ..items.pos())
 ]
 
 // ---------- legacy callouts ----------

@@ -42,7 +42,8 @@ function buildPreamble(options: DocumentOptions): string {
   const lines: string[] = [];
   lines.push(
     `#import "template.typ": paper, note, tip, warning, danger, warn, system, ` +
-      `marg, eyebrow, dropcap, epigraph, exbox, code-block, task-box`,
+      `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
+      `task-box, task-item, task-list`,
   );
   lines.push("");
   lines.push("#show: paper.with(");
