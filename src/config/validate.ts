@@ -154,6 +154,14 @@ function expectToc(value: unknown, path: string): TocEntry[] {
       title: expectString(e.title, `${path}[${idx}].title`),
     };
     if ("ref" in e) out.ref = expectString(e.ref, `${path}[${idx}].ref`);
+    if ("page" in e && e.page !== undefined) {
+      // Accept string or number; coerce numbers to string for display.
+      if (typeof e.page === "number") {
+        out.page = String(e.page);
+      } else {
+        out.page = expectString(e.page, `${path}[${idx}].page`);
+      }
+    }
     return out;
   });
 }

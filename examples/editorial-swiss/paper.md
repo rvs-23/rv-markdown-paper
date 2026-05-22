@@ -36,13 +36,18 @@ cover:
     Topic: "Thread pools & futures"
     Language: "Python 3.12"
     Runtime: "75 min read"
+  # NOTE: `page` values are provisional. They match the mockup's page
+  # numbering but will be replaced by Typst-side resolution via
+  # `counter(page).at(label)` once section page-break policy lands
+  # (commit 15 of the post-review plan). Do not hand-edit after
+  # choreography changes — regenerate from labels instead.
   toc:
-    - { id: "7.1", title: "Threads & the GIL",            ref: "sec-threads-gil" }
-    - { id: "7.2", title: "What a pool actually is",      ref: "sec-pool-is" }
-    - { id: "7.3", title: "Submitting & collecting work", ref: "sec-submitting" }
-    - { id: "7.4", title: "Sizing the pool",              ref: "sec-sizing" }
-    - { id: "7.5", title: "Exercises",                    ref: "sec-exercises" }
-    - { id: "7.6", title: "Further reading",              ref: "sec-further" }
+    - { id: "7.1", title: "Threads & the GIL",            ref: "sec-threads-gil", page: "086" }
+    - { id: "7.2", title: "What a pool actually is",      ref: "sec-pool-is",     page: "088" }
+    - { id: "7.3", title: "Submitting & collecting work", ref: "sec-submitting",  page: "090" }
+    - { id: "7.4", title: "Sizing the pool",              ref: "sec-sizing",      page: "092" }
+    - { id: "7.5", title: "Exercises",                    ref: "sec-exercises",   page: "094" }
+    - { id: "7.6", title: "Further reading",              ref: "sec-further",     page: "096" }
 ---
 
 # Thread pools {#ch-thread-pools}

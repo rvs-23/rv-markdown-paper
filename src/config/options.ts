@@ -10,8 +10,16 @@ export type MetaPair = { label: string; value: string };
 
 // A single entry in the cover TOC. `id` is what the reader sees (e.g. "7.1"),
 // `title` is the section title, `ref` is the Typst label / heading ID used for
-// cross-referencing from body copy.
-export type TocEntry = { id: string; title: string; ref?: string };
+// cross-referencing from body copy. `page` is the page number to display in the
+// TOC; provisional manual values today, will become a Typst-side
+// `counter(page).at(label)` lookup once page choreography stabilises (see
+// commit 15 of the post-review plan).
+export type TocEntry = {
+  id: string;
+  title: string;
+  ref?: string;
+  page?: string;
+};
 
 export type Cover = {
   kicker?: string;

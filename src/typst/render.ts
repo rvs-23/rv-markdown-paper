@@ -109,6 +109,7 @@ function renderCover(cover: Cover): string {
       .map((e) => {
         const parts = [`id: ${quote(e.id)}`, `title: ${quote(e.title)}`];
         if (e.ref) parts.push(`ref: ${quote(e.ref)}`);
+        if (e.page) parts.push(`page: ${quote(e.page)}`);
         return `(${parts.join(", ")})`;
       })
       .join(", ");
