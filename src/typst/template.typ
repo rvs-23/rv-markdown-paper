@@ -512,7 +512,13 @@
   ]
 
   // --------- Code ---------
-  if theme-path != none { set raw(theme: theme-path) }
+  // `set raw(theme: ...)` must live at function scope, not inside an
+  // `if {…}` — Typst `set` rules expire at the closing brace of their
+  // enclosing block, so wrapping this in a conditional `{ set raw(theme:
+  // theme-path) }` would make the rule die immediately and never reach
+  // subsequent raw blocks. `none` is Typst's no-op for `set raw(theme:)`,
+  // so an unconditional set is safe even when no theme was passed.
+  set raw(theme: theme-path)
   // Raw block: no own fill/stroke — the wrapper provides the panel chrome.
   // A bare ``` fence without attributes still gets a subtle panel via the
   // outer block set on top of this rule; to guarantee one even when called
