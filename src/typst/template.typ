@@ -53,8 +53,19 @@
 
 #let _marg-bottom = state("marg-bottom", 0pt)
 
+// Geometry state, populated by `paper()` so `marg()` can derive its
+// horizontal offset from the actual page width and margins rather than
+// hard-coding a number for A4. Default values reproduce the previous
+// constant (131mm dx on A4) so this state is safe even when paper()
+// hasn't run yet (e.g. fixtures that call marg directly).
+#let _marg-geom = state(
+  "marg-geom",
+  (left: 22mm, right: 62mm, gap: 5mm, width: 35mm),
+)
+
 #let marg(label: none, body) = context {
-  let note-content = block(width: rail-width, above: 0pt, below: 0pt)[
+  let geom = _marg-geom.get()
+  let note-content = block(width: geom.width, above: 0pt, below: 0pt)[
     #line(length: 100%, stroke: 0.4pt + c-hairline)
     #v(4pt)
     #if label != none {
@@ -72,10 +83,13 @@
   let actual-y = calc.max(here-y, last-bottom + gap)
   let shift = actual-y - here-y
   let h = measure(note-content).height
-  // dx = content-column width + rail-gap. For A4 @ (left 22mm, right 62mm),
-  // content width = 210 − 22 − 62 = 126mm, so dx lands at 131mm — the left
-  // edge of the rail. If page size / margins change, update this constant.
-  place(dx: 131mm, dy: shift, note-content)
+  // dx is relative to the content column's left edge (the surrounding
+  // flow container). The rail sits to its right with `rail-gap` between,
+  // so dx = content-column-width + rail-gap = (page.width - margin-left
+  // - effective-right) + rail-gap. Reading page.width here lets the
+  // marginalia track A4/Letter/custom margins without manual tweaks.
+  let content-width = page.width - geom.left - geom.right
+  place(dx: content-width + geom.gap, dy: shift, note-content)
   _marg-bottom.update(actual-y + h)
 }
 
@@ -428,8 +442,16 @@
 
   // --------- Page ---------
   // Right margin reserves the rail. The `marg()` helper places into that
-  // reserved band.
+  // reserved band; we publish the geometry it needs via `_marg-geom` so
+  // its dx computation tracks actual page width / margins instead of
+  // hardcoding A4.
   let effective-right = rail-gap + rail-width + rail-outer
+  _marg-geom.update((
+    left: margin-left,
+    right: effective-right,
+    gap: rail-gap,
+    width: rail-width,
+  ))
   set page(
     paper: page-size,
     fill: c-paper,
