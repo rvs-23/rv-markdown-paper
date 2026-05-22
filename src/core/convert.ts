@@ -32,7 +32,23 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
   });
 
   const tree = parseMarkdownToMdast(content);
-  if (resolved.title) stripRedundantLeadingH1(tree, resolved.title);
+  // Strip a leading H1 in two situations:
+  // (a) `cover` is configured — the cover block IS the chapter title, so
+  //     a `# Thread pools` H1 right after the cover renders the title
+  //     a second time at body weight. The H1's text doesn't have to
+  //     match `cover.title` exactly (the editorial fixture's H1 is just
+  //     "Thread pools" while cover.title is the full deck line).
+  // (b) `title` (the flat title field) is set AND matches the H1 — the
+  //     legacy behaviour, kept for documents that use the editorial title
+  //     block fallback rather than a full cover.
+  const first = tree.children[0];
+  const firstIsH1 =
+    !!first && first.type === "heading" && first.depth === 1;
+  if (firstIsH1 && resolved.cover) {
+    tree.children.shift();
+  } else if (firstIsH1 && resolved.title) {
+    stripRedundantLeadingH1(tree, resolved.title);
+  }
 
   // The template only renders the editorial title block when `title` is set,
   // so an untitled file stays clean — no orphan sigrule, no filename posing

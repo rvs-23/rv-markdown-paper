@@ -40,7 +40,12 @@ const ADMONITION_NAMES = new Set(["note", "tip", "warning", "danger", "warn", "s
 export function generateTypst(tree: Root, options: GenerateOptions): string {
   const footnotes = collectFootnotes(tree);
   const labels = collectLabels(tree);
-  const ctx: Ctx = { sourceDir: options.sourceDir, footnotes, labels };
+  const ctx: Ctx = {
+    sourceDir: options.sourceDir,
+    footnotes,
+    labels,
+    pageChoreo: { sawOpener: false, breakBeforeNextH2: false },
+  };
   reorderMarginDirectives(tree.children);
   return renderBlocks(tree.children, ctx).trimEnd() + "\n";
 }
@@ -49,6 +54,10 @@ type Ctx = {
   sourceDir: string;
   footnotes: Map<string, RootContent[]>;
   labels: Set<string>;
+  // Page-choreography state. Tracks whether we've emitted the opener
+  // page-break and whether the next H2 should be preceded by one (i.e.
+  // the body returning to standard layout after the opener page).
+  pageChoreo: { sawOpener: boolean; breakBeforeNextH2: boolean };
 };
 
 // Harvest every `{#id}` found on headings, images, math blocks, and directive
@@ -169,14 +178,25 @@ function renderHeading(node: Heading, ctx: Ctx): string {
   const attrs = getAttrs(node);
   // Opener heading (`## Heading {#chapter-opener}`) is structural only — the
   // visible page chrome comes from the eyebrow + dropcap blocks below it.
-  // Emit just the cross-ref label so the `#` anchor still resolves.
+  // Push the opener onto its own page after the cover with a weak break,
+  // and arm a one-shot break before the next H2 so the body section
+  // returns to standard layout on a fresh page.
   if (attrs?.id === "chapter-opener" || attrs?.classes?.includes("chapter-opener")) {
-    return attrs?.id ? `#metadata("opener") <${attrs.id}>` : "";
+    ctx.pageChoreo.sawOpener = true;
+    ctx.pageChoreo.breakBeforeNextH2 = true;
+    const label = attrs?.id ? ` <${attrs.id}>` : "";
+    return `#pagebreak(weak: true)\n#metadata("opener")${label}`;
+  }
+  // First H2 after the opener: pre-break so the body starts on a new page.
+  let prebreak = "";
+  if (node.depth === 2 && ctx.pageChoreo.breakBeforeNextH2) {
+    prebreak = "#pagebreak(weak: true)\n";
+    ctx.pageChoreo.breakBeforeNextH2 = false;
   }
   const prefix = "=".repeat(node.depth);
   const body = renderInlines(node.children, ctx);
   const label = attrs?.id ? ` <${attrs.id}>` : "";
-  return `${prefix} ${body}${label}`;
+  return `${prebreak}${prefix} ${body}${label}`;
 }
 
 function renderCodeBlock(node: Code): string {
