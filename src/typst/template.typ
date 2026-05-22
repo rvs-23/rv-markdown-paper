@@ -110,7 +110,7 @@
 
 // Pull quote / epigraph: italic serif, indented, hairline rule above and
 // below. Used by `::: epigraph`.
-#let epigraph(body) = block(above: 1.6em, below: 1.6em)[
+#let epigraph(body) = block(above: 1.6em, below: 1.6em, breakable: false)[
   #line(length: 40%, stroke: 0.5pt + c-hairline)
   #v(0.8em)
   #set par(leading: 0.7em, justify: false)
@@ -130,8 +130,14 @@
   font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-ink,
 )[#upper(label)]
 
+// `breakable: false` on every admonition keeps the tracked-uppercase
+// label and the body together. A block too tall for the current page
+// forces an early page break; the previous (default `breakable: auto`)
+// behaviour split the DANGER label from its body across page borders,
+// which is materially worse. See examples/demos/07-oversized-admonition.md
+// for the regression fixture covering the early-break case.
 #let note(body) = block(
-  above: 1em, below: 1em, width: 100%,
+  above: 1em, below: 1em, width: 100%, breakable: false,
   fill: c-surface,
   stroke: (left: 1pt + c-ink-3),
   inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
@@ -142,7 +148,7 @@
 ]
 
 #let tip(body) = block(
-  above: 1em, below: 1em, width: 100%,
+  above: 1em, below: 1em, width: 100%, breakable: false,
   fill: c-surface,
   stroke: (left: 2pt + c-ink),
   inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
@@ -153,7 +159,7 @@
 ]
 
 #let warning(body) = block(
-  above: 1em, below: 1em, width: 100%,
+  above: 1em, below: 1em, width: 100%, breakable: false,
   fill: c-surface-2,
   stroke: (
     left: 2pt + c-ink-2,
@@ -168,7 +174,7 @@
 ]
 
 #let danger(body) = block(
-  above: 1em, below: 1em,
+  above: 1em, below: 1em, breakable: false,
   fill: c-danger-bg,
   inset: (x: 0.9em, y: 0.7em),
 )[
@@ -191,7 +197,7 @@
 // on the left, optional uppercase tracked tag on the right, body below.
 // Driven by `::: {.exbox number="01" tag="..."}`.
 #let exbox(number: none, tag: none, body) = block(
-  above: 1.2em, below: 1.2em,
+  above: 1.2em, below: 1.2em, breakable: false,
   stroke: (top: 0.4pt + c-hairline),
   inset: (top: 12pt, bottom: 4pt),
 )[
