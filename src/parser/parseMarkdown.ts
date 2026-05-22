@@ -70,13 +70,23 @@ function protectAttrColons(markdown: string): string {
 
 // Walk the tree and restore colons in any text/data values that may have
 // captured the placeholder. Covers text nodes, inlineCode, code blocks,
-// and directive attribute strings.
+// directive attribute records, and any other string-valued fields the
+// remark plugins might attach (e.g. `node.attributes` from
+// remark-directive). Recurses into `children`, `attributes`, and `data`.
 function restoreAttrColons(node: unknown): void {
   if (node === null || typeof node !== "object") return;
   const n = node as Record<string, unknown>;
-  if (typeof n.value === "string") n.value = (n.value as string).split(COLON_PLACEHOLDER).join(":");
-  if (typeof n.lang === "string") n.lang = (n.lang as string).split(COLON_PLACEHOLDER).join(":");
-  if (typeof n.meta === "string") n.meta = (n.meta as string).split(COLON_PLACEHOLDER).join(":");
+  const restore = (s: string) => s.split(COLON_PLACEHOLDER).join(":");
+  if (typeof n.value === "string") n.value = restore(n.value);
+  if (typeof n.lang === "string") n.lang = restore(n.lang);
+  if (typeof n.meta === "string") n.meta = restore(n.meta);
+  if (n.attributes && typeof n.attributes === "object") {
+    const attrs = n.attributes as Record<string, unknown>;
+    for (const [k, v] of Object.entries(attrs)) {
+      if (typeof v === "string") attrs[k] = restore(v);
+    }
+  }
+  if (n.data && typeof n.data === "object") restoreAttrColons(n.data);
   if (n.children && Array.isArray(n.children)) {
     for (const c of n.children) restoreAttrColons(c);
   }

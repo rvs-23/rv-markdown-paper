@@ -3,10 +3,38 @@ import type {
   RootContent,
   Paragraph,
   Heading,
-  PhrasingContent,
   Text,
   Code,
 } from "mdast";
+import { ConfigError } from "../config/validate.js";
+
+// Conservative ID grammar: letter, then letters/digits/underscore/colon/dash.
+// Tighter than the historical permissive parser (which accepted any non-
+// whitespace, non-`}` token). Colons are allowed so Pandoc-style refs like
+// `#eq:little`, `#fig:queue`, `#sec-pool-is` round-trip into Typst labels.
+// Anything outside this grammar — `<`, `>`, `[`, `]`, quotes, `#` — would
+// either break the emitted Typst or open an injection surface, so we reject
+// and surface a clear error at parse time.
+const ID_RE = /^[A-Za-z][A-Za-z0-9_:-]*$/;
+const CLASS_RE = /^[A-Za-z][A-Za-z0-9_-]*$/;
+
+function validateId(raw: string, sourceHint = "attribute id"): void {
+  if (!ID_RE.test(raw)) {
+    throw new ConfigError(
+      `${sourceHint}: id "${raw}" is invalid — expected pattern ` +
+        `${ID_RE.source} (letter, then letters/digits/_/:/-)`,
+    );
+  }
+}
+
+function validateClass(raw: string, sourceHint = "attribute class"): void {
+  if (!CLASS_RE.test(raw)) {
+    throw new ConfigError(
+      `${sourceHint}: class "${raw}" is invalid — expected pattern ` +
+        `${CLASS_RE.source} (letter, then letters/digits/_/-)`,
+    );
+  }
+}
 
 // Pandoc-style attribute syntax: `{#id .class1 .class2 key=val key2="v a l"}`.
 // This post-processor walks the mdast and lifts trailing `{...}` attribute
@@ -186,12 +214,14 @@ export function parseAttrString(s: string): Attributes | null {
       i++;
       const { token, end } = readToken(s, i);
       if (token === "") return null;
+      validateId(token, "attribute bundle");
       attrs.id = token;
       i = end;
     } else if (ch === ".") {
       i++;
       const { token, end } = readToken(s, i);
       if (token === "") return null;
+      validateClass(token, "attribute bundle");
       (attrs.classes ??= []).push(token);
       i = end;
     } else if (/[A-Za-z_]/.test(ch)) {
@@ -273,13 +303,17 @@ function normalizeDirectiveAttrs(
   const attrs: Attributes = {};
   for (const [k, v] of Object.entries(raw)) {
     if (v === null) continue;
-    if (k === "id") attrs.id = v;
-    else if (k === "class") attrs.classes = v.split(/\s+/).filter((x) => x !== "");
-    else (attrs.props ??= {})[k] = v;
+    if (k === "id") {
+      validateId(v, "directive id");
+      attrs.id = v;
+    } else if (k === "class") {
+      const classes = v.split(/\s+/).filter((x) => x !== "");
+      for (const c of classes) validateClass(c, "directive class");
+      attrs.classes = classes;
+    } else {
+      (attrs.props ??= {})[k] = v;
+    }
   }
   if (!attrs.id && !attrs.classes && !attrs.props) return null;
   return attrs;
 }
-
-// suppress unused-phrasing import warning — kept for future inline visitor
-void (null as unknown as PhrasingContent);
