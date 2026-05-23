@@ -38,10 +38,21 @@ program
   .option("--no-header", "Hide the running header")
   .option("--no-footer", "Hide the running footer")
   .option("--no-cover", "Skip the dedicated cover page (title block goes inline)")
+  .option(
+    "--config <path>",
+    "Explicit path to an mdpdf.config.json (skips upward search)",
+  )
   .action(async (input: string, output: string, opts: OptionValues, cmd: Command) => {
     try {
       const cli = cliOptionsToLayer(opts, cmd);
-      await convertMarkdownToPdf({ inputPath: input, outputPath: output, cli });
+      const configPath =
+        typeof opts.config === "string" ? opts.config : undefined;
+      await convertMarkdownToPdf({
+        inputPath: input,
+        outputPath: output,
+        cli,
+        configPath,
+      });
       console.log(`Wrote ${output}`);
     } catch (error) {
       console.error(formatError(error));

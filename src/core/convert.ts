@@ -4,7 +4,7 @@ import { toString as mdastToString } from "mdast-util-to-string";
 import type { Root as MdastRoot } from "mdast";
 import { parseMarkdownToMdast } from "../parser/parseMarkdown.js";
 import { extractFrontmatter } from "../parser/frontmatter.js";
-import { loadProjectConfig, resolveOptions } from "../config/resolve.js";
+import { loadConfigFromPath, loadProjectConfig, resolveOptions } from "../config/resolve.js";
 import type { DocumentOptions, DocumentOptionsLayer } from "../config/options.js";
 import { estimateReadingTime } from "./readingTime.js";
 import { generateTypst } from "../typst/generate.js";
@@ -14,6 +14,12 @@ export type ConvertOptions = {
   inputPath: string;
   outputPath: string;
   cli?: DocumentOptionsLayer;
+  // Explicit path to an mdpdf.config.json. When provided, the upward
+  // directory search is skipped and the given file is loaded directly;
+  // a missing file throws (a user-supplied path that doesn't exist is
+  // a clear error). When omitted, the existing upward-search behaviour
+  // applies (returns null when no config is found anywhere upstream).
+  configPath?: string;
 };
 
 export async function convertMarkdownToPdf(options: ConvertOptions): Promise<void> {
@@ -23,7 +29,9 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
 
   const raw = await readFile(inputAbsolute, "utf8");
   const { content, frontmatter } = extractFrontmatter(raw);
-  const project = loadProjectConfig(inputDir);
+  const project = options.configPath
+    ? loadConfigFromPath(resolvePath(options.configPath))
+    : loadProjectConfig(inputDir);
 
   const resolved = resolveOptions({
     cli: options.cli ?? {},

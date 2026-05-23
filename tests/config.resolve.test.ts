@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { DEFAULTS } from "../src/config/options.js";
-import { resolveOptions } from "../src/config/resolve.js";
+import { loadConfigFromPath, resolveOptions } from "../src/config/resolve.js";
 
 describe("resolveOptions", () => {
   it("uses precedence CLI > frontmatter > project > defaults", () => {
@@ -44,5 +47,27 @@ describe("resolveOptions", () => {
       bottom: DEFAULTS.margins.bottom,
       left: "30mm",
     });
+  });
+
+  it("loadConfigFromPath reads a config from an explicit path", () => {
+    const dir = mkdtempSync(join(tmpdir(), "mdpdf-config-test-"));
+    const configPath = join(dir, "custom-config.json");
+    writeFileSync(
+      configPath,
+      JSON.stringify({ title: "From custom path", pageSize: "Letter" }),
+    );
+    try {
+      const layer = loadConfigFromPath(configPath);
+      expect(layer.title).toBe("From custom path");
+      expect(layer.pageSize).toBe("Letter");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("loadConfigFromPath throws when the file does not exist", () => {
+    expect(() => loadConfigFromPath("/no/such/file.json")).toThrow(
+      /Config file not found/,
+    );
   });
 });

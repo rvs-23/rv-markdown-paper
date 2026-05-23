@@ -12,7 +12,21 @@ export const CONFIG_FILENAME = "mdpdf.config.json";
 export function loadProjectConfig(startDir: string): DocumentOptionsLayer | null {
   const path = findConfigFile(startDir);
   if (path === null) return null;
+  return readConfigFile(path);
+}
 
+// Load a config from a caller-supplied path (CLI --config flag). Throws
+// if the file doesn't exist or isn't valid JSON — these are user errors
+// the CLI should surface clearly, unlike the upward-search path which
+// silently returns null when no config is found.
+export function loadConfigFromPath(path: string): DocumentOptionsLayer {
+  if (!existsSync(path)) {
+    throw new Error(`Config file not found: ${path}`);
+  }
+  return readConfigFile(path);
+}
+
+function readConfigFile(path: string): DocumentOptionsLayer {
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(path, "utf8"));
