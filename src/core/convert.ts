@@ -53,10 +53,13 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
   // The template only renders the editorial title block when `title` is set,
   // so an untitled file stays clean — no orphan sigrule, no filename posing
   // as a title.
+  const readingTime =
+    resolved.readingTime ??
+    ((resolved.title || resolved.cover) ? estimateReadingTime(tree) : undefined);
   const templateOptions: DocumentOptions = {
     ...resolved,
-    readingTime:
-      resolved.readingTime ?? (resolved.title ? estimateReadingTime(tree) : undefined),
+    readingTime,
+    cover: injectReadingTimeIntoCoverMeta(resolved.cover, readingTime),
   };
 
   const body = generateTypst(tree, { sourceDir: inputDir });
@@ -68,6 +71,26 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     options: templateOptions,
     sourceDir: inputDir,
   });
+}
+
+// If a cover is present and reading-time is known, surface it as a cover
+// meta cell so the value flows into the visible chrome instead of staying
+// a dead parameter on `paper(...)`. Skipped when the author has already
+// supplied a Runtime/Reading time entry — explicit wins over auto-inject.
+function injectReadingTimeIntoCoverMeta(
+  cover: import("../config/options.js").Cover | undefined,
+  readingTime: string | undefined,
+): import("../config/options.js").Cover | undefined {
+  if (!cover || !readingTime) return cover;
+  const meta = cover.meta ?? [];
+  const hasRuntimeKey = meta.some((p) =>
+    /^(runtime|reading[\s_-]?time)$/i.test(p.label),
+  );
+  if (hasRuntimeKey) return cover;
+  return {
+    ...cover,
+    meta: [...meta, { label: "Runtime", value: readingTime }],
+  };
 }
 
 function stripRedundantLeadingH1(tree: MdastRoot, title: string): void {
