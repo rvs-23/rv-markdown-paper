@@ -588,7 +588,7 @@
   // eyebrow line, h3 is the "Why a pool" display.
 
   show heading.where(level: 1): it => block(above: 1.8em, below: 0.8em, breakable: false)[
-    #text(font: f-sans, weight: 500, size: 28pt, fill: c-ink, tracking: -0.4pt)[
+    #text(font: f-sans, weight: 400, size: 28pt, fill: c-ink, tracking: -0.4pt)[
       #it.body
     ]
   ]
@@ -599,8 +599,14 @@
     #v(4pt, weak: true)
     #line(length: 100%, stroke: 0.4pt + c-hairline)
   ]
-  show heading.where(level: 3): it => block(above: 1.2em, below: 1em, breakable: false)[
-    #text(font: f-sans, weight: 500, size: 21pt, fill: c-ink, tracking: -0.25pt)[
+  // H3 — display heading inside a section. Below-spacing bumped to 1.6em
+  // so the section opens with real breathing room before the first
+  // paragraph (matches Mockup D's airy lead-in under "Why a pool, and
+  // why bounded."). Weight 400 (Regular) instead of 500 — paired with a
+  // 200-weight body, 500 read as bold-face. 400 still steps up clearly
+  // but at a calmer contrast.
+  show heading.where(level: 3): it => block(above: 1.2em, below: 1.6em, breakable: false)[
+    #text(font: f-sans, weight: 400, size: 21pt, fill: c-ink, tracking: -0.25pt)[
       #it.body
     ]
   ]
@@ -627,7 +633,11 @@
 
   // --------- Inline ---------
   show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: c-ink, it))
-  show strong: set text(weight: 600)
+  // Strong weight 500 (Medium) — paired with body ExtraLight (200), the
+  // jump from 200 → 500 is three steps which reads as bold but stays
+  // proportional. The previous 600 against 200-weight body looked
+  // bold-on-the-face for run-in labels ("Bound memory.", etc.).
+  show strong: set text(weight: 500)
   // Emphasis stays in the body family (Archivo Italic). Instrument Serif
   // italic is reserved for ornamental slots — cover subtitle, dropcap,
   // epigraphs, equation tags, figure captions — not running prose. The
