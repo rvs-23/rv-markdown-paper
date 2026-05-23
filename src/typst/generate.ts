@@ -23,6 +23,7 @@ import type {
 } from "mdast";
 import { escapeMarkup, escapeString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
+import { toString as mdastToString } from "mdast-util-to-string";
 
 export type GenerateOptions = {
   sourceDir: string;
@@ -391,13 +392,25 @@ function renderContainerDirective(node: DirectiveNode, ctx: Ctx): string {
   const name = node.name;
   const attrs = getAttrs(node);
   const children = (node.children ?? []) as RootContent[];
-  const body = renderBlocks(children, ctx);
 
   if (name === "margin") {
-    const label = attrs?.props?.label;
+    // Label resolution order:
+    //   1. explicit `label="..."` attribute on the directive
+    //   2. leading bold-prefix in the first paragraph
+    //        (`**The GIL in 3.13.** PEP 703 …` → label "The GIL in 3.13",
+    //         body starts at "PEP 703 …")
+    // The body mutates in place (the bold prefix is consumed) when path 2
+    // fires, so the rendered body doesn't repeat the label inline.
+    let label = attrs?.props?.label;
+    if (!label) {
+      label = extractLeadingBoldLabel(children);
+    }
+    const body = renderBlocks(children, ctx);
     const labelArg = label ? `label: ${typstString(label)}, ` : "";
     return `#marg(${labelArg})[\n${indent(body, 2)}\n]`;
   }
+
+  const body = renderBlocks(children, ctx);
 
   if (ADMONITION_NAMES.has(name)) {
     return `#${name}[\n${indent(body, 2)}\n]`;
@@ -718,6 +731,39 @@ function typstString(s: string): string {
 // and return it alongside a mutated children array with that leading
 // character removed from the paragraph's first text node. Used by the
 // dropcap directive to lift the initial letter out of the body flow.
+// Detect a leading `**bold prefix**` in the first paragraph and consume
+// it — returning the bold text as a label string and stripping it from
+// the paragraph in place so the rendered body doesn't repeat it.
+//
+// Used by :::margin and :::exbox to surface the bold-prefix convention
+// (e.g. `**The GIL in 3.13.** PEP 703 …`) as a structured slot in the
+// component instead of leaving it as inline bold text in the body.
+//
+// The trailing period from the bold prefix is stripped (so "The GIL in
+// 3.13." → "The GIL in 3.13"), matching the tracked-uppercase label
+// convention. Returns `undefined` when no bold prefix is found.
+function extractLeadingBoldLabel(children: RootContent[]): string | undefined {
+  if (children.length === 0) return undefined;
+  const first = children[0]!;
+  if (first.type !== "paragraph") return undefined;
+  const para = first as Paragraph;
+  if (para.children.length === 0) return undefined;
+  const firstInline = para.children[0]!;
+  if (firstInline.type !== "strong") return undefined;
+  const strong = firstInline as Strong;
+  const text = mdastToString(strong).trim().replace(/\.$/, "");
+  if (text === "") return undefined;
+  // Drop the strong node from the paragraph; if the next sibling is a
+  // text node starting with whitespace, also strip the leading space.
+  para.children = para.children.slice(1);
+  if (para.children.length > 0 && para.children[0]!.type === "text") {
+    const t = para.children[0] as Text;
+    t.value = t.value.replace(/^\s+/, "");
+    if (t.value === "") para.children = para.children.slice(1);
+  }
+  return text;
+}
+
 function splitDropcap(
   children: RootContent[],
 ): { letter: string; rest: RootContent[] } {
