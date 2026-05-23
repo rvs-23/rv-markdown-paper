@@ -1,6 +1,6 @@
 // rv-markdown-paper — Editorial + Swiss template.
 //
-// Design language: neutral light-gray page (#F4F4F4), single-ink ramp, three-font
+// Design language: neutral light-gray page (#E8E8E8), single-ink ramp, three-font
 // system. Body sans is Archivo; ornament voice is Instrument Serif Italic
 // (folios, dropcaps, pull quotes, equation tags); code is JetBrains Mono.
 //
@@ -10,18 +10,18 @@
 
 // ---------- color tokens ----------
 
-#let c-paper     = rgb("#F4F4F4")  // page background — neutral light gray
+#let c-paper     = rgb("#E8E8E8")  // page background — distinctly light gray
 #let c-ink       = rgb("#11131A")  // primary text
 #let c-ink-2     = rgb("#2A2D36")  // secondary text (eyebrows, labels)
 #let c-ink-3     = rgb("#4A4D57")  // tertiary (kickers, eyebrow fills)
 #let c-muted     = rgb("#686C76")  // captions, margin notes, meta cells
 #let c-mute-2    = rgb("#8B8E97")  // very-light labels (lang-label, numerals)
-#let c-hairline  = rgb("#C5C2BC")  // dividers, thin rules
-#let c-surface   = rgb("#E4E1DA")  // code-block body, subtle panels
-#let c-surface-2 = rgb("#DBD8D1")  // code-block header, warning panels
+#let c-hairline  = rgb("#B8B8B8")  // dividers, thin rules — neutral gray
+#let c-surface   = rgb("#D9D9D9")  // code-block body, subtle panels — neutral gray, ~7% darker than paper
+#let c-surface-2 = rgb("#CECECE")  // code-block header, warning panels — slightly more contrast
 #let c-accent    = rgb("#11131A")  // reserved for single color event (e.g. danger)
 #let c-danger-bg = rgb("#11131A")  // danger block inverts to ink-on-paper
-#let c-danger-fg = rgb("#F4F4F4")  // page-colored ink for danger inversion; tracks c-paper
+#let c-danger-fg = rgb("#E8E8E8")  // page-colored ink for danger inversion; tracks c-paper
 
 // ---------- fonts ----------
 // All three families ship in `assets/fonts/` and are loaded with
