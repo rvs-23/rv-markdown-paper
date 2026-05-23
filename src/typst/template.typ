@@ -223,7 +223,14 @@
 // Exercise box: top hairline rule (no surrounding box), italic-serif numeral
 // on the left, optional uppercase tracked tag on the right, body below.
 // Driven by `::: {.exbox number="01" tag="..."}`.
-#let exbox(number: none, tag: none, body) = block(
+// 3-col header row per spec §12.6:
+//   L: numeral  — 32pt italic serif ink
+//   M: title    — 14pt italic serif ink-2 (e.g. "Warm-up")
+//   R: tag/meta — 8pt sans tracked uppercase muted (e.g. "SUBMIT / RESULT")
+// Title is supplied either as a `title="..."` directive attribute or by
+// consuming a leading `**...**` bold-prefix from the body (the generator
+// handles that extraction).
+#let exbox(number: none, title: none, tag: none, body) = block(
   above: 1.2em, below: 1.2em, breakable: false,
   stroke: (top: 0.4pt + c-hairline),
   inset: (top: 12pt, bottom: 4pt),
@@ -237,7 +244,11 @@
         #number
       ]
     } else [],
-    [],
+    if title != none {
+      text(font: f-serif, style: "italic", weight: 400, size: 14pt, fill: c-ink-2)[
+        #title
+      ]
+    } else [],
     if tag != none {
       text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-muted)[
         #upper(tag)

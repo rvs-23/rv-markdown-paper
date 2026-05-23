@@ -410,6 +410,24 @@ function renderContainerDirective(node: DirectiveNode, ctx: Ctx): string {
     return `#marg(${labelArg})[\n${indent(body, 2)}\n]`;
   }
 
+  if (name === "exbox") {
+    // Same bold-prefix-as-title resolution as :::margin:
+    //   1. explicit `title="..."` directive attribute
+    //   2. leading bold-prefix in the first paragraph (consumed in place)
+    // `tag` is the right-aligned meta uppercase label.
+    let title = attrs?.props?.title;
+    if (!title) {
+      title = extractLeadingBoldLabel(children);
+    }
+    const body = renderBlocks(children, ctx);
+    const args: string[] = [];
+    if (attrs?.props?.number) args.push(`number: ${typstString(attrs.props.number)}`);
+    if (title) args.push(`title: ${typstString(title)}`);
+    if (attrs?.props?.tag) args.push(`tag: ${typstString(attrs.props.tag)}`);
+    const argStr = args.length > 0 ? `${args.join(", ")}, ` : "";
+    return `#exbox(${argStr})[\n${indent(body, 2)}\n]`;
+  }
+
   const body = renderBlocks(children, ctx);
 
   if (ADMONITION_NAMES.has(name)) {
@@ -432,14 +450,6 @@ function renderContainerDirective(node: DirectiveNode, ctx: Ctx): string {
 
   if (name === "epigraph") {
     return `#epigraph[\n${indent(body, 2)}\n]`;
-  }
-
-  if (name === "exbox") {
-    const args: string[] = [];
-    if (attrs?.props?.number) args.push(`number: ${typstString(attrs.props.number)}`);
-    if (attrs?.props?.tag) args.push(`tag: ${typstString(attrs.props.tag)}`);
-    const argStr = args.length > 0 ? `${args.join(", ")}, ` : "";
-    return `#exbox(${argStr})[\n${indent(body, 2)}\n]`;
   }
 
   // Unknown container: fall through as a plain block. Future generators can
