@@ -314,7 +314,7 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | [`examples/demos/05-admonitions.md`](examples/demos/05-admonitions.md) | All four callout flavours, stacked |
 | [`examples/demos/06-full-paper.md`](examples/demos/06-full-paper.md) | A small essay using callouts, figure, lists, code |
 | [`examples/demos/07-oversized-admonition.md`](examples/demos/07-oversized-admonition.md) | Regression fixture for `breakable: false` admonitions |
-| [`examples/editorial-swiss/`](examples/editorial-swiss/) | Canonical chapter fixture — `paper.md` source, `output.pdf` (our render), `target.pdf` (the visual target to diff against), `mockup.html` (older HTML design spec, kept for reference), `figures/` assets |
+| [`examples/editorial-swiss/`](examples/editorial-swiss/) | Canonical chapter fixture — `paper.md` source, `output.pdf` (our render), `target.pdf` (the visual target to diff against), `figures/` assets |
 
 ## Technical Details
 

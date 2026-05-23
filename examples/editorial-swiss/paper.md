@@ -144,7 +144,7 @@ default, reason as if the GIL is there.
 *(This section is listed in the chapter TOC but its content lives in the
 companion reference card; see Appendix A.)*
 
-## 7.3 · Submitting & collecting work {#sec-submitting}
+## 7.3 · Submitting & collecting work {#sec-submitting .pagebreak}
 
 ### The minimal executor.
 
@@ -190,7 +190,7 @@ Do not share an unsynchronised mutable (a `list`, `dict`) across workers.
 The GIL protects bytecode, not your invariants.
 :::
 
-## 7.4 · Sizing the pool {#sec-sizing}
+## 7.4 · Sizing the pool {#sec-sizing .pagebreak}
 
 ### How many workers?
 
