@@ -53,7 +53,8 @@ function buildPreamble(options: DocumentOptions): string {
   lines.push(
     `#import "template.typ": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
-      `task-box, task-item, task-list, _sig-numeral`,
+      `task-box, task-item, task-list, _sig-numeral, ` +
+      `opener-margins, body-margins`,
   );
   lines.push("");
   lines.push("#show: paper.with(");

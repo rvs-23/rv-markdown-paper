@@ -179,17 +179,25 @@ function renderHeading(node: Heading, ctx: Ctx): string {
   // Opener heading (`## Heading {#chapter-opener}`) is structural only — the
   // visible page chrome comes from the eyebrow + dropcap blocks below it.
   // Push the opener onto its own page after the cover with a weak break,
+  // switch to single-column geometry (opener-margins drops the marginalia
+  // rail reservation so the dropcap intro spans the full content width),
   // and arm a one-shot break before the next H2 so the body section
-  // returns to standard layout on a fresh page.
+  // returns to standard two-column layout on a fresh page.
   if (attrs?.id === "chapter-opener" || attrs?.classes?.includes("chapter-opener")) {
     ctx.pageChoreo.sawOpener = true;
     ctx.pageChoreo.breakBeforeNextH2 = true;
     const label = attrs?.id ? ` <${attrs.id}>` : "";
-    return `#pagebreak(weak: true)\n#metadata("opener")${label}`;
+    return (
+      `#pagebreak(weak: true)\n` +
+      `#set page(margin: opener-margins)\n` +
+      `#metadata("opener")${label}`
+    );
   }
   // Page-break choreography:
   // - One-shot break for the first H2 after the opener (above), so the
-  //   body returns to standard layout on a fresh page.
+  //   body returns to standard layout on a fresh page. This break also
+  //   restores body-margins (two-column geometry with the rail
+  //   reservation) — the opener page used single-column opener-margins.
   // - Opt-in `{.pagebreak}` attribute on any heading: author marks
   //   section starts that the design wants on a fresh page without a
   //   blanket "every ## starts a new page" policy.
@@ -198,8 +206,12 @@ function renderHeading(node: Heading, ctx: Ctx): string {
     (node.depth === 2 && ctx.pageChoreo.breakBeforeNextH2) ||
     (attrs?.classes?.includes("pagebreak") ?? false);
   if (wantsPagebreak) {
-    prebreak = "#pagebreak(weak: true)\n";
-    if (ctx.pageChoreo.breakBeforeNextH2) ctx.pageChoreo.breakBeforeNextH2 = false;
+    if (ctx.pageChoreo.breakBeforeNextH2) {
+      prebreak = "#pagebreak(weak: true)\n#set page(margin: body-margins)\n";
+      ctx.pageChoreo.breakBeforeNextH2 = false;
+    } else {
+      prebreak = "#pagebreak(weak: true)\n";
+    }
   }
   const prefix = "=".repeat(node.depth);
   const body = renderInlines(node.children, ctx);

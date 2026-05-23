@@ -34,6 +34,15 @@
 #let rail-gap   = 5mm
 #let rail-outer = 22mm
 
+// Pre-built `margin` dicts the generator can `#set page(margin: ...)`
+// with to switch layout mode mid-document. Only the right margin is
+// specified — Typst merges these into the existing page margins, so
+// top/left/bottom stay at the user's resolved values. The opener page
+// uses single-column geometry (no rail reservation); body pages
+// re-claim the rail for marginalia.
+#let opener-margins = (right: rail-outer)
+#let body-margins   = (right: rail-gap + rail-width + rail-outer)
+
 // ---------- marginalia ----------
 // `#marg(label, body)` places a labelled note in the right rail, anchored to
 // its vertical position in source flow. The generator emits `#marg(...)`
@@ -120,15 +129,21 @@
   #body
 ]
 
-// Pull quote / epigraph: italic serif, indented, hairline rule above and
-// below. Used by `::: epigraph`.
-#let epigraph(body) = block(above: 1.6em, below: 1.6em, breakable: false)[
-  #line(length: 40%, stroke: 0.5pt + c-hairline)
-  #v(0.8em)
+// Pull quote / epigraph: the loud, display-weight quote. Used by
+// `::: epigraph` for elevated external attributions, where the
+// ornament voice (Instrument Serif italic) is the whole point. Per
+// spec §12.6: 20pt italic serif on a full-ink 1.5pt left rule, with
+// generous inset on the left. The ordinary `>` blockquote stays in
+// the body voice (sans) — see the show rule on `quote` below.
+#let epigraph(body) = block(
+  above: 1.6em, below: 1.6em, breakable: false,
+  inset: (left: 20pt, top: 14pt, bottom: 12pt),
+  stroke: (left: 1.5pt + c-ink),
+)[
   #set par(leading: 0.7em, justify: false)
-  #text(font: f-serif, style: "italic", size: 13pt, fill: c-ink-2)[#body]
-  #v(0.8em)
-  #line(length: 40%, stroke: 0.5pt + c-hairline)
+  #text(font: f-serif, style: "italic", size: 20pt, fill: c-ink, tracking: -0.05pt)[
+    #body
+  ]
 ]
 
 // Admonitions — note / tip / warning / danger.
@@ -641,11 +656,16 @@
   )
 
   // --------- Blockquote ---------
+  // Ordinary `>` blockquote: body voice (Archivo sans), quiet hairline
+  // left rule. Instrument Serif italic is reserved for ornament (folio,
+  // pull quotes, dropcap, etc.) per the design rule — using it on every
+  // in-text quote spent the ornament voice on the wrong slot. The loud
+  // "pull quote" lives in `:::epigraph` instead.
   show quote.where(block: true): it => block(
-    inset: (left: 1.2em, y: 0.5em),
     spacing: 1.2em,
-    stroke: (left: 2pt + c-hairline),
-    text(font: f-serif, style: "italic", size: 12pt, fill: c-ink-2, it.body),
+    inset: (left: 14pt, top: 2pt, bottom: 2pt),
+    stroke: (left: 1.5pt + c-hairline),
+    text(font: f-sans, size: 10.5pt, fill: c-ink-2, it.body),
   )
 
   // --------- Math ---------
