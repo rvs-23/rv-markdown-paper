@@ -497,7 +497,7 @@
   show heading.where(level: 4): it => block(above: 1.6em, below: 0.5em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink)[#it.body]
   ]
-  show heading.where(level: 5): it => block(above: 0.9em, below: 0.2em)[
+  show heading.where(level: 5): it => block(above: 1.6em, below: 0.5em)[
     #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
   ]
   show heading.where(level: 6): it => block(above: 0.8em, below: 0.2em)[
@@ -581,13 +581,20 @@
   // standalone, we give it a light surface fill only when NOT already inside
   // a `code-block` wrapper (which it detects via parent fill). Simplest: keep
   // the standalone case visually identical to the wrapped case.
+  // Block raw: `justify: false` so a soft-wrapped long line doesn't
+  // stretch with cavernous inter-token gaps. Font stays at 8.6pt — the
+  // editorial fixture's pagination is calibrated around this size, and
+  // dropping to 8pt re-compresses sections enough that the §7.5
+  // pagebreak alone no longer reaches 6 pages.
   show raw.where(block: true): it => block(
     fill: c-surface,
     inset: (x: 12pt, y: 10pt),
     width: 100%,
     stroke: 0.5pt + c-hairline,
-    text(font: f-mono, size: 8.6pt, it),
-  )
+  )[
+    #set par(justify: false)
+    #text(font: f-mono, size: 8.6pt, it)
+  ]
   show raw.where(block: false): it => box(
     fill: c-surface,
     inset: (x: 4pt, y: 0pt),
