@@ -21,7 +21,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && cp src/typst/template.typ src/typst/theme.tmTheme dist/typst/",
+    "build": "tsc && cp src/typst/template.typ src/typst/theme.tmTheme src/typst/palette.typ dist/typst/",
     "prepack": "npm run build",
     "mdpdf": "tsx src/cli/index.ts",
     "dev": "tsx src/cli/index.ts",

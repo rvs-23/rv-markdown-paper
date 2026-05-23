@@ -53,6 +53,13 @@ export type DocumentOptions = {
   showHeader: boolean;
   showFooter: boolean;
   showCover: boolean;
+
+  // Optional page-background override as a "#RRGGBB" hex string. When
+  // set, the surface, hairline, and danger-fg tokens are re-derived
+  // from this value so the whole neutral palette tracks the chosen
+  // paper colour. When omitted, the canonical defaults in
+  // src/typst/palette.typ apply.
+  paperBg?: string;
 };
 
 export type DocumentOptionsLayer = {
@@ -74,6 +81,7 @@ export type DocumentOptionsLayer = {
   showHeader?: boolean;
   showFooter?: boolean;
   showCover?: boolean;
+  paperBg?: string;
 };
 
 export const DEFAULTS: DocumentOptions = {

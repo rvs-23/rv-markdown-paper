@@ -81,6 +81,7 @@ export function resolveOptions(layers: {
     showHeader: pick(layers.cli.showHeader, layers.frontmatter.showHeader, project.showHeader) ?? DEFAULTS.showHeader,
     showFooter: pick(layers.cli.showFooter, layers.frontmatter.showFooter, project.showFooter) ?? DEFAULTS.showFooter,
     showCover: pick(layers.cli.showCover, layers.frontmatter.showCover, project.showCover) ?? DEFAULTS.showCover,
+    paperBg: pick(layers.cli.paperBg, layers.frontmatter.paperBg, project.paperBg),
   };
 }
 

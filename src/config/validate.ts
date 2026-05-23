@@ -43,8 +43,21 @@ export function validateOptions(raw: unknown, source: string): DocumentOptionsLa
   if ("showHeader" in r) out.showHeader = expectBool(r.showHeader, `${source}.showHeader`);
   if ("showFooter" in r) out.showFooter = expectBool(r.showFooter, `${source}.showFooter`);
   if ("showCover" in r) out.showCover = expectBool(r.showCover, `${source}.showCover`);
+  if ("paperBg" in r) out.paperBg = expectHexColor(r.paperBg, `${source}.paperBg`);
 
   return out;
+}
+
+// Strict #RRGGBB matcher — six hex digits, no shorthand, no alpha. Keeps
+// the surface palette derivation predictable (the JS-side darken helper
+// expects an 8-bit-per-channel base).
+export function expectHexColor(value: unknown, path: string): string {
+  if (typeof value !== "string" || !/^#[0-9A-Fa-f]{6}$/.test(value)) {
+    throw new ConfigError(
+      `${path}: expected a #RRGGBB hex color, got ${describe(value)}.`,
+    );
+  }
+  return value.toUpperCase();
 }
 
 function expectString(value: unknown, path: string): string {

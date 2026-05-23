@@ -7,6 +7,7 @@ import type { Cover, DocumentOptions } from "../config/options.js";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolvePath(HERE, "./template.typ");
 const THEME_PATH = resolvePath(HERE, "./theme.tmTheme");
+const PALETTE_PATH = resolvePath(HERE, "./palette.typ");
 const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
 
 export type TypstRenderOptions = {
@@ -24,8 +25,17 @@ export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> 
   try {
     const tempTemplate = join(tempDir, "template.typ");
     const tempTheme = join(tempDir, "theme.tmTheme");
+    const tempPalette = join(tempDir, "palette.typ");
     await copyFile(TEMPLATE_PATH, tempTemplate);
     await copyFile(THEME_PATH, tempTheme);
+    // palette.typ: defaults from disk unless --paper-bg overrides it.
+    // template.typ does `#import "palette.typ": *`, so any helper that
+    // closes over a colour token automatically picks up the override.
+    if (opts.options.paperBg) {
+      await writeFile(tempPalette, derivePaletteTyp(opts.options.paperBg), "utf8");
+    } else {
+      await copyFile(PALETTE_PATH, tempPalette);
+    }
 
     const preamble = buildPreamble(opts.options);
     const source = `${preamble}\n\n${opts.body}\n`;
@@ -155,6 +165,58 @@ function typstContentWithBackticks(s: string): string {
 
 function pageSizeToTypst(size: "Letter" | "A4"): string {
   return size === "Letter" ? "us-letter" : "a4";
+}
+
+// Derive the full neutral palette from a paper hex by multiplicative
+// channel darkening. Matches the relative steps the canonical palette
+// uses against the default #E8E8E8 paper: surface ~7%, surface-2 ~11%,
+// hairline ~21%. Danger-fg always tracks paper. The ink/mute ramp is
+// independent of paper colour and stays at its canonical values.
+export function derivePaletteTyp(paperHex: string): string {
+  const paper = parseHex(paperHex);
+  const surface = darken(paper, 0.07);
+  const surface2 = darken(paper, 0.11);
+  const hairline = darken(paper, 0.21);
+  const dangerFg = paper;
+  const hex = (rgb: [number, number, number]) =>
+    "#" +
+    rgb
+      .map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, "0").toUpperCase())
+      .join("");
+  return [
+    `// Derived palette — generated at render time from --paper-bg ${paperHex.toUpperCase()}.`,
+    `// Do not commit edits to this file directly; the source-of-truth defaults`,
+    `// live in src/typst/palette.typ.`,
+    ``,
+    `#let c-paper     = rgb("${hex(paper)}")`,
+    `#let c-ink       = rgb("#11131A")`,
+    `#let c-ink-2     = rgb("#2A2D36")`,
+    `#let c-ink-3     = rgb("#4A4D57")`,
+    `#let c-muted     = rgb("#686C76")`,
+    `#let c-mute-2    = rgb("#8B8E97")`,
+    `#let c-hairline  = rgb("${hex(hairline)}")`,
+    `#let c-surface   = rgb("${hex(surface)}")`,
+    `#let c-surface-2 = rgb("${hex(surface2)}")`,
+    `#let c-accent    = rgb("#11131A")`,
+    `#let c-danger-bg = rgb("#11131A")`,
+    `#let c-danger-fg = rgb("${hex(dangerFg)}")`,
+    ``,
+  ].join("\n");
+}
+
+function parseHex(hex: string): [number, number, number] {
+  const m = /^#([0-9A-Fa-f]{6})$/.exec(hex);
+  if (!m) throw new Error(`invalid hex color: ${hex}`);
+  const n = parseInt(m[1]!, 16);
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+}
+
+function darken(
+  rgb: [number, number, number],
+  amount: number,
+): [number, number, number] {
+  const f = 1 - amount;
+  return [rgb[0] * f, rgb[1] * f, rgb[2] * f];
 }
 
 function cssLengthToTypst(value: string): string {

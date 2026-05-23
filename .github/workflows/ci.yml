@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel in-flight runs for the same ref when a new push lands. Saves
+# minutes on rapid pushes; the latest commit is the one that matters.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck · lint · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      # Typst is a runtime dependency of the integration test (it shells
+      # out to `typst compile`). The community action ships pinned
+      # binaries so we don't depend on whatever apt happens to have.
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: "0.14.2"
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

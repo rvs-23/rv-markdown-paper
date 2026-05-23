@@ -39,6 +39,11 @@ program
   .option("--no-footer", "Hide the running footer")
   .option("--no-cover", "Skip the dedicated cover page (title block goes inline)")
   .option(
+    "--paper-bg <hex>",
+    "Page background as #RRGGBB; surface + hairline + danger-fg derive from it",
+    parseHexColor,
+  )
+  .option(
     "--config <path>",
     "Explicit path to an mdpdf.config.json (skips upward search)",
   )
@@ -71,6 +76,7 @@ function cliOptionsToLayer(opts: OptionValues, cmd: Command): DocumentOptionsLay
   if (typeof opts.date === "string") layer.date = opts.date;
   if (typeof opts.readingTime === "string") layer.readingTime = opts.readingTime;
   if (typeof opts.pageSize === "string") layer.pageSize = opts.pageSize as "Letter" | "A4";
+  if (typeof opts.paperBg === "string") layer.paperBg = opts.paperBg;
 
   if (cmd.getOptionValueSource("header") === "cli") {
     layer.showHeader = Boolean(opts.header);
@@ -102,6 +108,15 @@ function parseCssLength(value: string): string {
     throw new InvalidArgumentError(`expected a CSS length like "0.85in" or "20mm", got "${value}".`);
   }
   return value;
+}
+
+function parseHexColor(value: string): string {
+  if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
+    throw new InvalidArgumentError(
+      `expected a #RRGGBB hex color (six digits, no shorthand), got "${value}".`,
+    );
+  }
+  return value.toUpperCase();
 }
 
 function formatError(error: unknown): string {
