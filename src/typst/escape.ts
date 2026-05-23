@@ -13,7 +13,10 @@
 // those rules. Over-escaping is cheap; under-escaping is a parsing bug.
 
 const MARKUP_SPECIAL_RE = /[\\*_`$#@<>[\]]/g;
-const LINE_START_SPECIAL_RE = /(^|\n)([=\-+/])/g;
+// Only `^` can match this — newlines are collapsed to spaces upstream of
+// the regex, so the `(\n)` alternative would never fire. The previous
+// `(^|\n)` form was dead code on that branch.
+const LINE_START_SPECIAL_RE = /^([=\-+/])/;
 
 export function escapeMarkup(text: string): string {
   // Soft line breaks inside mdast text nodes (from Markdown line-wrap) become
@@ -23,7 +26,7 @@ export function escapeMarkup(text: string): string {
   return text
     .replace(/\n/g, " ")
     .replace(MARKUP_SPECIAL_RE, (c) => `\\${c}`)
-    .replace(LINE_START_SPECIAL_RE, (_, lead: string, ch: string) => `${lead}\\${ch}`);
+    .replace(LINE_START_SPECIAL_RE, (_, ch: string) => `\\${ch}`);
 }
 
 export function escapeString(text: string): string {
