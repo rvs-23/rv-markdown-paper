@@ -315,7 +315,27 @@
     header: none, footer: none,
   )
   #block(height: 100%)[
-    // Top: kicker line + ghosted chapter numeral.
+    // Edition strip: top row with edition L, volume R, separated by a
+    // hairline below. 8pt sans tracked uppercase muted. Only rendered
+    // when edition or volume is set — skipped for cover configs that
+    // don't carry book metadata.
+    #if edition != none or volume != none {
+      grid(
+        columns: (1fr, auto),
+        align: (left, right),
+        text(font: f-sans, size: 8pt, weight: 500, tracking: 0.16em, fill: c-muted)[
+          #if edition != none { upper(edition) }
+        ],
+        text(font: f-sans, size: 8pt, weight: 500, tracking: 0.16em, fill: c-muted)[
+          #if volume != none { upper(volume) }
+        ],
+      )
+      v(6pt)
+      line(length: 100%, stroke: 0.4pt + c-hairline)
+      v(20mm)
+    }
+
+    // Kicker line.
     #if kicker != none {
       text(font: f-sans, size: 9pt, weight: 600, tracking: 0.18em, fill: c-ink-2)[
         #upper(kicker)
