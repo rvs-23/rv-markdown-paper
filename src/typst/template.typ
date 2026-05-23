@@ -645,7 +645,15 @@
   // Caption: hairline rule above, then a two-column grid — italic-serif
   // `Fig. X.Y` lead in ink, sans body in muted gray. Mirrors the mockup's
   // figcaption row.
-  set figure(supplement: [Fig.], numbering: "1.1")
+  // Figures and equations are chapter-relative per Mockup D:
+  // "Fig. 7.1", "(7.1)". Prefix derives from the `chapter` parameter so
+  // documents that don't set chapter fall back to flat numbering ("Fig.
+  // 1", "(1)").
+  let chapter-prefix = if chapter != none { str(chapter) + "." } else { "" }
+  set figure(
+    supplement: [Fig.],
+    numbering: n => chapter-prefix + str(n),
+  )
   show figure.caption: it => block(width: 100%, above: 0.6em)[
     #set align(left)
     #block(stroke: (top: 0.3pt + c-hairline), inset: (top: 5pt))[
@@ -725,7 +733,13 @@
   )
 
   // --------- Math ---------
-  set math.equation(numbering: "(1)", supplement: [Eq.])
+  // Equation refs resolve to "(7.1)" — no "Eq." supplement, chapter-
+  // relative numbering. Supplement set to empty content so cross-refs
+  // emit only the parenthesised numbering.
+  set math.equation(
+    numbering: n => "(" + chapter-prefix + str(n) + ")",
+    supplement: [],
+  )
   show math.equation.where(block: true): it => block(
     above: 1em, below: 1em,
     stroke: (top: 0.3pt + c-hairline, bottom: 0.3pt + c-hairline),
