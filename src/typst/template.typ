@@ -481,18 +481,18 @@
     #v(4pt, weak: true)
     #line(length: 100%, stroke: 0.4pt + c-hairline)
   ]
-  show heading.where(level: 3): it => block(above: 1em, below: 0.8em, breakable: false)[
+  show heading.where(level: 3): it => block(above: 1.2em, below: 1em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 21pt, fill: c-ink, tracking: -0.25pt)[
       #it.body
     ]
   ]
-  show heading.where(level: 4): it => block(above: 1.6em, below: 0.5em, breakable: false)[
+  show heading.where(level: 4): it => block(above: 1.8em, below: 0.9em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink)[#it.body]
   ]
-  show heading.where(level: 5): it => block(above: 1.6em, below: 0.5em)[
+  show heading.where(level: 5): it => block(above: 1.6em, below: 0.6em)[
     #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
   ]
-  show heading.where(level: 6): it => block(above: 0.8em, below: 0.2em)[
+  show heading.where(level: 6): it => block(above: 1em, below: 0.3em)[
     #text(font: f-serif, style: "italic", weight: 400, size: 10pt, fill: c-ink-2)[
       #it.body
     ]
