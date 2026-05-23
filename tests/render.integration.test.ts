@@ -7,7 +7,7 @@ import { convertMarkdownToPdf } from "../src/core/convert.js";
 
 // End-to-end render check for the canonical editorial fixture: the
 // pipeline must produce a 6-page PDF that visually corresponds to
-// `examples/editorial-swiss/mockup.pdf`. Page-count is the strictest
+// `examples/editorial-swiss/target.pdf`. Page-count is the strictest
 // assertion we can make without a pixel-level harness; if the cover,
 // opener-page isolation, or the §7.5 `.pagebreak` annotation regresses,
 // the count will drift and this test will fail with a useful diff.

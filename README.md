@@ -39,7 +39,7 @@ npm run mdpdf -- examples/demos/01-hello.md output/01-hello.pdf
 npm run mdpdf -- examples/editorial-swiss/paper.md examples/editorial-swiss/output.pdf
 ```
 
-The canonical fixture (`examples/editorial-swiss/paper.md`) exercises every supported feature; compare its `output.pdf` against the `mockup.pdf` (browser print of `mockup.html`, the visual design spec) to see what the system is aiming for.
+The canonical fixture (`examples/editorial-swiss/paper.md`) exercises every supported feature; compare its `output.pdf` against `target.pdf` (the designer-iterated visual target) to see what the system is aiming for.
 
 ## CLI Usage
 
@@ -301,7 +301,7 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Page-break opt-in | `## Section {.pagebreak}` | Forces the section onto a fresh page |
 | Chapter opener | `## Heading {#chapter-opener}` | Structural — page-isolates the dropcap intro and suppresses the running header on that page |
 
-Every feature listed here is exercised by the canonical fixture at [`examples/editorial-swiss/paper.md`](examples/editorial-swiss/paper.md). Open it side-by-side with the [`output.pdf`](examples/editorial-swiss/output.pdf) (or the design target [`mockup.pdf`](examples/editorial-swiss/mockup.pdf)) to see each in context.
+Every feature listed here is exercised by the canonical fixture at [`examples/editorial-swiss/paper.md`](examples/editorial-swiss/paper.md). Open it side-by-side with the [`output.pdf`](examples/editorial-swiss/output.pdf) (or the design target [`target.pdf`](examples/editorial-swiss/target.pdf)) to see each in context.
 
 ### Examples
 
@@ -314,7 +314,7 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | [`examples/demos/05-admonitions.md`](examples/demos/05-admonitions.md) | All four callout flavours, stacked |
 | [`examples/demos/06-full-paper.md`](examples/demos/06-full-paper.md) | A small essay using callouts, figure, lists, code |
 | [`examples/demos/07-oversized-admonition.md`](examples/demos/07-oversized-admonition.md) | Regression fixture for `breakable: false` admonitions |
-| [`examples/editorial-swiss/`](examples/editorial-swiss/) | Canonical chapter fixture — `paper.md` source, `output.pdf` render, `mockup.html`/`mockup.pdf` visual target, `figures/` assets |
+| [`examples/editorial-swiss/`](examples/editorial-swiss/) | Canonical chapter fixture — `paper.md` source, `output.pdf` (our render), `target.pdf` (the visual target to diff against), `mockup.html` (older HTML design spec, kept for reference), `figures/` assets |
 
 ## Technical Details
 
