@@ -186,9 +186,9 @@
 ]
 
 #let danger(body) = block(
-  above: 1em, below: 1em, breakable: false,
+  above: 1em, below: 1em, width: 100%, breakable: false,
   fill: c-danger-bg,
-  inset: (x: 0.9em, y: 0.7em),
+  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
 )[
   #set text(fill: c-danger-fg)
   // Inline-code chips default to a light fill on dark text; invert here so
@@ -295,7 +295,7 @@
   if checked { text(fill: c-muted, body) } else { body },
 )
 
-#let task-list(..items) = block(above: 0.6em, below: 0.6em)[
+#let task-list(..items) = block(above: 1em, below: 0.8em)[
   #stack(spacing: 0.45em, ..items.pos())
 ]
 
@@ -524,6 +524,15 @@
     ]
   ]
 
+  // Lists need a real gap above so they don't sit flush against the
+  // preceding heading or paragraph. Without this, `### Foo` immediately
+  // followed by `- bullet` shows the first item ~5pt under the heading
+  // baseline — visibly too tight. 1em above gives a "tab-equivalent"
+  // breathing room after H3/H4 without making list-after-paragraph
+  // double-spaced.
+  show list: it => block(above: 1em, below: 0.8em, it)
+  show enum: it => block(above: 1em, below: 0.8em, it)
+
   // --------- Inline ---------
   show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: c-ink, it))
   show strong: set text(weight: 600)
@@ -572,6 +581,12 @@
       #grid(
         columns: (auto, 1fr),
         column-gutter: 10pt,
+        // `align: (left + bottom, left + bottom)` puts the larger 10pt
+        // italic-serif `Fig. N.M` and the smaller 8.5pt sans caption
+        // body on the same baseline. Without this they shared the
+        // grid row's top, leaving the caption text sitting visibly
+        // above the figure label.
+        align: (left + bottom, left + bottom),
         text(font: f-serif, style: "italic", size: 10pt, fill: c-ink)[
           #it.supplement #context it.counter.display(it.numbering)
         ],
@@ -579,6 +594,10 @@
       )
     ]
   ]
+  // Whole-figure spacing: pull the figure block out of the default
+  // `set block(spacing: ...)` so the paragraph after a figure doesn't
+  // sit flush against the caption row.
+  show figure: it => block(below: 1.2em, it)
 
   // --------- Code ---------
   // `set raw(theme: ...)` must live at function scope, not inside an
@@ -661,7 +680,19 @@
         p == opener-results.at(0).location().page()
       } else { false }
       if on-cover or on-title-page or on-opener { [] } else {
-        let left-cell = if part != none { part } else if section != none { section } else { "" }
+        // Header left: prefer "Ch. NN" if a chapter number is set
+        // (zero-padded under 10 to match the cover-foot), then fall
+        // back to `part`, then `section`. The cover-foot already
+        // shows "Ch. 07"; the running header tracks the same string
+        // so a reader flipping pages sees one consistent locator.
+        let chapter-str = if chapter != none {
+          let n = str(chapter)
+          if n.len() == 1 { "Ch. 0" + n } else { "Ch. " + n }
+        } else { none }
+        let left-cell = if chapter-str != none { chapter-str }
+          else if part != none { "Part " + part }
+          else if section != none { section }
+          else { "" }
         let center-cell = if title != none { title } else { "" }
         let right-cell = if edition != none { edition } else if date != none { date } else { "" }
         if left-cell == "" and center-cell == "" and right-cell == "" {
