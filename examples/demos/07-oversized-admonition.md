@@ -19,7 +19,7 @@ new page.
 
 Some prose before the warning, so the layout has to make a real
 decision about where to place the block. Two short paragraphs of body
-copy on the warm paper — set in Archivo at 10.5pt with the standard
+copy on the neutral paper — set in Archivo at 10.5pt with the standard
 0.62em leading. Nothing surprising in the type.
 
 Some more prose. Long enough to push the start of the warning
