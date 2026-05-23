@@ -106,6 +106,9 @@ $RECYCLE.BIN/
 /scratch/
 .mdpdf-debug/
 
+# npm pack output
+*.tgz
+
 # Generated PDFs — ignore everywhere except checked-in examples
 *.pdf
 !examples/**/*.pdf

@@ -1,14 +1,23 @@
 #!/usr/bin/env node
 import { Command, InvalidArgumentError, type OptionValues } from "commander";
+import { createRequire } from "node:module";
 import { convertMarkdownToPdf } from "../core/convert.js";
 import type { DocumentOptionsLayer, Margins } from "../config/options.js";
+
+// Read the package version at runtime so it stays in sync with
+// package.json — previously hardcoded `0.1.0` and drifted to `0.2.0+`.
+// createRequire works both in `tsx`-driven dev (../../package.json from
+// src/cli/index.ts) and in the compiled `dist/cli/index.js` build
+// (../../package.json from dist/cli/index.js — same depth).
+const requireFromHere = createRequire(import.meta.url);
+const pkg = requireFromHere("../../package.json") as { version: string };
 
 const program = new Command();
 
 program
   .name("mdpdf")
   .description("Convert Markdown to a beautiful PDF.")
-  .version("0.1.0");
+  .version(pkg.version);
 
 program
   .command("convert", { isDefault: true })

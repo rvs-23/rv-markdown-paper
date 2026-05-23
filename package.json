@@ -3,7 +3,26 @@
   "version": "0.2.0",
   "description": "A disciplined, grayscale Markdown to PDF converter, powered by Typst.",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "mdpdf": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "assets/fonts",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "tsc && cp src/typst/template.typ src/typst/theme.tmTheme dist/typst/",
+    "prepack": "npm run build",
     "mdpdf": "tsx src/cli/index.ts",
     "dev": "tsx src/cli/index.ts",
     "lint": "eslint src",
