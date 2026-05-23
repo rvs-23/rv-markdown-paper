@@ -5,11 +5,12 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
 
-// End-to-end render check. Smoke-only at this commit: the test verifies
-// the editorial fixture compiles to a PDF with valid header magic and a
-// sane file size. A strict page-count assertion is added in a follow-up
-// commit once page choreography stabilises — see commit 14 of the
-// post-review plan.
+// End-to-end render check for the canonical editorial fixture: the
+// pipeline must produce a 6-page PDF that visually corresponds to
+// `examples/editorial-swiss/mockup.pdf`. Page-count is the strictest
+// assertion we can make without a pixel-level harness; if the cover,
+// opener-page isolation, or the §7.5 `.pagebreak` annotation regresses,
+// the count will drift and this test will fail with a useful diff.
 
 const FIXTURE = resolve(__dirname, "..", "examples/editorial-swiss/paper.md");
 
@@ -41,6 +42,18 @@ describe("render integration: editorial-swiss fixture", () => {
   it.skipIf(!typstAvailable())("produces a PDF of sane size (≥50 KB)", async () => {
     const s = await stat(outPath);
     expect(s.size).toBeGreaterThanOrEqual(50_000);
+  });
+
+  it.skipIf(!typstAvailable())("renders the fixture as exactly 6 pages", () => {
+    // The PDF stores the page count in the root `/Type /Pages /Count N`
+    // entry. The first `/Count` in the file is the document-wide one;
+    // later `/Count` entries belong to outline / annotation trees, so we
+    // scan top-down and return the first hit.
+    const text = pdfBuffer.toString("latin1");
+    const match = text.match(/\/Type\s*\/Pages[^]*?\/Count\s+(\d+)/);
+    expect(match, "could not locate /Pages /Count in the PDF").not.toBeNull();
+    const pageCount = Number(match![1]);
+    expect(pageCount).toBe(6);
   });
 
   // Cleanup after all assertions; vitest runs `it`s in order within a
