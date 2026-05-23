@@ -767,17 +767,41 @@
     }
   } else { none }
 
+  // Footer: `series · edition-short` left in sans muted, zero-padded
+  // folio right in italic serif. Mirrors the cover-foot's left composition
+  // so a reader flipping pages sees the same book locator throughout.
+  let footer-left-text = if series != none and edition-short != none {
+    series + " · " + edition-short
+  } else if series != none and edition != none {
+    series + " · " + edition
+  } else if series != none {
+    series
+  } else if edition-short != none {
+    edition-short
+  } else if edition != none {
+    edition
+  } else { "" }
   let footer-fn = if show-footer {
     context {
       let p = counter(page).get().first()
       let on-cover = cover-active and p <= 1
       if on-cover { [] } else {
         let current = counter(page).get().first()
-        let display-num = current - footer-page-offset + (
+        let n = current - footer-page-offset + (
           if page-start != none { page-start - 1 } else { 0 }
         )
-        set align(center)
-        text(font: f-serif, style: "italic", size: 9pt, fill: c-muted)[#display-num]
+        // Zero-pad to 3 digits so the folio reads consistently across a
+        // book-length document (e.g. "085" not "85").
+        let s = str(n)
+        let display-num = if s.len() >= 3 { s }
+          else if s.len() == 2 { "0" + s }
+          else { "00" + s }
+        grid(
+          columns: (1fr, auto),
+          align: (left + horizon, right + horizon),
+          text(font: f-sans, size: 8.5pt, fill: c-muted)[#footer-left-text],
+          text(font: f-serif, style: "italic", size: 9pt, fill: c-ink)[#display-num],
+        )
       }
     }
   } else { none }
