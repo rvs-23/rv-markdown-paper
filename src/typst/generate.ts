@@ -204,7 +204,26 @@ function renderHeading(node: Heading, ctx: Ctx): string {
   const prefix = "=".repeat(node.depth);
   const body = renderInlines(node.children, ctx);
   const label = attrs?.id ? ` <${attrs.id}>` : "";
-  return `${prebreak}${prefix} ${body}${label}`;
+  // Sig-numeral state update: if an H2 starts with a dotted section ID
+  // ("7.1", "12.3", "A.4"), publish it into the template's sig-numeral
+  // state so the page foreground renders the 60pt rail numeral on every
+  // body page of that section. Match runs against the raw heading text
+  // before inline emission so e.g. "7.1 · Threads & the GIL" → "7.1".
+  let sigUpdate = "";
+  if (node.depth === 2) {
+    const headingText = node.children
+      .map((c) => ("value" in c ? (c as { value?: string }).value ?? "" : ""))
+      .join("");
+    const m = /^(\d+(?:\.\d+)+|[A-Z]\.\d+)\b/.exec(headingText.trim());
+    if (m) {
+      sigUpdate = `#_sig-numeral.update(${typstStringLiteral(m[1]!)})\n`;
+    }
+  }
+  return `${prebreak}${sigUpdate}${prefix} ${body}${label}`;
+}
+
+function typstStringLiteral(s: string): string {
+  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 function renderCodeBlock(node: Code): string {

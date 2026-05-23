@@ -45,6 +45,12 @@
 
 #let _marg-bottom = state("marg-bottom", 0pt)
 
+// Current section sig-numeral ("7.1", "7.3", etc.). The generator updates
+// this state immediately before each H2 whose body starts with a dotted
+// section number. The page foreground renders the value at top-right per
+// spec §12.5 (60pt Archivo 300 mute-2 in the right rail).
+#let _sig-numeral = state("sig-numeral", "")
+
 // Geometry state, populated by `paper()` so `marg()` can derive its
 // horizontal offset from the actual page width and margins rather than
 // hard-coding a number for A4. Default values reproduce the previous
@@ -694,7 +700,31 @@
     }
   } else { none }
 
-  set page(header: header-fn, footer: footer-fn)
+  // Page foreground: sig-numeral (60pt Archivo 300 mute-2) pinned in
+  // the right rail of every body page. Suppressed on cover / opener /
+  // title-page chrome, same conditions as the header-fn.
+  let foreground-fn = context {
+    let p = counter(page).get().first()
+    let on-cover = cover-active and p <= 1
+    let on-title-page = not cover-active and title != none and p == 1
+    let opener-results = query(<chapter-opener>)
+    let on-opener = if opener-results.len() > 0 {
+      p == opener-results.at(0).location().page()
+    } else { false }
+    if on-cover or on-title-page or on-opener { return }
+    let sig = _sig-numeral.get()
+    if sig == "" { return }
+    place(
+      top + right,
+      dx: -12mm,
+      dy: 24mm,
+      text(font: f-sans, size: 60pt, weight: 300, fill: c-mute-2, tracking: -1pt)[
+        #sig
+      ],
+    )
+  }
+
+  set page(header: header-fn, footer: footer-fn, foreground: foreground-fn)
 
   // --------- Cover ---------
   if cover-active {
