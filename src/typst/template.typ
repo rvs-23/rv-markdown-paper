@@ -10,7 +10,7 @@
 
 // ---------- color tokens ----------
 
-#let c-paper     = rgb("#EFEDE7")  // warm background
+#let c-paper     = rgb("#F4F4F4")  // page background (was #EFEDE7 warm)
 #let c-ink       = rgb("#11131A")  // primary text
 #let c-ink-2     = rgb("#2A2D36")  // secondary text (eyebrows, labels)
 #let c-ink-3     = rgb("#4A4D57")  // tertiary (kickers, eyebrow fills)
@@ -21,7 +21,7 @@
 #let c-surface-2 = rgb("#DBD8D1")  // code-block header, warning panels
 #let c-accent    = rgb("#11131A")  // reserved for single color event (e.g. danger)
 #let c-danger-bg = rgb("#11131A")  // danger block inverts to ink-on-paper
-#let c-danger-fg = rgb("#EFEDE7")
+#let c-danger-fg = rgb("#F4F4F4")  // page-colored ink for danger inversion; tracks c-paper
 
 // ---------- fonts ----------
 // All three families ship in `assets/fonts/` and are loaded with
