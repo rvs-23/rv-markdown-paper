@@ -685,7 +685,12 @@
       page-end: page-end,
     )
   } else if title != none {
-    // Lighter editorial title block for documents without a full cover.
+    // Editorial title block for documents without a full cover. Uses the
+    // SAME size + family as H1 (Archivo sans 28pt 500) so the on-page
+    // title ladder is one voice — the previous 30pt Instrument Serif
+    // variant collided with the H1 show-rule's 28pt Archivo. Instrument
+    // Serif italic stays reserved for ornament (folio, subtitles, pull
+    // quotes) per the §12.1 design rule.
     block(below: 2em)[
       #if section != none {
         text(font: f-sans, size: 8.5pt, weight: 600, tracking: 0.18em, fill: c-ink-2)[
@@ -693,7 +698,9 @@
         ]
         v(0.6em)
       }
-      #text(font: f-serif, weight: 400, size: 30pt, fill: c-ink)[#title]
+      #text(font: f-sans, weight: 500, size: 28pt, fill: c-ink, tracking: -0.4pt)[
+        #title
+      ]
       #if subtitle != none {
         v(0.3em)
         text(font: f-serif, style: "italic", size: 14pt, fill: c-ink-2)[#subtitle]
