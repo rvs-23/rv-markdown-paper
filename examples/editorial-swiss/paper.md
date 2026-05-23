@@ -23,7 +23,9 @@
 
 chapter: 7
 part: Two
+series: "Python in Practice"
 edition: "Edition 2 · 2026"
+editionShort: "Edition 2"
 volume: "Volume I"
 page-start: 85
 page-end: 98

@@ -41,7 +41,9 @@ export type DocumentOptions = {
   // Editorial-book fields.
   chapter?: number | string;
   part?: string;
-  edition?: string;
+  series?: string;       // book title — e.g. "Python in Practice"
+  edition?: string;      // full edition string — e.g. "Edition 2 · 2026"
+  editionShort?: string; // short edition for the cover-foot — e.g. "Edition 2"
   volume?: string;
   pageStart?: number;
   pageEnd?: number;
@@ -71,7 +73,9 @@ export type DocumentOptionsLayer = {
   readingTime?: string;
   chapter?: number | string;
   part?: string;
+  series?: string;
   edition?: string;
+  editionShort?: string;
   volume?: string;
   pageStart?: number;
   pageEnd?: number;

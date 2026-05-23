@@ -31,7 +31,11 @@ export function validateOptions(raw: unknown, source: string): DocumentOptionsLa
   if ("readingTime" in r) out.readingTime = expectString(r.readingTime, `${source}.readingTime`);
   if ("chapter" in r) out.chapter = expectStringOrNumber(r.chapter, `${source}.chapter`);
   if ("part" in r) out.part = expectString(r.part, `${source}.part`);
+  if ("series" in r) out.series = expectString(r.series, `${source}.series`);
   if ("edition" in r) out.edition = expectString(r.edition, `${source}.edition`);
+  if ("editionShort" in r) {
+    out.editionShort = expectString(r.editionShort, `${source}.editionShort`);
+  }
   if ("volume" in r) out.volume = expectString(r.volume, `${source}.volume`);
   if ("page-start" in r) out.pageStart = expectNumber(r["page-start"], `${source}.page-start`);
   if ("page-end" in r) out.pageEnd = expectNumber(r["page-end"], `${source}.page-end`);

@@ -66,7 +66,9 @@ function buildPreamble(options: DocumentOptions): string {
   pushOptionalString(lines, "reading-time", options.readingTime);
   pushOptionalScalar(lines, "chapter", options.chapter);
   pushOptionalString(lines, "part", options.part);
+  pushOptionalString(lines, "series", options.series);
   pushOptionalString(lines, "edition", options.edition);
+  pushOptionalString(lines, "edition-short", options.editionShort);
   pushOptionalString(lines, "volume", options.volume);
   pushOptionalNumber(lines, "page-start", options.pageStart);
   pushOptionalNumber(lines, "page-end", options.pageEnd);

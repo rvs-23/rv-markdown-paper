@@ -328,7 +328,9 @@
 #let _cover-page(
   kicker: none, title: none, subtitle: none,
   meta: (), toc: (),
-  chapter: none, part: none, edition: none, volume: none,
+  chapter: none, part: none,
+  series: none, edition: none, edition-short: none,
+  volume: none,
   page-start: none, page-end: none,
 ) = [
   #set page(
@@ -336,16 +338,25 @@
     header: none, footer: none,
   )
   #block(height: 100%)[
-    // Edition strip: top row with edition L, volume R, separated by a
-    // hairline below. 8pt sans tracked uppercase muted. Only rendered
-    // when edition or volume is set — skipped for cover configs that
-    // don't carry book metadata.
-    #if edition != none or volume != none {
+    // Edition strip: top row with `series · edition` L, volume R,
+    // separated by a hairline below. 8pt sans tracked uppercase muted.
+    // The left cell joins series + edition with a middle-dot when both
+    // are set so the strip reads e.g.
+    //   "PYTHON IN PRACTICE · EDITION 2 · 2026                  VOLUME I"
+    // Only rendered when at least one of series/edition/volume is set.
+    #let _strip-left = if series != none and edition != none {
+      series + " · " + edition
+    } else if series != none {
+      series
+    } else if edition != none {
+      edition
+    } else { none }
+    #if _strip-left != none or volume != none {
       grid(
         columns: (1fr, auto),
         align: (left, right),
         text(font: f-sans, size: 8pt, weight: 500, tracking: 0.16em, fill: c-muted)[
-          #if edition != none { upper(edition) }
+          #if _strip-left != none { upper(_strip-left) }
         ],
         text(font: f-sans, size: 8pt, weight: 500, tracking: 0.16em, fill: c-muted)[
           #if volume != none { upper(volume) }
@@ -420,8 +431,10 @@
       )))
     }
 
-    // Cover-foot per spec §12.6: edition · "Ch. NN" · page-range, hairline
-    // above. No ghost numeral — sig-numeral is suppressed on the cover.
+    // Cover-foot per spec §12.6: `series · edition-short` L,
+    // "Ch. NN" centred (italic serif), `pp. NNN – NNN` R (zero-padded).
+    // Hairline above. No ghost numeral — sig-numeral is suppressed on
+    // the cover.
     #v(1fr)
     #line(length: 100%, stroke: 0.4pt + c-hairline)
     #v(0.6em)
@@ -430,15 +443,31 @@
         let n = str(chapter)
         if n.len() == 1 { "Ch. 0" + n } else { "Ch. " + n }
       } else { "" }
+      let pad3 = (n) => {
+        let s = str(n)
+        if s.len() >= 3 { s }
+        else if s.len() == 2 { "0" + s }
+        else { "00" + s }
+      }
       let page-range = if page-start != none and page-end != none {
-        "pp. " + str(page-start) + " – " + str(page-end)
+        "pp. " + pad3(page-start) + " – " + pad3(page-end)
+      } else { "" }
+      let foot-left = if series != none and edition-short != none {
+        series + " · " + edition-short
+      } else if series != none and edition != none {
+        // Fall back to full edition if editionShort isn't provided.
+        series + " · " + edition
+      } else if series != none {
+        series
+      } else if edition-short != none {
+        edition-short
+      } else if edition != none {
+        edition
       } else { "" }
       grid(
         columns: (1fr, auto, 1fr),
         align: (left, center, right),
-        text(font: f-sans, size: 8.5pt, fill: c-muted)[
-          #if edition != none { edition } else []
-        ],
+        text(font: f-sans, size: 8.5pt, fill: c-muted)[#foot-left],
         text(font: f-serif, style: "italic", size: 13pt, fill: c-ink)[#chapter-str],
         text(font: f-sans, size: 8.5pt, fill: c-muted)[#page-range],
       )
@@ -454,7 +483,9 @@
   title: none, subtitle: none, section: none,
   author: none, date: none, reading-time: none,
   // editorial
-  chapter: none, part: none, edition: none, volume: none,
+  chapter: none, part: none,
+  series: none, edition: none, edition-short: none,
+  volume: none,
   page-start: none, page-end: none,
   cover: none,
   // layout
@@ -787,7 +818,9 @@
       toc: cover.at("toc", default: ()),
       chapter: chapter,
       part: part,
+      series: series,
       edition: edition,
+      edition-short: edition-short,
       volume: volume,
       page-start: page-start,
       page-end: page-end,
