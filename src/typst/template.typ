@@ -378,12 +378,17 @@
     // Display title — comma-split per spec §12.6: head ("Thread pools")
     // is upright Archivo 500 at 44pt; tail (everything from the first comma
     // on) is Instrument Serif italic at the same size, the ornament voice.
+    // Constrained to ~14ch (≈115mm at 44pt) so the title wraps to three
+    // lines matching the mockup ("Thread pools," / "or how to share" /
+    // "a bounded crew.").
     #if title != none {
       let parts = title.split(",")
       let head = parts.at(0)
       let tail = if parts.len() > 1 { "," + parts.slice(1).join(",") } else { "" }
-      par(leading: 0.32em)[
-        #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
+      box(width: 115mm)[
+        #par(leading: 0.32em)[
+          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
+        ]
       ]
     }
     #if subtitle != none {
