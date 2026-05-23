@@ -405,7 +405,11 @@
       let head = parts.at(0)
       let tail = if parts.len() > 1 { "," + parts.slice(1).join(",") } else { "" }
       box(width: 115mm)[
-        #par(leading: 0.32em)[
+        // `justify: false` on the title — the document-level `set par`
+        // turns justification on for body prose, which spreads "Thread"
+        // and "pools," apart on short title lines. Display headings
+        // should always be left-aligned, never justified.
+        #par(leading: 0.32em, justify: false)[
           #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
         ]
       ]
@@ -534,16 +538,17 @@
   body,
 ) = {
   // --------- Base typography ---------
-  // Body weight: 300 (Archivo Light) instead of the 400 default. Closes
-  // the perceived weight gap against Mockup D, which renders Archivo
-  // Regular via Chrome / Skia Type-3 outlines + AA; that pipeline reads
-  // visibly lighter than Typst's CID-TrueType vector outlines. Shipping
-  // Archivo Light + setting body to weight 300 matches the mockup's
-  // visual weight directly rather than chasing the rasterisation diff.
-  // Headings keep their explicit weights (500 / 600) so the hierarchy
-  // still steps up from body.
-  set text(font: f-sans, size: 10.5pt, weight: 300, fill: c-ink, hyphenate: false)
-  set par(leading: 0.7em, spacing: 1em, justify: true, first-line-indent: 0em)
+  // Body weight: 200 (Archivo ExtraLight). 300 (Light) was a step in
+  // the right direction but still read bold-ish against Mockup D in
+  // user review. ExtraLight closes the visual gap. Headings keep their
+  // explicit 500 / 600 weights so the hierarchy still steps up.
+  //
+  // Body leading: 0.85em (+21% from the previous 0.7em). User review
+  // flagged spacing as still feeling 15–20% tighter than the mockup;
+  // 0.85em puts our line-spacing in the mockup's range. Paragraph
+  // spacing bumped to 1.2em to match.
+  set text(font: f-sans, size: 10.5pt, weight: 200, fill: c-ink, hyphenate: false)
+  set par(leading: 0.85em, spacing: 1.2em, justify: true, first-line-indent: 0em)
 
   // --------- Page ---------
   // Right margin reserves the rail. The `marg()` helper places into that
