@@ -1,7 +1,25 @@
 {
   "name": "rv-markdown-paper",
   "version": "0.2.0",
-  "description": "A disciplined, grayscale Markdown to PDF converter, powered by Typst.",
+  "description": "Markdown to print-quality PDF via Typst — fixed editorial design system, bundled fonts, deterministic output.",
+  "keywords": [
+    "markdown",
+    "pdf",
+    "typst",
+    "editorial",
+    "typography",
+    "cli",
+    "remark"
+  ],
+  "homepage": "https://github.com/rvs-23/rv-markdown-paper#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rvs-23/rv-markdown-paper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rvs-23/rv-markdown-paper/issues"
+  },
+  "author": "Rishav Sharma",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
