@@ -212,7 +212,7 @@ average time a worker spends per request (mostly blocked on I/O).
 | DNS lookups       |           16 |      64 | Resolver cache      |
 | Pure Python CPU   |            1 |       1 | GIL                 |
 
-## 7.5 · Exercises {#sec-exercises}
+## 7.5 · Exercises {#sec-exercises .pagebreak}
 
 ### Work these before 7.6.
 

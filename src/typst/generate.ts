@@ -187,11 +187,19 @@ function renderHeading(node: Heading, ctx: Ctx): string {
     const label = attrs?.id ? ` <${attrs.id}>` : "";
     return `#pagebreak(weak: true)\n#metadata("opener")${label}`;
   }
-  // First H2 after the opener: pre-break so the body starts on a new page.
+  // Page-break choreography:
+  // - One-shot break for the first H2 after the opener (above), so the
+  //   body returns to standard layout on a fresh page.
+  // - Opt-in `{.pagebreak}` attribute on any heading: author marks
+  //   section starts that the design wants on a fresh page without a
+  //   blanket "every ## starts a new page" policy.
   let prebreak = "";
-  if (node.depth === 2 && ctx.pageChoreo.breakBeforeNextH2) {
+  const wantsPagebreak =
+    (node.depth === 2 && ctx.pageChoreo.breakBeforeNextH2) ||
+    (attrs?.classes?.includes("pagebreak") ?? false);
+  if (wantsPagebreak) {
     prebreak = "#pagebreak(weak: true)\n";
-    ctx.pageChoreo.breakBeforeNextH2 = false;
+    if (ctx.pageChoreo.breakBeforeNextH2) ctx.pageChoreo.breakBeforeNextH2 = false;
   }
   const prefix = "=".repeat(node.depth);
   const body = renderInlines(node.children, ctx);

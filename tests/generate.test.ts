@@ -23,4 +23,28 @@ describe("generateTypst", () => {
       generateTypst(tree, { sourceDir: "/tmp/mdpdf-tests/safe" }),
     ).toThrow(/escapes the source directory/);
   });
+
+  it("emits a weak pagebreak before a heading carrying {.pagebreak}", () => {
+    // Opt-in section-break: any heading annotated with `pagebreak`
+    // emits `#pagebreak(weak: true)` ahead of its marker. The editorial
+    // fixture uses this on `## 7.5 · Exercises {.pagebreak}` to match
+    // the mockup's six-page layout.
+    const md = `## Intro
+
+Body of intro section.
+
+## Next Section {.pagebreak}
+
+Body of the next section.
+`;
+    const tree = parseMarkdownToMdast(md);
+    const out = generateTypst(tree, { sourceDir: "/tmp/mdpdf-tests" });
+    const lines = out.split("\n");
+    const breakIdx = lines.findIndex((l) => l.includes("#pagebreak"));
+    const nextHeadingIdx = lines.findIndex(
+      (l, i) => i > breakIdx && /^==\s+Next Section/.test(l),
+    );
+    expect(breakIdx).toBeGreaterThanOrEqual(0);
+    expect(nextHeadingIdx).toBe(breakIdx + 1);
+  });
 });
