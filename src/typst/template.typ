@@ -534,7 +534,15 @@
   body,
 ) = {
   // --------- Base typography ---------
-  set text(font: f-sans, size: 10.5pt, fill: c-ink, hyphenate: false)
+  // Body weight: 300 (Archivo Light) instead of the 400 default. Closes
+  // the perceived weight gap against Mockup D, which renders Archivo
+  // Regular via Chrome / Skia Type-3 outlines + AA; that pipeline reads
+  // visibly lighter than Typst's CID-TrueType vector outlines. Shipping
+  // Archivo Light + setting body to weight 300 matches the mockup's
+  // visual weight directly rather than chasing the rasterisation diff.
+  // Headings keep their explicit weights (500 / 600) so the hierarchy
+  // still steps up from body.
+  set text(font: f-sans, size: 10.5pt, weight: 300, fill: c-ink, hyphenate: false)
   set par(leading: 0.7em, spacing: 1em, justify: true, first-line-indent: 0em)
 
   // --------- Page ---------
