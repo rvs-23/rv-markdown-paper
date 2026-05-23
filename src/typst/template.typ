@@ -37,10 +37,18 @@
 // Pre-built `margin` dicts the generator can `#set page(margin: ...)`
 // with to switch layout mode mid-document. Only the right margin is
 // specified — Typst merges these into the existing page margins, so
-// top/left/bottom stay at the user's resolved values. The opener page
-// uses single-column geometry (no rail reservation); body pages
-// re-claim the rail for marginalia.
-#let opener-margins = (right: rail-outer)
+// top/left/bottom stay at the user's resolved values.
+//
+// `opener-margins` constrains the opener's prose to ~58ch per spec §12.4
+// ("Measure for body prose (opener): max-width: 58ch"). At 10.5pt
+// Archivo, 58ch ≈ 113mm, so right margin = 210 - 22 - 113 ≈ 75mm.
+// This is wider than the rail reservation (62mm), so the opener column
+// is narrower than the body column — visually matching the mockup's
+// generous left/right breathing room on the dropcap page.
+//
+// `body-margins` reserves the marginalia rail (62mm right) so the prose
+// column is ~126mm and the rail sits to its right.
+#let opener-margins = (right: 75mm)
 #let body-margins   = (right: rail-gap + rail-width + rail-outer)
 
 // ---------- marginalia ----------
@@ -527,7 +535,7 @@
 ) = {
   // --------- Base typography ---------
   set text(font: f-sans, size: 10.5pt, fill: c-ink, hyphenate: false)
-  set par(leading: 0.62em, spacing: 1em, justify: true, first-line-indent: 0em)
+  set par(leading: 0.7em, spacing: 1em, justify: true, first-line-indent: 0em)
 
   // --------- Page ---------
   // Right margin reserves the rail. The `marg()` helper places into that
