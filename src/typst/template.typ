@@ -731,22 +731,38 @@
         p == opener-results.at(0).location().page()
       } else { false }
       if on-cover or on-title-page or on-opener { [] } else {
-        // Header left: prefer "Ch. NN" if a chapter number is set
-        // (zero-padded under 10 to match the cover-foot), then fall
-        // back to `part`, then `section`. The cover-foot already
-        // shows "Ch. 07"; the running header tracks the same string
-        // so a reader flipping pages sees one consistent locator.
+        // Header left: "Ch. NN — Title" per the mockup. Chapter is
+        // zero-padded under 10 (matches the cover-foot). Title is the
+        // head of the comma-split cover.title when a cover is set
+        // (e.g. "Thread pools" from "Thread pools, or how to share a
+        // bounded crew."), otherwise the flat `title` field, otherwise
+        // omitted.
         let chapter-str = if chapter != none {
           let n = str(chapter)
           if n.len() == 1 { "Ch. 0" + n } else { "Ch. " + n }
         } else { none }
-        let left-cell = if chapter-str != none { chapter-str }
-          else if part != none { "Part " + part }
-          else if section != none { section }
-          else { "" }
-        let center-cell = if title != none { title } else { "" }
-        let right-cell = if edition != none { edition } else if date != none { date } else { "" }
-        if left-cell == "" and center-cell == "" and right-cell == "" {
+        let title-head = if cover != none and cover.at("title", default: none) != none {
+          // Head of comma-split (same convention as the cover title).
+          let t = cover.title
+          if "," in t { t.split(",").at(0) } else { t }
+        } else if title != none { title } else { none }
+        let left-cell = if chapter-str != none and title-head != none {
+          chapter-str + " — " + title-head
+        } else if chapter-str != none {
+          chapter-str
+        } else if part != none {
+          "Part " + part
+        } else if section != none {
+          section
+        } else { "" }
+        // Header right: the current section sig-numeral (e.g. "7.3").
+        // For pages where two sections share the page, the mockup uses
+        // a section-range form ("7.1 – 7.2"); range computation is a
+        // follow-up — the single sig is the closest single-value
+        // approximation.
+        let sig = _sig-numeral.get()
+        let right-cell = if sig != "" { sig } else { "" }
+        if left-cell == "" and right-cell == "" {
           []
         } else {
           set text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-muted)
@@ -754,11 +770,10 @@
             stroke: (bottom: 0.4pt + c-hairline),
             inset: (bottom: 5pt),
             grid(
-              columns: (auto, 1fr, auto),
+              columns: (1fr, auto),
               column-gutter: 1.5em,
-              align: (left + horizon, center + horizon, right + horizon),
+              align: (left + horizon, right + horizon),
               upper(left-cell),
-              upper(center-cell),
               upper(right-cell),
             ),
           )
