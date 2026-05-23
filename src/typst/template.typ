@@ -646,7 +646,15 @@
       // p.1 stacks the running header AND the title block, both carrying
       // the same kicker/title — visible in 06-full-paper.pdf before this.
       let on-title-page = not cover-active and title != none and p == 1
-      if on-cover or on-title-page { [] } else {
+      // Suppress the header on the opener page (single dropcap intro
+      // after the cover). The generator emits `<chapter-opener>` as a
+      // label on the opener's structural heading; query its page so the
+      // header-fn can match against the current page deterministically.
+      let opener-results = query(<chapter-opener>)
+      let on-opener = if opener-results.len() > 0 {
+        p == opener-results.at(0).location().page()
+      } else { false }
+      if on-cover or on-title-page or on-opener { [] } else {
         let left-cell = if part != none { part } else if section != none { section } else { "" }
         let center-cell = if title != none { title } else { "" }
         let right-cell = if edition != none { edition } else if date != none { date } else { "" }
