@@ -417,7 +417,10 @@
       v(1.6em)
     }
 
-    // "In this chapter" — section list as 3-col grid (id / title / page).
+    // "In this chapter" — section list as a 3-col table with hairline
+    // row separators (id / title / page). Per Mockup D each TOC row
+    // ends in a full-width hairline rule; the table primitive gives
+    // us that for free via `stroke: (bottom: ...)`.
     #if toc.len() > 0 {
       line(length: 100%, stroke: 1pt + c-ink)
       v(0.6em)
@@ -425,15 +428,21 @@
         #upper("In this chapter")
       ]
       v(0.8em)
-      stack(spacing: 0.55em, ..toc.map(entry => grid(
+      table(
         columns: (52pt, 1fr, auto),
-        column-gutter: 1em,
-        text(font: f-sans, size: 9pt, weight: 500, tracking: 0.04em, fill: c-ink-2)[#entry.id],
-        text(font: f-sans, size: 10pt, fill: c-ink)[#entry.title],
-        text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
-          #entry.at("page", default: "")
-        ],
-      )))
+        align: (left + horizon, left + horizon, right + horizon),
+        inset: (x: 0pt, y: 8pt),
+        stroke: (x, y) => (bottom: 0.4pt + c-hairline),
+        ..toc.map(entry => (
+          text(font: f-sans, size: 9pt, weight: 500, tracking: 0.04em, fill: c-ink-2)[
+            #entry.id
+          ],
+          text(font: f-sans, size: 10pt, fill: c-ink)[#entry.title],
+          text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
+            #entry.at("page", default: "")
+          ],
+        )).flatten(),
+      )
     }
 
     // Cover-foot per spec §12.6: `series · edition-short` L,
