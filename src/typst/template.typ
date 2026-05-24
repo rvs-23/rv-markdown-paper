@@ -301,6 +301,10 @@
   above: 1em, below: 1em, breakable: true,
 )[
   #if filename != none or lang-label != none {
+    // Header strip is its own bordered surface-2 box. The 4pt gap below
+    // separates it visually from the raw body box (which has its own
+    // border via the raw show-rule); without the gap the two boxes
+    // share a border and read as one panel.
     block(
       fill: c-surface-2,
       inset: (x: 12pt, y: 6pt),
@@ -317,6 +321,7 @@
         ],
       )
     ]
+    v(4pt)
   }
   #body
 ]
@@ -684,11 +689,19 @@
   show table.cell: it => {
     set par(justify: false)
     if it.y == 0 {
+      // Header row — tracked uppercase eyebrow voice.
       text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, it)
-    } else if it.x == 0 {
-      text(font: f-sans, size: 9.3pt, fill: c-ink, it)
     } else {
-      text(font: f-mono, size: 9.3pt, fill: c-ink, it)
+      // Body cells — all sans (Archivo), no font switch by column.
+      // Tabular-numerals feature ("tnum") keeps digit columns
+      // aligned so numeric columns line up vertically without
+      // resorting to a monospaced face (which reads heavier than the
+      // body's ExtraLight weight). Cells inherit body weight (200).
+      text(
+        font: f-sans, size: 9.3pt, fill: c-ink,
+        features: ("tnum": 1),
+        it,
+      )
     }
   }
 

@@ -208,11 +208,11 @@ where *N* is the pool size, *λ* the arrival rate of requests, and *W* the
 average time a worker spends per request (mostly blocked on I/O).
 
 | Workload          | Good default | Ceiling | Why                 |
-| :---------------- | -----------: | ------: | :------------------ |
-| Local disk I/O    |        4 – 8 |      32 | Kernel queue depth  |
-| HTTP calls        |       8 – 32 |     256 | Remote capacity     |
-| DNS lookups       |           16 |      64 | Resolver cache      |
-| Pure Python CPU   |            1 |       1 | GIL                 |
+| :---------------- | :----------- | :------ | :------------------ |
+| Local disk I/O    | 4 – 8        | 32      | Kernel queue depth  |
+| HTTP calls        | 8 – 32       | 256     | Remote capacity     |
+| DNS lookups       | 16           | 64      | Resolver cache      |
+| Pure Python CPU   | 1            | 1       | GIL                 |
 
 ## 7.5 · Exercises {#sec-exercises .pagebreak}
 
