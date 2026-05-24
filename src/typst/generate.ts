@@ -391,7 +391,7 @@ type DirectiveNode = {
 function renderContainerDirective(node: DirectiveNode, ctx: Ctx): string {
   const name = node.name;
   const attrs = getAttrs(node);
-  const children = (node.children ?? []) as RootContent[];
+  let children = (node.children ?? []) as RootContent[];
 
   if (name === "margin") {
     // Label resolution order:
@@ -428,6 +428,30 @@ function renderContainerDirective(node: DirectiveNode, ctx: Ctx): string {
     return `#exbox(${argStr})[\n${indent(body, 2)}\n]`;
   }
 
+  if (name === "epigraph") {
+    // Extract the trailing em-dash paragraph as the `cite` slot so the
+    // template can render the attribution in tracked-uppercase sans
+    // muted on its own line (per spec §12.6). Detection is robust to
+    // any of `—` (em-dash), `–` (en-dash), or `--` (ascii) as the
+    // leading character; the dash itself is stripped along with any
+    // leading whitespace before the cite is emitted.
+    let cite: string | undefined;
+    if (children.length > 1) {
+      const last = children[children.length - 1]!;
+      if (last.type === "paragraph") {
+        const leading = mdastToString(last as Paragraph).trimStart();
+        const m = /^(?:—|–|--)\s*(.+)$/s.exec(leading);
+        if (m) {
+          cite = m[1]!.trim();
+          children = children.slice(0, -1);
+        }
+      }
+    }
+    const body = renderBlocks(children, ctx);
+    const citeArg = cite ? `cite: ${typstString(cite)}, ` : "";
+    return `#epigraph(${citeArg})[\n${indent(body, 2)}\n]`;
+  }
+
   const body = renderBlocks(children, ctx);
 
   if (ADMONITION_NAMES.has(name)) {
@@ -446,10 +470,6 @@ function renderContainerDirective(node: DirectiveNode, ctx: Ctx): string {
     if (!letter) return `#dropcap("")[\n${indent(body, 2)}\n]`;
     const restRendered = renderBlocks(rest, ctx);
     return `#dropcap(${typstString(letter)})[\n${indent(restRendered, 2)}\n]`;
-  }
-
-  if (name === "epigraph") {
-    return `#epigraph[\n${indent(body, 2)}\n]`;
   }
 
   // Unknown container: fall through as a plain block. Future generators can

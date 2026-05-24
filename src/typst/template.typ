@@ -140,10 +140,17 @@
 // Pull quote / epigraph: the loud, display-weight quote. Used by
 // `::: epigraph` for elevated external attributions, where the
 // ornament voice (Instrument Serif italic) is the whole point. Per
-// spec §12.6: 20pt italic serif on a full-ink 1.5pt left rule, with
-// generous inset on the left. The ordinary `>` blockquote stays in
-// the body voice (sans) — see the show rule on `quote` below.
-#let epigraph(body) = block(
+// spec §12.6:
+//   body: 20pt italic serif on a full-ink 1.5pt left rule
+//   cite: 8.5pt sans 500 tracked .12em uppercase muted, preceded by em-dash
+// The ordinary `>` blockquote stays in the body voice — see the show
+// rule on `quote` below.
+//
+// `cite` is optional content; when set, it renders as its own line
+// below the quote body with the cite typography. Generator extracts
+// the last paragraph starting with `—` and passes it via this slot
+// (see renderContainerDirective in generate.ts).
+#let epigraph(cite: none, body) = block(
   above: 1.6em, below: 1.6em, breakable: false,
   inset: (left: 20pt, top: 14pt, bottom: 12pt),
   stroke: (left: 1.5pt + c-ink),
@@ -152,6 +159,12 @@
   #text(font: f-serif, style: "italic", size: 20pt, fill: c-ink, tracking: -0.05pt)[
     #body
   ]
+  #if cite != none {
+    v(10pt)
+    text(font: f-sans, size: 8.5pt, weight: 500, tracking: 0.12em, fill: c-muted)[
+      #upper(cite)
+    ]
+  }
 ]
 
 // Admonitions — note / tip / warning / danger.
