@@ -220,8 +220,11 @@ function renderHeading(node: Heading, ctx: Ctx): string {
   // Sig-numeral state update: if an H2 starts with a dotted section ID
   // ("7.1", "12.3", "A.4"), publish it into the template's sig-numeral
   // state so the page foreground renders the 60pt rail numeral on every
-  // body page of that section. Match runs against the raw heading text
-  // before inline emission so e.g. "7.1 · Threads & the GIL" → "7.1".
+  // body page of that section. Also append a `(page, sig)` tuple to
+  // `_sig-history` so the running header can compute a per-page section
+  // range ("7.1 – 7.2") for pages where two sections share a page.
+  // Match runs against the raw heading text before inline emission so
+  // e.g. "7.1 · Threads & the GIL" → "7.1".
   let sigUpdate = "";
   if (node.depth === 2) {
     const headingText = node.children
@@ -229,7 +232,16 @@ function renderHeading(node: Heading, ctx: Ctx): string {
       .join("");
     const m = /^(\d+(?:\.\d+)+|[A-Z]\.\d+)\b/.exec(headingText.trim());
     if (m) {
-      sigUpdate = `#_sig-numeral.update(${typstStringLiteral(m[1]!)})\n`;
+      const sigLit = typstStringLiteral(m[1]!);
+      // `here()` must be evaluated inside a `context` block so it's a
+      // located expression; capture the page first, then pass an
+      // already-resolved record into the state update.
+      sigUpdate =
+        `#_sig-numeral.update(${sigLit})\n` +
+        `#context {\n` +
+        `  let p = here().page()\n` +
+        `  _sig-history.update(h => h + ((page: p, sig: ${sigLit}),))\n` +
+        `}\n`;
     }
   }
   return `${prebreak}${sigUpdate}${prefix} ${body}${label}`;

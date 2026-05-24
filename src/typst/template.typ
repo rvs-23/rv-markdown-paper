@@ -68,6 +68,13 @@
 // spec §12.5 (60pt Archivo 300 mute-2 in the right rail).
 #let _sig-numeral = state("sig-numeral", "")
 
+// History of every sig-numeral the generator has emitted, paired with
+// the page it started on: `((page: 3, sig: "7.1"), (page: 3, sig: "7.2"),
+// (page: 4, sig: "7.3"), …)`. The running header reads this list,
+// filters by current page, and renders the first–last range
+// ("7.1 – 7.2") when multiple sections share a page.
+#let _sig-history = state("sig-history", ())
+
 // Geometry state, populated by `paper()` so `marg()` can derive its
 // horizontal offset from the actual page width and margins rather than
 // hard-coding a number for A4. Default values reproduce the previous
@@ -854,13 +861,23 @@
         } else if section != none {
           section
         } else { "" }
-        // Header right: the current section sig-numeral (e.g. "7.3").
-        // For pages where two sections share the page, the mockup uses
-        // a section-range form ("7.1 – 7.2"); range computation is a
-        // follow-up — the single sig is the closest single-value
-        // approximation.
-        let sig = _sig-numeral.get()
-        let right-cell = if sig != "" { sig } else { "" }
+        // Header right: section range for the current page. The
+        // generator pushes (page, sig) tuples into _sig-history at
+        // each H2; here we filter to entries whose page matches the
+        // current page. One entry → single sig ("7.3"). Two or more →
+        // range ("7.1 – 7.2"). Zero (no H2 starts on this page) →
+        // fall back to the currently-active sig from _sig-numeral,
+        // which carries the section the body continues from.
+        let history = _sig-history.final()
+        let on-page = history.filter(h => h.page == p)
+        let right-cell = if on-page.len() == 0 {
+          let sig = _sig-numeral.get()
+          if sig != "" { sig } else { "" }
+        } else if on-page.len() == 1 {
+          on-page.at(0).sig
+        } else {
+          on-page.at(0).sig + " – " + on-page.at(-1).sig
+        }
         if left-cell == "" and right-cell == "" {
           []
         } else {
