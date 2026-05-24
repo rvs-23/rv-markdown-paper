@@ -717,10 +717,26 @@
       )
     ]
   ]
-  // Whole-figure spacing: pull the figure block out of the default
-  // `set block(spacing: ...)` so the paragraph after a figure doesn't
-  // sit flush against the caption row.
-  show figure: it => block(below: 1.2em, it)
+  // Figure framed panel per spec §12.6: image sits inside a
+  // surface-filled, hairline-bordered box (visually "the figure lives
+  // in its own panel"); caption row renders below with the existing
+  // figure.caption show-rule (italic-serif "Fig. N.M" lead + caption
+  // body on a hairline-divided row). The custom show: figure rule
+  // replaces Typst's default figure layout with this panel + caption
+  // composition, so the framing also covers code-fence figures and
+  // tabular figures, not just images.
+  show figure: it => block(below: 1.4em, width: 100%)[
+    #block(
+      fill: c-surface,
+      stroke: 0.5pt + c-hairline,
+      inset: 14pt,
+      width: 100%,
+    )[
+      #set align(center)
+      #it.body
+    ]
+    #it.caption
+  ]
 
   // --------- Code ---------
   // `set raw(theme: ...)` must live at function scope, not inside an
