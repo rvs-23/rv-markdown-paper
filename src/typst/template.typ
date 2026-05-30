@@ -564,16 +564,16 @@
   body,
 ) = {
   // --------- Base typography ---------
-  // Body weight: 200 (Archivo ExtraLight). 300 (Light) was a step in
-  // the right direction but still read bold-ish against Mockup D in
-  // user review. ExtraLight closes the visual gap. Headings keep their
-  // explicit 500 / 600 weights so the hierarchy still steps up.
+  // Body weight: 300 (Archivo Light). 200 (ExtraLight) under-rendered
+  // against target.pdf in side-by-side review — body text looked 10–20%
+  // lighter than the target. 300 closes the gap while still feeling
+  // editorial rather than UI-weight. Headings keep their explicit
+  // 400/500 weights so the hierarchy still steps up cleanly.
   //
-  // Body leading: 0.85em (+21% from the previous 0.7em). User review
-  // flagged spacing as still feeling 15–20% tighter than the mockup;
-  // 0.85em puts our line-spacing in the mockup's range. Paragraph
-  // spacing bumped to 1.2em to match.
-  set text(font: f-sans, size: 10.5pt, weight: 200, fill: c-ink, hyphenate: false)
+  // Body leading: 0.85em, paragraph spacing 1.2em — calibrated to the
+  // target's line rhythm; do not tighten without re-checking the
+  // editorial fixture page count.
+  set text(font: f-sans, size: 10.5pt, weight: 300, fill: c-ink, hyphenate: false)
   set par(leading: 0.85em, spacing: 1.2em, justify: true, first-line-indent: 0em)
 
   // --------- Page ---------
@@ -671,6 +671,12 @@
   // inside a `show emph` rule does not always commit Typst to the Italic
   // variant in the font registry.
   show emph: it => text(font: f-sans, style: "italic")[#it.body]
+  // Strikethrough renders in muted ink with a thinner stroke so deleted
+  // text reads as "removed" rather than as a deletion-bar over normal
+  // body weight. Target.pdf shows ~Async pools~ in the muted ramp; our
+  // earlier default left the body fill at c-ink, which made strikes
+  // visually loud.
+  show strike: it => text(fill: c-muted)[#it]
 
   // --------- Tables ---------
   // Mockup: no surrounding box; header row gets a 0.75pt ink rule below it;
@@ -790,14 +796,14 @@
     stroke: 0.5pt + c-hairline,
   )[
     #set par(justify: false)
-    #text(font: f-mono, size: 8.6pt, it)
+    #text(font: f-mono, size: 8.6pt, fill: c-ink-2, it)
   ]
   show raw.where(block: false): it => box(
     fill: c-surface,
     inset: (x: 4pt, y: 0pt),
     outset: (y: 2pt),
     radius: 0pt,
-    text(font: f-mono, size: 0.88em, fill: c-ink, it),
+    text(font: f-mono, size: 0.88em, fill: c-ink-2, it),
   )
 
   // --------- Blockquote ---------
@@ -895,17 +901,18 @@
         if left-cell == "" and right-cell == "" {
           []
         } else {
-          set text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-muted)
-          block(
-            stroke: (bottom: 0.4pt + c-hairline),
-            inset: (bottom: 5pt),
-            grid(
-              columns: (1fr, auto),
-              column-gutter: 1.5em,
-              align: (left + horizon, right + horizon),
-              upper(left-cell),
-              upper(right-cell),
-            ),
+          // Mixed-case sans, no tracking, no underline rule. Target.pdf
+          // sets the running header in a quiet locator voice — "Ch. 07
+          // — Thread pools" L, "7.4" R — so it reads as page-furniture
+          // and leaves the column-rule eyebrow ("7.4 · SIZING THE POOL")
+          // to do the section-marker work.
+          set text(font: f-sans, size: 9pt, weight: 400, fill: c-muted)
+          grid(
+            columns: (1fr, auto),
+            column-gutter: 1.5em,
+            align: (left + horizon, right + horizon),
+            left-cell,
+            right-cell,
           )
         }
       }
