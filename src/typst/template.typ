@@ -167,9 +167,16 @@
     #body
   ]
   #if cite != none {
-    v(10pt)
+    // 14pt gap (was 10pt) gives the attribution a clearer step away
+    // from the quote body so it reads as "by ROB PIKE", not as a
+    // tracked-uppercase continuation of the quote text.
+    v(14pt)
+    // Leading "— " (em-dash + thin space) is part of the cite voice in
+    // target.pdf; the generator strips the dash when extracting the
+    // cite slot from the trailing paragraph, so we re-add it here at
+    // render time.
     text(font: f-sans, size: 8.5pt, weight: 500, tracking: 0.12em, fill: c-muted)[
-      #upper(cite)
+      — #upper(cite)
     ]
   }
 ]
@@ -340,9 +347,13 @@
   inset: 0pt,
 )[
   #if checked {
+    // Tick glyph (U+2713 CHECK MARK), not "x". Target.pdf uses a check
+    // for completed items; "x" reads ambiguously as either "done" or
+    // "rejected" depending on context. Bumped weight to 700 + size to
+    // 0.78em so the tick fills the box cleanly at the paper colour.
     align(center + horizon, text(
-      font: f-mono, size: 0.7em, weight: 700, fill: c-paper,
-    )[x])
+      font: f-sans, size: 0.78em, weight: 700, fill: c-paper,
+    )[#"\u{2713}"])
   }
 ]
 
@@ -354,8 +365,11 @@
   if checked { text(fill: c-muted, body) } else { body },
 )
 
+// Item-to-item spacing was 0.45em — list felt loose against target,
+// which stacks task rows almost flush. 0.2em pulls items together
+// while still leaving the rows visually distinct.
 #let task-list(..items) = block(above: 1em, below: 0.8em)[
-  #stack(spacing: 0.45em, ..items.pos())
+  #stack(spacing: 0.2em, ..items.pos())
 ]
 
 // ---------- legacy callouts ----------
@@ -618,12 +632,14 @@
       #it.body
     ]
   ]
+  // H2 = section eyebrow only. Tracked-uppercase voice alone is enough
+  // to mark a section break; target.pdf does not run a hairline under
+  // the eyebrow row (the underline previously made every section opener
+  // read as a heavier divider than the editorial design called for).
   show heading.where(level: 2): it => block(above: 2em, below: 0.9em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
       #upper(it.body)
     ]
-    #v(4pt, weak: true)
-    #line(length: 100%, stroke: 0.4pt + c-hairline)
   ]
   // H3 — display heading inside a section. Below-spacing bumped to 1.6em
   // so the section opens with real breathing room before the first
@@ -689,6 +705,12 @@
     inset: (x: 10pt, y: 7pt),
     align: left + horizon,
   )
+  // Tables fill the column width by default so they don't sit as a
+  // narrow island in the middle of the body — target.pdf stretches
+  // tables edge-to-edge inside the body column. The set rule above
+  // controls strokes/insets; this show wraps every table in a
+  // full-width block so it expands to the available measure.
+  show table: it => block(width: 100%, it)
   // Document-level `set par(justify: true)` propagates into table cells,
   // producing ugly inter-word gaps in narrow columns (visible in the Notes
   // columns of 03-structured.pdf and 06-full-paper.pdf before this rule).
@@ -828,9 +850,9 @@
     supplement: [],
   )
   show math.equation.where(block: true): it => block(
-    above: 1em, below: 1em,
+    above: 1.8em, below: 1.8em,
     stroke: (top: 0.3pt + c-hairline, bottom: 0.3pt + c-hairline),
-    inset: (top: 8pt, bottom: 8pt),
+    inset: (top: 18pt, bottom: 18pt),
     width: 100%,
     it,
   )

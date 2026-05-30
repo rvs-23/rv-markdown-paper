@@ -349,8 +349,22 @@ function renderTable(node: Table, ctx: Ctx): string {
     .map((row) => renderTableRowCells(row, ctx))
     .flat();
 
+  // Emit columns as (auto, auto, …, auto, 1fr) so labels and numeric
+  // columns size to their content while the final column absorbs the
+  // slack — the table stretches edge-to-edge in the body column without
+  // every column being forced to equal width (which made narrow
+  // numeric columns over-wide and wide text columns wrap). Matches
+  // target.pdf's body-column tables.
+  const colSpecs =
+    columns === 1
+      ? "1fr"
+      : Array(columns - 1)
+          .fill("auto")
+          .concat("1fr")
+          .join(", ");
+  const fracColumns = `(${colSpecs})`;
   const parts = [
-    `columns: ${columns}`,
+    `columns: ${fracColumns}`,
     ...(alignArg ? [`align: (${alignArg})`] : []),
     `table.header(${headerCells.join(", ")})`,
     ...bodyRows,
