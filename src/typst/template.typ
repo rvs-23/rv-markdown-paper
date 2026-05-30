@@ -378,6 +378,42 @@
 #let warn(body) = warning(body)
 #let system(body) = note(body)
 
+// ---------- endnotes ----------
+// Editorial / book-style footnote handling: each [^x] in the body
+// renders as a superscript italic-serif numeral inline, and the
+// generator collects the bodies into a single NOTES block at the end
+// of the document via `endnotes((body1, body2, …))`. Engaged when
+// `footnotes: "endnotes"` is set; the page-bottom mode keeps Typst's
+// native `#footnote` instead.
+#let endnote-ref(n) = super(
+  text(font: f-serif, style: "italic", size: 0.95em, fill: c-ink)[#n]
+)
+
+#let endnotes(items) = if items.len() > 0 {
+  block(above: 2em, below: 0.6em, breakable: false)[
+    // Section eyebrow voice — tracked-uppercase 9pt sans, matching the
+    // H2 styling so NOTES reads as a sibling to other section openers.
+    #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
+      NOTES
+    ]
+  ]
+  // 2-col grid: italic-serif numeral L (matches the inline ref voice),
+  // body R in normal prose. Hairline-divided rows give a quiet ledger
+  // feel without spending another ornament voice.
+  grid(
+    columns: (auto, 1fr),
+    column-gutter: 1em,
+    row-gutter: 0.6em,
+    align: (right + top, left + top),
+    ..items.enumerate().map(((i, body)) => (
+      text(font: f-serif, style: "italic", size: 10pt, fill: c-muted)[
+        #(i + 1)
+      ],
+      body,
+    )).flatten(),
+  )
+}
+
 // ---------- cover page ----------
 // Rendered when `show-cover = true` and a cover config was passed. Three
 // stacked blocks: kicker (Part · Chapter), display title (mixed upright sans
@@ -500,6 +536,43 @@
         #upper("In this chapter")
       ]
       v(0.8em)
+      // Resolve each TOC entry's page number via Typst's page counter
+      // at the entry's heading label, with `page-start` applied as an
+      // editorial offset (so a chapter that starts on absolute page 85
+      // shows folios 085, 086, … rather than the document's own 1, 2,
+      // …). Falls back to the manual `entry.page` field if no `ref`
+      // is set or the label can't be located — keeps the schema field
+      // useful as a manual override for special cases.
+      //
+      // Wrapped in a `context` block so `counter(page).at(label(…))`
+      // can see the final document layout; `query(label(…)).first()`
+      // returns the heading element, whose `.location().page()` gives
+      // the absolute page number.
+      let pad3 = (n) => {
+        let s = str(n)
+        if s.len() >= 3 { s }
+        else if s.len() == 2 { "0" + s }
+        else { "00" + s }
+      }
+      // Cover is doc page 1 but folio 000 — every body page starts
+      // one ahead of its absolute page number. Subtract 1 from the
+      // queried page so 7.1 on doc page 3 reads as 086 (matching the
+      // page footer's `current - 1 + page-start - 1` math), not 087.
+      let toc-page-cell(entry) = context {
+        let manual = entry.at("page", default: "")
+        let ref = entry.at("ref", default: none)
+        let resolved = if ref != none and ref != "" {
+          let hits = query(label(ref))
+          if hits.len() > 0 {
+            let p = hits.first().location().page()
+            let offset = if page-start != none { page-start - 1 } else { 0 }
+            pad3(p - 1 + offset)
+          } else { none }
+        } else { none }
+        text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
+          #if resolved != none { resolved } else { manual }
+        ]
+      }
       table(
         columns: (52pt, 1fr, auto),
         align: (left + horizon, left + horizon, right + horizon),
@@ -510,9 +583,7 @@
             #entry.id
           ],
           text(font: f-sans, size: 10pt, fill: c-ink)[#entry.title],
-          text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
-            #entry.at("page", default: "")
-          ],
+          toc-page-cell(entry),
         )).flatten(),
       )
     }

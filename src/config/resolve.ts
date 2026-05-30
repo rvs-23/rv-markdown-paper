@@ -88,6 +88,7 @@ export function resolveOptions(layers: {
     showFooter: pick(layers.cli.showFooter, layers.frontmatter.showFooter, project.showFooter) ?? DEFAULTS.showFooter,
     showCover: pick(layers.cli.showCover, layers.frontmatter.showCover, project.showCover) ?? DEFAULTS.showCover,
     paperBg: pick(layers.cli.paperBg, layers.frontmatter.paperBg, project.paperBg),
+    footnotes: pick(layers.cli.footnotes, layers.frontmatter.footnotes, project.footnotes) ?? DEFAULTS.footnotes,
   };
 }
 

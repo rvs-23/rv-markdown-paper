@@ -246,6 +246,7 @@ showHeader: true
 showFooter: true
 showCover: true
 paperBg: "#F4F4F4"
+footnotes: "endnotes"   # "page" (default) | "endnotes" — bottom-of-page vs chapter-end NOTES
 
 # dedicated cover (optional — when set, the cover replaces the editorial title block)
 cover:
@@ -276,7 +277,7 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Strikethrough | `~~text~~` | Muted ink + strike |
 | Inline code | `` `code` `` | JetBrains Mono on a surface-fill chip |
 | Link | `[text](url)` | Underlined hairline |
-| Footnote | `text[^1]` + `[^1]: body` | Native Typst footnote at the bottom of the page that contains the reference |
+| Footnote | `text[^1]` + `[^1]: body` | Page-bottom footnote by default; set `footnotes: endnotes` in frontmatter to collect every body into a chapter-end "NOTES" block with inline superscript numerals |
 | Unordered list | `- item` | Native bullet |
 | Ordered list | `1. item` | Numeric counter |
 | Task list | `- [x] done` / `- [ ] todo` | Ink-bordered checkbox; checked is ink-filled with paper-colored tick + muted body |

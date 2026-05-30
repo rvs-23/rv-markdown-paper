@@ -62,6 +62,14 @@ export type DocumentOptions = {
   // paper colour. When omitted, the canonical defaults in
   // src/typst/palette.typ apply.
   paperBg?: string;
+
+  // Footnote placement. "page" (default) uses Typst's native page-bottom
+  // footnotes — the body of each `[^x]` definition renders at the
+  // bottom of the page where the reference appears. "endnotes" defers
+  // every footnote to a single NOTES block at the end of the document
+  // body, with inline superscript numerals at the reference sites.
+  // Editorial / book-style documents typically want "endnotes".
+  footnotes: "page" | "endnotes";
 };
 
 export type DocumentOptionsLayer = {
@@ -86,6 +94,7 @@ export type DocumentOptionsLayer = {
   showFooter?: boolean;
   showCover?: boolean;
   paperBg?: string;
+  footnotes?: "page" | "endnotes";
 };
 
 export const DEFAULTS: DocumentOptions = {
@@ -103,4 +112,5 @@ export const DEFAULTS: DocumentOptions = {
   showHeader: true,
   showFooter: true,
   showCover: true,
+  footnotes: "page",
 };

@@ -54,7 +54,7 @@ function buildPreamble(options: DocumentOptions): string {
     `#import "template.typ": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
-      `opener-margins, body-margins`,
+      `opener-margins, body-margins, endnote-ref, endnotes`,
   );
   lines.push("");
   lines.push("#show: paper.with(");
@@ -82,6 +82,10 @@ function buildPreamble(options: DocumentOptions): string {
   lines.push(`  show-footer: ${options.showFooter},`);
   lines.push(`  show-cover: ${options.showCover},`);
   lines.push(`  theme-path: "theme.tmTheme",`);
+  // footnote-mode is consumed at generation time (it controls whether
+  // the body emits #footnote or #endnote-ref calls) and is NOT passed
+  // through to paper(...) — the template helpers are already imported
+  // and any difference is fully encoded in the generated body.
   lines.push(")");
   return lines.join("\n");
 }

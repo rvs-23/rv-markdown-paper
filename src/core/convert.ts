@@ -70,7 +70,10 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     cover: injectReadingTimeIntoCoverMeta(resolved.cover, readingTime),
   };
 
-  const body = generateTypst(tree, { sourceDir: inputDir });
+  const body = generateTypst(tree, {
+    sourceDir: inputDir,
+    footnoteMode: resolved.footnotes,
+  });
 
   await mkdir(dirname(outputAbsolute), { recursive: true });
   await renderTypstToPdf({

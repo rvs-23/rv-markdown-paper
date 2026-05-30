@@ -27,6 +27,11 @@ import { toString as mdastToString } from "mdast-util-to-string";
 
 export type GenerateOptions = {
   sourceDir: string;
+  // "page" → each [^x] becomes a native Typst #footnote at the page
+  // bottom. "endnotes" → references render as superscript numerals and
+  // every body is collected into a single NOTES block appended after
+  // the body. Default at the call site is "page" if undefined.
+  footnoteMode?: "page" | "endnotes";
 };
 
 const ALIGN_MAP: Record<string, string> = {
@@ -44,16 +49,41 @@ export function generateTypst(tree: Root, options: GenerateOptions): string {
   const ctx: Ctx = {
     sourceDir: options.sourceDir,
     footnotes,
+    footnoteMode: options.footnoteMode ?? "page",
+    endnoteOrder: [],
     labels,
     pageChoreo: { sawOpener: false, breakBeforeNextH2: false },
   };
   reorderMarginDirectives(tree.children);
-  return renderBlocks(tree.children, ctx).trimEnd() + "\n";
+  const body = renderBlocks(tree.children, ctx).trimEnd();
+  // In endnotes mode, emit a single NOTES block after the body. The
+  // template's `endnotes` helper renders the section heading + the
+  // numbered grid. Order is reference order (first [^x] in the body
+  // is endnote 1), which is what readers expect when scanning the
+  // chapter-end notes. Definitions referenced more than once collapse
+  // to a single entry — endnoteOrder is deduped.
+  if (ctx.footnoteMode === "endnotes" && ctx.endnoteOrder.length > 0) {
+    const items = ctx.endnoteOrder
+      .map((id) => {
+        const def = footnotes.get(id);
+        if (!def) return "[]";
+        return `[${renderBlocks(def, ctx).trim()}]`;
+      })
+      .join(", ");
+    const trailing = ctx.endnoteOrder.length === 1 ? "," : "";
+    return `${body}\n\n#endnotes((${items}${trailing}))\n`;
+  }
+  return body + "\n";
 }
 
 type Ctx = {
   sourceDir: string;
   footnotes: Map<string, RootContent[]>;
+  footnoteMode: "page" | "endnotes";
+  // Reference-order list of footnote identifiers seen so far. The
+  // 1-based index is the visible endnote number; duplicates collapse
+  // to the same number so two [^foo] in the body share endnote 1.
+  endnoteOrder: string[];
   labels: Set<string>;
   // Page-choreography state. Tracks whether we've emitted the opener
   // page-break and whether the next H2 should be preceded by one (i.e.
@@ -681,6 +711,18 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
       const ref = (node as unknown as { identifier: string }).identifier;
       const def = ctx.footnotes.get(ref);
       if (!def) return "";
+      if (ctx.footnoteMode === "endnotes") {
+        // Endnotes mode: emit a superscript marker, defer body rendering
+        // to the trailing `#endnotes(...)` call. Track reference order
+        // (first-seen index) so multiple [^x] to the same id share an
+        // endnote number.
+        let idx = ctx.endnoteOrder.indexOf(ref);
+        if (idx < 0) {
+          ctx.endnoteOrder.push(ref);
+          idx = ctx.endnoteOrder.length - 1;
+        }
+        return `#endnote-ref(${idx + 1})`;
+      }
       const body = renderBlocks(def, ctx);
       return `#footnote[${body}]`;
     }

@@ -48,8 +48,18 @@ export function validateOptions(raw: unknown, source: string): DocumentOptionsLa
   if ("showFooter" in r) out.showFooter = expectBool(r.showFooter, `${source}.showFooter`);
   if ("showCover" in r) out.showCover = expectBool(r.showCover, `${source}.showCover`);
   if ("paperBg" in r) out.paperBg = expectHexColor(r.paperBg, `${source}.paperBg`);
+  if ("footnotes" in r) out.footnotes = expectFootnoteMode(r.footnotes, `${source}.footnotes`);
 
   return out;
+}
+
+function expectFootnoteMode(value: unknown, path: string): "page" | "endnotes" {
+  if (value !== "page" && value !== "endnotes") {
+    throw new ConfigError(
+      `${path}: expected "page" or "endnotes", got ${describe(value)}.`,
+    );
+  }
+  return value;
 }
 
 // Strict #RRGGBB matcher — six hex digits, no shorthand, no alpha. Keeps
