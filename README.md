@@ -96,7 +96,7 @@ await convertMarkdownToPdf({
   cli: {
     title: "Thread pools",
     pageSize: "Letter",
-    paperBg: "#E8E8E8",
+    paperBg: "#F4F4F4",
     showCover: false,
     margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
   },
@@ -215,7 +215,7 @@ pageSize: "A4"
 showHeader: true
 showFooter: true
 showCover: true
-paperBg: "#E8E8E8"
+paperBg: "#F4F4F4"
 ---
 ```
 
@@ -245,7 +245,7 @@ margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
 showCover: true
-paperBg: "#E8E8E8"
+paperBg: "#F4F4F4"
 
 # dedicated cover (optional — when set, the cover replaces the editorial title block)
 cover:
@@ -271,19 +271,19 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Feature | Markdown syntax | Renders as |
 |---|---|---|
 | Heading + label | `## Section {#sec-intro}` | Tracked uppercase eyebrow + hairline rule (H2 maps to section marker, H3 is the display heading at 21pt) |
-| Bold | `**text**` | Archivo 600 |
+| Bold | `**text**` | Archivo 500 |
 | Italic | `*text*` | Archivo Italic (body italic stays sans — Instrument Serif italic is reserved for ornament) |
 | Strikethrough | `~~text~~` | Muted ink + strike |
 | Inline code | `` `code` `` | JetBrains Mono on a surface-fill chip |
 | Link | `[text](url)` | Underlined hairline |
-| Footnote | `text[^1]` + `[^1]: body` | Native Typst footnote at page bottom |
-| Unordered list | `- item` | Dash bullet |
+| Footnote | `text[^1]` + `[^1]: body` | Native Typst footnote at the bottom of the page that contains the reference |
+| Unordered list | `- item` | Native bullet |
 | Ordered list | `1. item` | Numeric counter |
 | Task list | `- [x] done` / `- [ ] todo` | Ink-bordered checkbox; checked is ink-filled with paper-colored tick + muted body |
 | Definition list | `Term`\n`:   definition` | 2-col grid with hairline-bordered rows |
-| Blockquote | `> ...` | Hairline left rule, Instrument Serif italic body |
+| Blockquote | `> ...` | Hairline left rule, sans body in muted ink |
 | Pull quote | `:::epigraph` … `:::` | Hairline top + bottom rules, italic-serif body |
-| Table | GFM pipe syntax | First column sans, mono tabular body, zebra-stripe, ragged-right |
+| Table | GFM pipe syntax | All cells in Archivo sans with tabular-numerals (`tnum`); hairline header rule, no zebra striping |
 | Code block | ` ```lang ` fence | Surface-fill panel, mono body, syntax-highlighted in the grayscale theme |
 | Code block + filename | `` ```python {filename="x.py" lang-label="Python 3.12"} `` | Adds a header strip above the panel with filename L, lang-label R |
 | Figure | `![caption](path)` | Image + hairline-divided caption with italic-serif `Fig. N.M` lead |
@@ -355,10 +355,10 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 ### Design principles
 
 1. **One design language, no themes.** The output looks the same on every machine and from every author. There is no theme registry, no accent palette, no light/dark toggle.
-2. **Single-ink ramp.** Body is `#11131A` near-ink on a `#E8E8E8` paper. Secondary text steps through ink-2 / ink-3 / muted / mute-2 — five levels of the same gray. The only color event in the whole system is the `:::danger` admonition, which inverts to paper-on-ink. Color inversion is reserved precisely because nothing else inverts.
+2. **Single-ink ramp.** Body is `#11131A` near-ink on a `#F4F4F4` paper. Secondary text steps through ink-2 / ink-3 / muted / mute-2 — five levels of the same gray. The only color event in the whole system is the `:::danger` admonition, which inverts to paper-on-ink. Color inversion is reserved precisely because nothing else inverts.
 3. **Three fonts, one rule per font.** Archivo for body, UI, headings, captions, tables, admonitions. Instrument Serif **italic only**, ornament only — folio, dropcap, pull quotes, equation numbers, figcaption labels. JetBrains Mono for code and tabular numerics. Body italic stays in the Archivo family; the serif italic is too loud for prose.
 4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`src/typst/template.typ`](src/typst/template.typ). To restyle the system you edit the template, not the converter.
-5. **Deterministic output.** Bundled fonts loaded with `--ignore-system-fonts` mean a Typst version + this repo = byte-identical PDFs across machines. Mismatched system fonts cannot silently substitute.
+5. **Reproducible output.** Bundled fonts loaded with `--ignore-system-fonts` mean mismatched system fonts cannot silently substitute. PDF metadata is pinned via `--creation-timestamp` (honours `SOURCE_DATE_EPOCH`, defaults to `0`), so re-rendering the same source with the same Typst version produces a byte-identical PDF.
 6. **Fail loud.** Invalid attribute IDs throw at parse time. Remote image URLs are rejected before reaching the compiler. Missing fonts surface as a Typst error, not a silent substitution. The principle: errors with clear messages beat silent drift.
 7. **Page count is a contract.** The integration test renders the canonical fixture and asserts it compiles to exactly 6 pages. Page choreography regressions fail CI.
 

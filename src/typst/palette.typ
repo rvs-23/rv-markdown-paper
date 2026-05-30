@@ -16,15 +16,15 @@
 // independent of the paper colour: it stays the same neutral
 // progression regardless of the background.
 
-#let c-paper     = rgb("#E8E8E8")  // page background — distinctly light gray
+#let c-paper     = rgb("#F4F4F4")  // page background — light neutral gray
 #let c-ink       = rgb("#11131A")  // primary text
 #let c-ink-2     = rgb("#2A2D36")  // secondary text (eyebrows, labels)
 #let c-ink-3     = rgb("#4A4D57")  // tertiary (kickers, eyebrow fills)
 #let c-muted     = rgb("#686C76")  // captions, margin notes, meta cells
 #let c-mute-2    = rgb("#8B8E97")  // very-light labels (lang-label, numerals)
-#let c-hairline  = rgb("#B8B8B8")  // dividers, thin rules — neutral gray
-#let c-surface   = rgb("#D9D9D9")  // code-block body, subtle panels
-#let c-surface-2 = rgb("#CECECE")  // code-block header, warning panels
+#let c-hairline  = rgb("#C1C1C1")  // dividers, thin rules — neutral gray
+#let c-surface   = rgb("#E3E3E3")  // code-block body, subtle panels
+#let c-surface-2 = rgb("#D9D9D9")  // code-block header, warning panels
 #let c-accent    = rgb("#11131A")  // reserved for single color event (e.g. danger)
 #let c-danger-bg = rgb("#11131A")  // danger block inverts to ink-on-paper
-#let c-danger-fg = rgb("#E8E8E8")  // page-colored ink for danger inversion; tracks c-paper
+#let c-danger-fg = rgb("#F4F4F4")  // page-colored ink for danger inversion; tracks c-paper

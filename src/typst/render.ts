@@ -239,6 +239,13 @@ const STDERR_TAIL_BYTES = 64 * 1024;
 
 function runTypst(inputPath: string, outputPath: string, root: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Honour SOURCE_DATE_EPOCH for reproducible builds; default to 0
+    // (Unix epoch) so re-rendering the same source produces a
+    // byte-identical PDF without the caller having to opt in. Typst's
+    // --creation-timestamp pins both the embedded creation date and
+    // (via the document ID seed) the PDF /ID entry that otherwise
+    // randomises per run.
+    const epoch = process.env.SOURCE_DATE_EPOCH ?? "0";
     const child = spawn(
       "typst",
       [
@@ -246,6 +253,7 @@ function runTypst(inputPath: string, outputPath: string, root: string): Promise<
         "--root", root,
         "--font-path", FONTS_DIR,
         "--ignore-system-fonts",
+        "--creation-timestamp", epoch,
         inputPath,
         outputPath,
       ],

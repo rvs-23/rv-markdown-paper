@@ -422,20 +422,21 @@
     // Display title — comma-split per spec §12.6: head ("Thread pools")
     // is upright Archivo 500 at 44pt; tail (everything from the first comma
     // on) is Instrument Serif italic at the same size, the ornament voice.
-    // Constrained to ~14ch (≈115mm at 44pt) so the title wraps to three
-    // lines matching the mockup ("Thread pools," / "or how to share" /
-    // "a bounded crew.").
+    // A hard linebreak after the head (comma + head end) pins the wrap
+    // matching the mockup ("Thread pools," / "or how to share" /
+    // "a bounded crew."); the box width then governs how the italic tail
+    // wraps on its own lines.
     #if title != none {
       let parts = title.split(",")
-      let head = parts.at(0)
-      let tail = if parts.len() > 1 { "," + parts.slice(1).join(",") } else { "" }
-      box(width: 115mm)[
+      let head = parts.at(0) + ","
+      let tail = if parts.len() > 1 { parts.slice(1).join(",").trim() } else { "" }
+      box(width: 95mm)[
         // `justify: false` on the title — the document-level `set par`
         // turns justification on for body prose, which spreads "Thread"
         // and "pools," apart on short title lines. Display headings
         // should always be left-aligned, never justified.
         #par(leading: 0.32em, justify: false)[
-          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
+          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
         ]
       ]
     }
@@ -962,7 +963,19 @@
       p == opener-results.at(0).location().page()
     } else { false }
     if on-cover or on-title-page or on-opener { return }
-    let sig = _sig-numeral.get()
+    // Prefer the FIRST section that starts on this page so a late
+    // placeholder H2 (e.g. 7.2 at the bottom of a page dominated by
+    // 7.1) cannot hijack the big rail glyph. _sig-history is the
+    // (page, sig) tuple list pushed at each H2; the header range uses
+    // the same source. Fall back to the active _sig-numeral when no
+    // H2 starts on this page (i.e. body continues a prior section).
+    let history = _sig-history.final()
+    let on-page = history.filter(h => h.page == p)
+    let sig = if on-page.len() > 0 {
+      on-page.at(0).sig
+    } else {
+      _sig-numeral.get()
+    }
     if sig == "" { return }
     place(
       top + right,
