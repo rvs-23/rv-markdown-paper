@@ -433,24 +433,33 @@
     }
     #v(1.6em)
 
-    // Display title — comma-split per spec §12.6: head ("Thread pools")
-    // is upright Archivo 500 at 44pt; tail (everything from the first comma
-    // on) is Instrument Serif italic at the same size, the ornament voice.
-    // A hard linebreak after the head (comma + head end) pins the wrap
-    // matching the mockup ("Thread pools," / "or how to share" /
-    // "a bounded crew."); the box width then governs how the italic tail
-    // wraps on its own lines.
+    // Display title — comma-split per spec §12.6: head (before the
+    // first comma) is upright Archivo 500 at 44pt; tail (everything
+    // from the first comma on) is Instrument Serif italic at the same
+    // size, the ornament voice. A hard linebreak after the head pins
+    // the head/tail break; within the tail, the author can insert
+    // `|` as an explicit linebreak marker to force the wrap matching
+    // the mockup (e.g. "Thread pools, or how to share | a bounded
+    // crew." renders as three lines: head / "or how to share" /
+    // "a bounded crew."). Without a `|`, the tail flows naturally
+    // within the box width.
     #if title != none {
       let parts = title.split(",")
       let head = parts.at(0) + ","
       let tail = if parts.len() > 1 { parts.slice(1).join(",").trim() } else { "" }
+      let tail-segments = tail.split("|").map(s => s.trim())
       box(width: 95mm)[
         // `justify: false` on the title — the document-level `set par`
         // turns justification on for body prose, which spreads "Thread"
         // and "pools," apart on short title lines. Display headings
         // should always be left-aligned, never justified.
         #par(leading: 0.32em, justify: false)[
-          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#tail]
+          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#{
+            for (i, seg) in tail-segments.enumerate() {
+              if i > 0 { linebreak() }
+              seg
+            }
+          }]
         ]
       ]
     }
@@ -811,6 +820,12 @@
   // editorial fixture's pagination is calibrated around this size, and
   // dropping to 8pt re-compresses sections enough that the §7.5
   // pagebreak alone no longer reaches 6 pages.
+  // Code voice: JetBrains Mono Light (300). Bundling Light against the
+  // body's 300-weight body keeps code visually paired with prose rather
+  // than reading as a heavier on-page event. Prior pass dropped fill
+  // to c-ink-2 as a stopgap because we shipped Regular (400) only;
+  // with Light shipped we can put the fill back to c-ink and let the
+  // weight do the work — sharper letterforms, no perceived greying.
   show raw.where(block: true): it => block(
     fill: c-surface,
     inset: (x: 12pt, y: 10pt),
@@ -818,14 +833,14 @@
     stroke: 0.5pt + c-hairline,
   )[
     #set par(justify: false)
-    #text(font: f-mono, size: 8.6pt, fill: c-ink-2, it)
+    #text(font: f-mono, size: 8.6pt, weight: 300, fill: c-ink, it)
   ]
   show raw.where(block: false): it => box(
     fill: c-surface,
     inset: (x: 4pt, y: 0pt),
     outset: (y: 2pt),
     radius: 0pt,
-    text(font: f-mono, size: 0.88em, fill: c-ink-2, it),
+    text(font: f-mono, size: 0.88em, weight: 300, fill: c-ink, it),
   )
 
   // --------- Blockquote ---------

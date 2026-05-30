@@ -32,7 +32,7 @@ page-end: 98
 
 cover:
   kicker: "Part Two · Chapter 07"
-  title: "Thread pools, or how to share a bounded crew."
+  title: "Thread pools, or how to share | a bounded crew."
   subtitle: "From `threading.Thread` to `concurrent.futures` — when a pool helps, and when it just hides the problem."
   meta:
     Topic: "Thread pools & futures"

@@ -349,19 +349,26 @@ function renderTable(node: Table, ctx: Ctx): string {
     .map((row) => renderTableRowCells(row, ctx))
     .flat();
 
-  // Emit columns as (auto, auto, …, auto, 1fr) so labels and numeric
-  // columns size to their content while the final column absorbs the
-  // slack — the table stretches edge-to-edge in the body column without
-  // every column being forced to equal width (which made narrow
-  // numeric columns over-wide and wide text columns wrap). Matches
-  // target.pdf's body-column tables.
-  const colSpecs =
-    columns === 1
-      ? "1fr"
-      : Array(columns - 1)
-          .fill("auto")
-          .concat("1fr")
-          .join(", ");
+  // Emit weighted fractional columns so the table stretches edge-to-
+  // edge in the body column without short label cells wrapping.
+  // Layout heuristic, modelled on target.pdf's body-column tables:
+  //   1 col            → `1fr`
+  //   2 cols           → `1fr, 1.5fr`             (label | description)
+  //   N ≥ 3 cols       → `1.5fr, 1fr, …, 1fr, 2fr` (label | data… | description)
+  // The first column gets a bit more room for short labels, the last
+  // absorbs the descriptive prose, the middle columns share the rest.
+  // The earlier `(auto, …, auto, 1fr)` approach let narrow `auto`
+  // measurements cause "Pure Python CPU" to wrap when the body
+  // column was tight.
+  let colSpecs: string;
+  if (columns === 1) {
+    colSpecs = "1fr";
+  } else if (columns === 2) {
+    colSpecs = "1fr, 1.5fr";
+  } else {
+    const middle = Array(columns - 2).fill("1fr");
+    colSpecs = ["1.5fr", ...middle, "2fr"].join(", ");
+  }
   const fracColumns = `(${colSpecs})`;
   const parts = [
     `columns: ${fracColumns}`,
