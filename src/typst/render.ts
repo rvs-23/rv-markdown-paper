@@ -56,6 +56,12 @@ function buildPreamble(options: DocumentOptions): string {
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
       `opener-margins, body-margins, endnote-ref, endnotes`,
   );
+  // Palette tokens are needed by generated body content (e.g. the
+  // definition-list grid renders its hairline with `c-hairline`).
+  // template.typ imports palette.typ at its top level, but those
+  // bindings don't leak into the document scope where the body is
+  // evaluated, so import them explicitly here.
+  lines.push(`#import "palette.typ": *`);
   lines.push("");
   lines.push("#show: paper.with(");
   pushOptionalString(lines, "title", options.title);

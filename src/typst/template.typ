@@ -167,10 +167,11 @@
     #body
   ]
   #if cite != none {
-    // 14pt gap (was 10pt) gives the attribution a clearer step away
-    // from the quote body so it reads as "by ROB PIKE", not as a
-    // tracked-uppercase continuation of the quote text.
-    v(14pt)
+    // Quiet 7pt gap — target.pdf sets the attribution close under
+    // the quote body, reading as a label rather than as a separate
+    // paragraph. 14pt put the cite too far down for an editorial
+    // attribution.
+    v(7pt)
     // Leading "— " (em-dash + thin space) is part of the cite voice in
     // target.pdf; the generator strips the dash when extracting the
     // cite slot from the trailing paragraph, so we re-add it here at
@@ -390,19 +391,22 @@
 )
 
 #let endnotes(items) = if items.len() > 0 {
-  block(above: 2em, below: 0.6em, breakable: false)[
+  block(above: 2em, below: 1.4em, breakable: false)[
     // Section eyebrow voice — tracked-uppercase 9pt sans, matching the
     // H2 styling so NOTES reads as a sibling to other section openers.
     #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
       NOTES
     ]
   ]
-  // 2-col grid: italic-serif numeral L (matches the inline ref voice),
-  // body R in normal prose. Hairline-divided rows give a quiet ledger
-  // feel without spending another ornament voice.
+  // 2-col grid: italic-serif numeral on the left in a narrow
+  // right-aligned column so every body left-edge sits at the same
+  // x position regardless of digit count; body on the right in
+  // normal prose. Tight 10pt numeral slot + 6pt gutter sits the
+  // body ~16pt in from page-left — typical footnote hanging-indent
+  // without visible gap between numeral and body.
   grid(
-    columns: (auto, 1fr),
-    column-gutter: 1em,
+    columns: (10pt, 1fr),
+    column-gutter: 6pt,
     row-gutter: 0.6em,
     align: (right + top, left + top),
     ..items.enumerate().map(((i, body)) => (
@@ -712,14 +716,17 @@
       #it.body
     ]
   ]
-  // H2 = section eyebrow only. Tracked-uppercase voice alone is enough
-  // to mark a section break; target.pdf does not run a hairline under
-  // the eyebrow row (the underline previously made every section opener
-  // read as a heavier divider than the editorial design called for).
-  show heading.where(level: 2): it => block(above: 2em, below: 0.9em, breakable: false)[
+  // H2 = section eyebrow. Tracked-uppercase row + a short editorial
+  // kicker rule (60pt, ink-weight) beneath. Matches target.pdf's
+  // consistent section-opener mark (visible on the chapter opener
+  // and every body section) — short enough to read as a flourish
+  // under the eyebrow rather than a column-wide divider.
+  show heading.where(level: 2): it => block(above: 2em, below: 1em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
       #upper(it.body)
     ]
+    #v(6pt, weak: true)
+    #line(length: 60pt, stroke: 0.6pt + c-ink)
   ]
   // H3 — display heading inside a section. Below-spacing bumped to 1.6em
   // so the section opens with real breathing room before the first
@@ -732,8 +739,13 @@
       #it.body
     ]
   ]
+  // H4 (e.g. "7.1.1 Three reasons to pool") in muted ink. Target sets
+  // sub-heading numerals + body in a gray voice so the H3 display
+  // heading stays the only ink-weight title in the section, and the
+  // H4s read as secondary structural beats rather than competing
+  // section openers.
   show heading.where(level: 4): it => block(above: 1.8em, below: 0.9em, breakable: false)[
-    #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink)[#it.body]
+    #text(font: f-sans, weight: 500, size: 14pt, fill: c-muted)[#it.body]
   ]
   show heading.where(level: 5): it => block(above: 1.6em, below: 0.6em)[
     #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
@@ -782,15 +794,21 @@
     stroke: (x, y) => (
       bottom: if y == 0 { 0.75pt + c-ink } else { 0.4pt + c-hairline },
     ),
-    inset: (x: 10pt, y: 7pt),
+    // x:7pt (was 10pt) trims 6pt per column off the side-inset budget
+    // so first-column labels like "Pure Python CPU" fit without
+    // wrapping. y:7pt unchanged — the row rhythm is calibrated to
+    // body leading.
+    inset: (x: 7pt, y: 7pt),
     align: left + horizon,
   )
   // Tables fill the column width by default so they don't sit as a
   // narrow island in the middle of the body — target.pdf stretches
-  // tables edge-to-edge inside the body column. The set rule above
-  // controls strokes/insets; this show wraps every table in a
-  // full-width block so it expands to the available measure.
-  show table: it => block(width: 100%, it)
+  // tables edge-to-edge inside the body column. Using `layout(...)`
+  // resolves the table inside a `box(width:)` of the actual available
+  // measure, which is what Typst needs to compute `fr` columns into
+  // absolute lengths (a bare `block(width: 100%, table)` doesn't
+  // propagate the container width to the table's fr resolution).
+  show table: it => layout(size => box(width: size.width, it))
   // Document-level `set par(justify: true)` propagates into table cells,
   // producing ugly inter-word gaps in narrow columns (visible in the Notes
   // columns of 03-structured.pdf and 06-full-paper.pdf before this rule).
@@ -935,12 +953,19 @@
     numbering: n => "(" + chapter-prefix + str(n) + ")",
     supplement: [],
   )
+  // Display math: bigger and bolder than body voice — target.pdf
+  // renders `N = λ · W` at a generous display size in medium weight,
+  // so the equation reads as the centerpiece of its panel rather
+  // than as inline-sized text floating between hairlines. Wrapped
+  // text() sets the math font at 15pt 500 inside the panel; the
+  // panel keeps its top/bottom hairline + generous inset for
+  // breathing room.
   show math.equation.where(block: true): it => block(
     above: 1.8em, below: 1.8em,
     stroke: (top: 0.3pt + c-hairline, bottom: 0.3pt + c-hairline),
     inset: (top: 18pt, bottom: 18pt),
     width: 100%,
-    it,
+    text(size: 15pt, weight: 500, it),
   )
 
   // --------- Running header/footer ---------

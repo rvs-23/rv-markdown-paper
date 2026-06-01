@@ -384,20 +384,24 @@ function renderTable(node: Table, ctx: Ctx): string {
   // Layout heuristic, modelled on target.pdf's body-column tables:
   //   1 col            → `1fr`
   //   2 cols           → `1fr, 1.5fr`             (label | description)
-  //   N ≥ 3 cols       → `1.5fr, 1fr, …, 1fr, 2fr` (label | data… | description)
-  // The first column gets a bit more room for short labels, the last
-  // absorbs the descriptive prose, the middle columns share the rest.
-  // The earlier `(auto, …, auto, 1fr)` approach let narrow `auto`
-  // measurements cause "Pure Python CPU" to wrap when the body
-  // column was tight.
+  //   N ≥ 3 cols       → `1.4fr, 1.4fr, …, 1fr, 2fr`
+  //                       (label | named-data | numeric data… | description)
+  // The first two columns get extra weight because their headers are
+  // typically multi-word (e.g. "Workload", "Good default"); the last
+  // column gets double weight for descriptive prose; remaining middle
+  // columns share evenly. This avoids the prior `1.5fr/1fr/1fr/2fr`
+  // wrap where "Good default" landed in a 1fr cell too narrow for its
+  // own tracked-uppercase header.
   let colSpecs: string;
   if (columns === 1) {
     colSpecs = "1fr";
   } else if (columns === 2) {
     colSpecs = "1fr, 1.5fr";
+  } else if (columns === 3) {
+    colSpecs = "2fr, 1fr, 2fr";
   } else {
-    const middle = Array(columns - 2).fill("1fr");
-    colSpecs = ["1.5fr", ...middle, "2fr"].join(", ");
+    const middle = Array(columns - 3).fill("1fr");
+    colSpecs = ["2.2fr", "1.6fr", ...middle, "2fr"].join(", ");
   }
   const fracColumns = `(${colSpecs})`;
   const parts = [
@@ -644,7 +648,15 @@ function renderDefList(node: DefListNode, ctx: Ctx): string {
     const rendered = renderDefListChild(child, ctx);
     cells.push(`  [${rendered}]`);
   }
-  return `#grid(\n  columns: (auto, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.55em,\n  stroke: (top: 0.3pt + rgb("#C5C2BC")),\n  inset: (top: 4pt),\n${cells.join(",\n")},\n)`;
+  // Term column at a fixed editorial width (60pt) so every term/body
+  // pair lines up on the same body-edge — `auto` previously let each
+  // term column size to its own widest cell, which in pages with
+  // mixed-length terms ("Pool" vs "Executor") produced a ragged body
+  // start that read as chaotic. Description gets 1fr to fill the
+  // available width. Hairline stroke uses the palette token so the
+  // colour tracks --paper-bg overrides; the prior hardcoded "#C5C2BC"
+  // was stale (drifted from the canonical c-hairline #C1C1C1).
+  return `#grid(\n  columns: (60pt, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.7em,\n  stroke: (top: 0.3pt + c-hairline),\n  inset: (top: 5pt),\n${cells.join(",\n")},\n)`;
 }
 
 function renderDefListChild(
