@@ -278,14 +278,18 @@
 // consuming a leading `**...**` bold-prefix from the body (the generator
 // handles that extraction).
 #let exbox(number: none, title: none, tag: none, body) = block(
-  above: 1.2em, below: 1.2em, breakable: false,
+  above: 1.6em, below: 1.6em, breakable: false,
   stroke: (top: 0.4pt + c-hairline),
-  inset: (top: 12pt, bottom: 4pt),
+  inset: (top: 16pt, bottom: 12pt),
 )[
+  // Header clusters left — numeral, title, then the tracked tag right
+  // beside them ("01 Warm-up SUBMIT / RESULT"). Target.pdf does not
+  // push the tag to the far edge; bottom-aligned cells approximate a
+  // shared baseline across the three sizes.
   #grid(
-    columns: (auto, 1fr, auto),
-    column-gutter: 1em,
-    align: (left + horizon, left + horizon, right + horizon),
+    columns: (auto, auto, auto),
+    column-gutter: 1.1em,
+    align: (left + bottom, left + bottom, left + bottom),
     if number != none {
       text(font: f-serif, style: "italic", weight: 400, size: 32pt, fill: c-ink)[
         #number
@@ -297,12 +301,14 @@
       ]
     } else [],
     if tag != none {
-      text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-muted)[
-        #upper(tag)
-      ]
+      // Hair of bottom inset keeps the 8pt tag off the baseline floor
+      // so it reads aligned with the title's x-height band.
+      box(inset: (bottom: 2pt), text(
+        font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-muted,
+      )[#upper(tag)])
     } else [],
   )
-  #v(0.3em)
+  #v(0.6em)
   #body
 ]
 
@@ -794,7 +800,21 @@
   // H4s read as secondary structural beats rather than competing
   // section openers.
   show heading.where(level: 4): it => block(above: 1.8em, below: 0.9em, breakable: false)[
-    #text(font: f-sans, weight: 500, size: 14pt, fill: c-muted)[#it.body]
+    #{
+      // Split a leading dotted numeral ("7.1.1 Three reasons to pool")
+      // so the numeral renders muted and the title in near-ink —
+      // target greys only the structural beat, not the words. Headings
+      // without a numeral (or with styled content) render whole.
+      let t = if it.body.has("text") { it.body.text } else { none }
+      let m = if t != none { t.match(regex("^(\d+(?:\.\d+)+)\s+(.+)$")) } else { none }
+      if m != none [
+        #text(font: f-sans, weight: 500, size: 14pt, fill: c-muted)[#m.captures.at(0)]
+        #h(0.4em)
+        #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink-2)[#m.captures.at(1)]
+      ] else [
+        #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink-2)[#it.body]
+      ]
+    }
   ]
   show heading.where(level: 5): it => block(above: 1.6em, below: 0.6em)[
     #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
@@ -867,17 +887,16 @@
     if it.y == 0 {
       // Header row — tracked uppercase eyebrow voice.
       text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, it)
+    } else if it.x == 0 {
+      // Label column — body sans.
+      text(font: f-sans, size: 9.3pt, fill: c-ink, it)
     } else {
-      // Body cells — all sans (Archivo), no font switch by column.
-      // Tabular-numerals feature ("tnum") keeps digit columns
-      // aligned so numeric columns line up vertically without
-      // resorting to a monospaced face (which reads heavier than the
-      // body's ExtraLight weight). Cells inherit body weight (200).
-      text(
-        font: f-sans, size: 9.3pt, fill: c-ink,
-        features: ("tnum": 1),
-        it,
-      )
+      // Data columns — JetBrains Mono Light, the code voice. Target.pdf
+      // sets every non-label cell ("4 – 8", "32", "Kernel queue depth")
+      // in mono; an earlier pass flattened the whole table to sans on
+      // the belief mono read too heavy, but the bundled Light face
+      // keeps it paired with the 300-weight body.
+      text(font: f-mono, size: 8.3pt, weight: 300, fill: c-ink, it)
     }
   }
 
@@ -999,7 +1018,10 @@
   // relative numbering. Supplement set to empty content so cross-refs
   // emit only the parenthesised numbering.
   set math.equation(
-    numbering: n => "(" + chapter-prefix + str(n) + ")",
+    numbering: n => text(
+      font: f-serif, style: "italic", size: 10pt, weight: 400, fill: c-muted,
+    )[(#{chapter-prefix + str(n)})],
+    number-align: top + end,
     supplement: [],
   )
   // Display math: bigger and bolder than body voice — target.pdf
