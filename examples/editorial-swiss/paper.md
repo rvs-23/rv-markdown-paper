@@ -39,19 +39,20 @@ cover:
     Topic: "Thread pools & futures"
     Language: "Python 3.12"
     Runtime: "75 min read"
-  # Page numbers are resolved by the template via
-  # `counter(page).at(label(ref))` + `page-start - 1`, so the values
-  # reflect actual document pagination. An explicit `page: "088"` may
-  # still be set per entry as a manual override (used when an entry
-  # points at content outside the rendered range, e.g. a reference
-  # card or appendix that lives in a sibling file).
+  # An explicit `page:` wins over auto-resolution — it is the editorial
+  # override for folios that follow the book's fiction rather than this
+  # excerpt's own pagination (the full chapter spans pp. 085–098; this
+  # rendered excerpt is 6 pages), and for entries pointing at content
+  # outside the rendered range (a reference card or appendix in a
+  # sibling file). Drop the `page:` field to fall back to the template's
+  # `counter(page).at(label(ref))` + `page-start - 1` resolution.
   toc:
-    - { id: "7.1", title: "Threads & the GIL",            ref: "sec-threads-gil" }
-    - { id: "7.2", title: "What a pool actually is",      ref: "sec-pool-is"     }
-    - { id: "7.3", title: "Submitting & collecting work", ref: "sec-submitting"  }
-    - { id: "7.4", title: "Sizing the pool",              ref: "sec-sizing"      }
-    - { id: "7.5", title: "Exercises",                    ref: "sec-exercises"   }
-    - { id: "7.6", title: "Further reading",              ref: "sec-further"     }
+    - { id: "7.1", title: "Threads & the GIL",            ref: "sec-threads-gil", page: "086" }
+    - { id: "7.2", title: "What a pool actually is",      ref: "sec-pool-is",     page: "088" }
+    - { id: "7.3", title: "Submitting & collecting work", ref: "sec-submitting",  page: "090" }
+    - { id: "7.4", title: "Sizing the pool",              ref: "sec-sizing",      page: "092" }
+    - { id: "7.5", title: "Exercises",                    ref: "sec-exercises",   page: "094" }
+    - { id: "7.6", title: "Further reading",              ref: "sec-further",     page: "096" }
 ---
 
 # Thread pools {#ch-thread-pools}

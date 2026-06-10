@@ -62,6 +62,17 @@ export function generateTypst(tree: Root, options: GenerateOptions): string {
   // is endnote 1), which is what readers expect when scanning the
   // chapter-end notes. Definitions referenced more than once collapse
   // to a single entry — endnoteOrder is deduped.
+  //
+  // Definitions that were never referenced still belong in NOTES (the
+  // canonical fixture defines [^as-completed-timeout] without a body
+  // reference and target.pdf lists it). They append after the
+  // referenced ones, in definition order. Page mode has no equivalent:
+  // a native #footnote needs an anchor, so orphans stay dropped there.
+  if (ctx.footnoteMode === "endnotes") {
+    for (const id of footnotes.keys()) {
+      if (!ctx.endnoteOrder.includes(id)) ctx.endnoteOrder.push(id);
+    }
+  }
   if (ctx.footnoteMode === "endnotes" && ctx.endnoteOrder.length > 0) {
     const items = ctx.endnoteOrder
       .map((id) => {
@@ -218,10 +229,14 @@ function renderHeading(node: Heading, ctx: Ctx): string {
     ctx.pageChoreo.sawOpener = true;
     ctx.pageChoreo.breakBeforeNextH2 = true;
     const label = attrs?.id ? ` <${attrs.id}>` : "";
+    // The trailing #v(26mm) sinks the opener's first content (the
+    // eyebrow) to ~54mm from the page top — target.pdf opens the
+    // chapter with a deep band of air above "CH. 7 · INTRODUCTION".
     return (
       `#pagebreak(weak: true)\n` +
       `#set page(margin: opener-margins)\n` +
-      `#metadata("opener")${label}`
+      `#metadata("opener")${label}\n` +
+      `#v(26mm)`
     );
   }
   // Page-break choreography:
@@ -437,7 +452,9 @@ function renderTableCell(cell: TableCell, ctx: Ctx): string {
 function renderFigure(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(image.url, ctx);
   const caption = (image.alt ?? "").trim();
-  const imgCall = `image("${escapeString(abs)}", width: 80%)`;
+  // Full column width: the figure panel renders the image edge-to-edge
+  // (target.pdf's grid-paper figure bleeds to the panel's hairline).
+  const imgCall = `image("${escapeString(abs)}", width: 100%)`;
   const attrs = getAttrs(image);
   const label = attrs?.id ? ` <${attrs.id}>` : "";
   if (caption === "") {
@@ -656,7 +673,7 @@ function renderDefList(node: DefListNode, ctx: Ctx): string {
   // available width. Hairline stroke uses the palette token so the
   // colour tracks --paper-bg overrides; the prior hardcoded "#C5C2BC"
   // was stale (drifted from the canonical c-hairline #C1C1C1).
-  return `#grid(\n  columns: (60pt, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.7em,\n  stroke: (top: 0.3pt + c-hairline),\n  inset: (top: 5pt),\n${cells.join(",\n")},\n)`;
+  return `#grid(\n  columns: (60pt, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.9em,\n  stroke: (top: 0.3pt + c-hairline),\n  inset: (top: 6pt),\n${cells.join(",\n")},\n)`;
 }
 
 function renderDefListChild(

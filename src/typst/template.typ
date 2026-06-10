@@ -39,16 +39,15 @@
 // specified — Typst merges these into the existing page margins, so
 // top/left/bottom stay at the user's resolved values.
 //
-// `opener-margins` constrains the opener's prose to ~58ch per spec §12.4
-// ("Measure for body prose (opener): max-width: 58ch"). At 10.5pt
-// Archivo, 58ch ≈ 113mm, so right margin = 210 - 22 - 113 ≈ 75mm.
-// This is wider than the rail reservation (62mm), so the opener column
-// is narrower than the body column — visually matching the mockup's
-// generous left/right breathing room on the dropcap page.
+// `opener-margins` gives the opener a ~140mm measure (right margin
+// 48mm on A4). The spec's "58ch" reading put the column at 113mm, but
+// the def-list hairlines in target.pdf span to ~162mm from the page's
+// left edge — the opener runs wider than the rail-reserving body
+// column, narrower than full bleed.
 //
 // `body-margins` reserves the marginalia rail (62mm right) so the prose
 // column is ~126mm and the rail sits to its right.
-#let opener-margins = (right: 75mm)
+#let opener-margins = (right: 48mm)
 #let body-margins   = (right: rail-gap + rail-width + rail-outer)
 
 // ---------- marginalia ----------
@@ -118,30 +117,42 @@
 // ---------- ornamental helpers ----------
 
 // Eyebrow: an uppercase mono-ish kicker above a section. Driven by
-// `::: eyebrow ... :::` in markdown.
-#let eyebrow(body) = block(above: 1.2em, below: 0.6em)[
+// `::: eyebrow ... :::` in markdown. Closes with a short ink kicker
+// rule — target.pdf's opener eyebrow carries a ~32pt dash beneath it,
+// not a column-wide hairline.
+#let eyebrow(body) = block(above: 1.2em, below: 1.4em)[
   #text(
     font: f-sans, size: 8pt, weight: 600, tracking: 0.18em, fill: c-ink-2,
   )[#upper(body)]
-  #v(4pt)
-  #line(length: 100%, stroke: 0.5pt + c-hairline)
+  #v(12pt)
+  #line(length: 36pt, stroke: 0.8pt + c-ink)
 ]
 
 // Dropcap: the first paragraph of a chapter opener. The generator splits
 // the leading letter off the paragraph and passes it as the first argument;
 // the rest of the body flows as normal paragraph text after it.
 //
-// The big letter sits in a box with `baseline: 0.55em` so it protrudes
-// upward by roughly two baselines while the inline layout treats it as a
-// single glyph. Not a true text-wrapping lettrine (Typst doesn't do that),
-// but visually distinctive and unambiguously editorial.
+// Rendered as a two-column grid: the cap fills a full-height left cell
+// so the paragraph wraps beside it for the cap's whole height (4-5
+// lines in target.pdf), not just the first line. Typst has no native
+// text-wrapping lettrine; the one concession vs. a true lettrine is
+// that trailing lines stay in the right column instead of returning
+// under the cap. `top-edge: "cap-height"` pins the cap's top to the
+// first line's cap line.
 #let dropcap(letter, body) = block(above: 0.3em, below: 1em)[
-  #set par(first-line-indent: 0em, justify: true)
-  #box(baseline: 0.55em, text(
-    font: f-serif, style: "italic", weight: 400, size: 52pt, fill: c-ink,
-  )[#letter])
-  #h(1pt)
-  #body
+  #grid(
+    columns: (auto, 1fr),
+    column-gutter: 14pt,
+    align: (top, top),
+    text(
+      font: f-serif, style: "italic", weight: 400, size: 64pt, fill: c-ink,
+      top-edge: "cap-height",
+    )[#letter],
+    [
+      #set par(first-line-indent: 0em, justify: false)
+      #body
+    ],
+  )
 ]
 
 // Pull quote / epigraph: the loud, display-weight quote. Used by
@@ -200,46 +211,46 @@
 // which is materially worse. See examples/demos/07-oversized-admonition.md
 // for the regression fixture covering the early-break case.
 #let note(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-surface,
   stroke: (left: 1pt + c-ink-3),
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #_admonition-label("note")
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
 #let tip(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-surface,
   stroke: (left: 2pt + c-ink),
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #_admonition-label("tip")
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
 #let warning(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-surface-2,
   stroke: (
     left: 2pt + c-ink-2,
     top: 0.4pt + c-hairline,
     bottom: 0.4pt + c-hairline,
   ),
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #_admonition-label("warning")
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
 #let danger(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-danger-bg,
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #set text(fill: c-danger-fg)
   // Inline-code chips default to a light fill on dark text; invert here so
@@ -252,7 +263,7 @@
     text(font: f-mono, size: 0.92em, fill: c-danger-fg, it),
   )
   #text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em)[#upper("danger")]
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
@@ -267,14 +278,18 @@
 // consuming a leading `**...**` bold-prefix from the body (the generator
 // handles that extraction).
 #let exbox(number: none, title: none, tag: none, body) = block(
-  above: 1.2em, below: 1.2em, breakable: false,
+  above: 1.6em, below: 1.6em, breakable: false,
   stroke: (top: 0.4pt + c-hairline),
-  inset: (top: 12pt, bottom: 4pt),
+  inset: (top: 16pt, bottom: 12pt),
 )[
+  // Header clusters left — numeral, title, then the tracked tag right
+  // beside them ("01 Warm-up SUBMIT / RESULT"). Target.pdf does not
+  // push the tag to the far edge; bottom-aligned cells approximate a
+  // shared baseline across the three sizes.
   #grid(
-    columns: (auto, 1fr, auto),
-    column-gutter: 1em,
-    align: (left + horizon, left + horizon, right + horizon),
+    columns: (auto, auto, auto),
+    column-gutter: 1.1em,
+    align: (left + bottom, left + bottom, left + bottom),
     if number != none {
       text(font: f-serif, style: "italic", weight: 400, size: 32pt, fill: c-ink)[
         #number
@@ -286,12 +301,14 @@
       ]
     } else [],
     if tag != none {
-      text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-muted)[
-        #upper(tag)
-      ]
+      // Hair of bottom inset keeps the 8pt tag off the baseline floor
+      // so it reads aligned with the title's x-height band.
+      box(inset: (bottom: 2pt), text(
+        font: f-sans, size: 8pt, weight: 500, tracking: 0.14em, fill: c-muted,
+      )[#upper(tag)])
     } else [],
   )
-  #v(0.3em)
+  #v(0.6em)
   #body
 ]
 
@@ -342,7 +359,7 @@
 // items doubled up as `• ☑ Text`.
 
 #let task-box(checked) = box(
-  width: 0.78em, height: 0.78em, baseline: 0.1em,
+  width: 0.92em, height: 0.92em, baseline: 0.12em,
   stroke: 0.6pt + c-ink,
   fill: if checked { c-ink } else { none },
   inset: 0pt,
@@ -350,10 +367,11 @@
   #if checked {
     // Tick glyph (U+2713 CHECK MARK), not "x". Target.pdf uses a check
     // for completed items; "x" reads ambiguously as either "done" or
-    // "rejected" depending on context. Bumped weight to 700 + size to
-    // 0.78em so the tick fills the box cleanly at the paper colour.
+    // "rejected" depending on context. Weight 700 so the tick fills
+    // the box cleanly at the paper colour. Box at 0.92em — measured
+    // against target.pdf's checkboxes, which run nearly a full em.
     align(center + horizon, text(
-      font: f-sans, size: 0.78em, weight: 700, fill: c-paper,
+      font: f-sans, size: 0.8em, weight: 700, fill: c-paper,
     )[#"\u{2713}"])
   }
 ]
@@ -366,11 +384,12 @@
   if checked { text(fill: c-muted, body) } else { body },
 )
 
-// Item-to-item spacing was 0.45em — list felt loose against target,
-// which stacks task rows almost flush. 0.2em pulls items together
-// while still leaving the rows visually distinct.
+// Item-to-item spacing 0.55em. Earlier passes tightened this to 0.2em
+// on the belief that target stacks task rows almost flush — a raster
+// diff at matched DPI shows the opposite: target rows carry roughly
+// half a line of air between them.
 #let task-list(..items) = block(above: 1em, below: 0.8em)[
-  #stack(spacing: 0.2em, ..items.pos())
+  #stack(spacing: 0.55em, ..items.pos())
 ]
 
 // ---------- legacy callouts ----------
@@ -431,8 +450,11 @@
   volume: none,
   page-start: none, page-end: none,
 ) = [
+  // Cover geometry per target.pdf: masthead strip sits ~40mm from the
+  // top edge (deeper than the body's 24mm) and the cover-foot runs
+  // ~16mm off the bottom.
   #set page(
-    margin: (top: 24mm, right: 22mm, bottom: 22mm, left: 22mm),
+    margin: (top: 40mm, right: 22mm, bottom: 16mm, left: 22mm),
     header: none, footer: none,
   )
   #block(height: 100%)[
@@ -462,13 +484,19 @@
       )
       v(6pt)
       line(length: 100%, stroke: 0.4pt + c-hairline)
-      v(20mm)
+      v(26mm)
     }
 
-    // Kicker line.
+    // Kicker line. Target.pdf separates the kicker's segments with a
+    // small filled bullet ("PART TWO ● CHAPTER 07"), so any middot in
+    // the authored kicker becomes a spaced ● at render time.
     #if kicker != none {
+      let segs = kicker.split("·").map(s => s.trim())
       text(font: f-sans, size: 9pt, weight: 600, tracking: 0.18em, fill: c-ink-2)[
-        #upper(kicker)
+        #for (i, seg) in segs.enumerate() {
+          if i > 0 [#h(0.9em)#text(size: 6.5pt, baseline: -1pt)[●]#h(0.9em)]
+          upper(seg)
+        }
       ]
     }
     #v(1.6em)
@@ -503,16 +531,20 @@
         ]
       ]
     }
+    // Subtitle shares the title's 95mm measure — full-width it ran two
+    // long lines; target.pdf wraps the deck inside the title column.
     #if subtitle != none {
       v(0.6em)
-      par(leading: 0.48em, text(
-        font: f-serif, style: "italic", size: 17pt, fill: c-ink-2,
-      )[#subtitle])
+      box(width: 95mm)[
+        #par(leading: 0.48em, text(
+          font: f-serif, style: "italic", size: 17pt, fill: c-ink-2,
+        )[#subtitle])
+      ]
     }
 
-    #v(2em)
-    #line(length: 60pt, stroke: 1pt + c-ink)
-    #v(1.6em)
+    // No ornament rule between deck and meta — target.pdf goes straight
+    // from the subtitle into the TOPIC / LANGUAGE / RUNTIME row.
+    #v(2.2em)
 
     // Meta — 3-col grid: (label / value) per cell, side by side.
     #if meta.len() > 0 {
@@ -526,27 +558,34 @@
           text(font: f-sans, size: 10pt, fill: c-ink-2)[#pair.value],
         )),
       )
+      v(1.4em)
+      line(length: 100%, stroke: 0.4pt + c-hairline)
       v(1.6em)
     }
 
-    // "In this chapter" — section list as a 3-col table with hairline
+    // "In this chapter" — section list as a 3-col grid with hairline
     // row separators (id / title / page). Per Mockup D each TOC row
-    // ends in a full-width hairline rule; the table primitive gives
-    // us that for free via `stroke: (bottom: ...)`.
+    // ends in a full-width hairline rule via `stroke: (bottom: ...)`.
+    // A `grid`, not a `table`: the document-level `show table.cell`
+    // rule styles row 0 as a tracked-uppercase header, which bolded
+    // the first TOC entry ("Threads & the GIL") — the TOC has no
+    // header row, so it must not participate in table-cell styling.
     #if toc.len() > 0 {
       line(length: 100%, stroke: 1pt + c-ink)
-      v(0.6em)
+      v(1.4em)
       text(font: f-sans, size: 9pt, weight: 600, tracking: 0.16em, fill: c-ink-2)[
         #upper("In this chapter")
       ]
       v(0.8em)
-      // Resolve each TOC entry's page number via Typst's page counter
-      // at the entry's heading label, with `page-start` applied as an
-      // editorial offset (so a chapter that starts on absolute page 85
-      // shows folios 085, 086, … rather than the document's own 1, 2,
-      // …). Falls back to the manual `entry.page` field if no `ref`
-      // is set or the label can't be located — keeps the schema field
-      // useful as a manual override for special cases.
+      // Page-number precedence: an explicit `page:` on the entry wins.
+      // It is the editorial override for folios that follow the book's
+      // fiction rather than this document's own pagination (target.pdf
+      // lists 086/088/090… while the rendered chapter itself spans
+      // 085–089), and for entries pointing outside the rendered range
+      // (a reference card or appendix in a sibling file). Entries
+      // without an override resolve via Typst's page counter at the
+      // entry's heading label, with `page-start` applied as an
+      // editorial offset.
       //
       // Wrapped in a `context` block so `counter(page).at(label(…))`
       // can see the final document layout; `query(label(…)).first()`
@@ -565,7 +604,9 @@
       let toc-page-cell(entry) = context {
         let manual = entry.at("page", default: "")
         let ref = entry.at("ref", default: none)
-        let resolved = if ref != none and ref != "" {
+        let resolved = if manual != "" {
+          manual
+        } else if ref != none and ref != "" {
           let hits = query(label(ref))
           if hits.len() > 0 {
             let p = hits.first().location().page()
@@ -574,13 +615,13 @@
           } else { none }
         } else { none }
         text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
-          #if resolved != none { resolved } else { manual }
+          #if resolved != none { resolved } else { "" }
         ]
       }
-      table(
+      grid(
         columns: (52pt, 1fr, auto),
         align: (left + horizon, left + horizon, right + horizon),
-        inset: (x: 0pt, y: 8pt),
+        inset: (x: 0pt, y: 12pt),
         stroke: (x, y) => (bottom: 0.4pt + c-hairline),
         ..toc.map(entry => (
           text(font: f-sans, size: 9pt, weight: 500, tracking: 0.04em, fill: c-ink-2)[
@@ -672,7 +713,24 @@
   // target's line rhythm; do not tighten without re-checking the
   // editorial fixture page count.
   set text(font: f-sans, size: 10.5pt, weight: 300, fill: c-ink, hyphenate: false)
-  set par(leading: 0.85em, spacing: 1.2em, justify: true, first-line-indent: 0em)
+  // Ragged-right, not justified: target.pdf sets every paragraph
+  // left-aligned with a soft rag. Justification produced visible
+  // inter-word gaps in the narrow body column (and worse ones in the
+  // 35mm marginalia rail, which inherits this rule).
+  set par(leading: 0.85em, spacing: 1.2em, justify: false, first-line-indent: 0em)
+
+  // --------- Lists ---------
+  // Target.pdf marks unordered items with an en-dash at every nesting
+  // level (no disc/triangle ladder), and sets ordered-list numerals in
+  // the ornament voice — Instrument Serif italic — against the sans
+  // body. Both lists indent off the column edge so the markers read as
+  // a separate rail.
+  set list(marker: ([–], [–], [–]), indent: 1.2em, body-indent: 0.6em)
+  set enum(
+    numbering: n => text(font: f-serif, style: "italic", fill: c-ink)[#n.],
+    indent: 1.2em,
+    body-indent: 0.6em,
+  )
 
   // --------- Page ---------
   // Right margin reserves the rail. The `marg()` helper places into that
@@ -716,17 +774,14 @@
       #it.body
     ]
   ]
-  // H2 = section eyebrow. Tracked-uppercase row + a short editorial
-  // kicker rule (60pt, ink-weight) beneath. Matches target.pdf's
-  // consistent section-opener mark (visible on the chapter opener
-  // and every body section) — short enough to read as a flourish
-  // under the eyebrow rather than a column-wide divider.
+  // H2 = section eyebrow. Bare tracked-uppercase row — a 160dpi crop
+  // of target.pdf shows no rule under the body-section eyebrows
+  // ("7.1 · THREADS & THE GIL" sits directly above the display H3).
+  // The short kicker rule lives only on the opener's :::eyebrow.
   show heading.where(level: 2): it => block(above: 2em, below: 1em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
       #upper(it.body)
     ]
-    #v(6pt, weak: true)
-    #line(length: 60pt, stroke: 0.6pt + c-ink)
   ]
   // H3 — display heading inside a section. Below-spacing bumped to 1.6em
   // so the section opens with real breathing room before the first
@@ -745,7 +800,21 @@
   // H4s read as secondary structural beats rather than competing
   // section openers.
   show heading.where(level: 4): it => block(above: 1.8em, below: 0.9em, breakable: false)[
-    #text(font: f-sans, weight: 500, size: 14pt, fill: c-muted)[#it.body]
+    #{
+      // Split a leading dotted numeral ("7.1.1 Three reasons to pool")
+      // so the numeral renders muted and the title in near-ink —
+      // target greys only the structural beat, not the words. Headings
+      // without a numeral (or with styled content) render whole.
+      let t = if it.body.has("text") { it.body.text } else { none }
+      let m = if t != none { t.match(regex("^(\d+(?:\.\d+)+)\s+(.+)$")) } else { none }
+      if m != none [
+        #text(font: f-sans, weight: 500, size: 14pt, fill: c-muted)[#m.captures.at(0)]
+        #h(0.4em)
+        #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink-2)[#m.captures.at(1)]
+      ] else [
+        #text(font: f-sans, weight: 500, size: 14pt, fill: c-ink-2)[#it.body]
+      ]
+    }
   ]
   show heading.where(level: 5): it => block(above: 1.6em, below: 0.6em)[
     #text(font: f-sans, weight: 500, size: 10.5pt, fill: c-ink)[#it.body]
@@ -818,17 +887,16 @@
     if it.y == 0 {
       // Header row — tracked uppercase eyebrow voice.
       text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, it)
+    } else if it.x == 0 {
+      // Label column — body sans.
+      text(font: f-sans, size: 9.3pt, fill: c-ink, it)
     } else {
-      // Body cells — all sans (Archivo), no font switch by column.
-      // Tabular-numerals feature ("tnum") keeps digit columns
-      // aligned so numeric columns line up vertically without
-      // resorting to a monospaced face (which reads heavier than the
-      // body's ExtraLight weight). Cells inherit body weight (200).
-      text(
-        font: f-sans, size: 9.3pt, fill: c-ink,
-        features: ("tnum": 1),
-        it,
-      )
+      // Data columns — JetBrains Mono Light, the code voice. Target.pdf
+      // sets every non-label cell ("4 – 8", "32", "Kernel queue depth")
+      // in mono; an earlier pass flattened the whole table to sans on
+      // the belief mono read too heavy, but the bundled Light face
+      // keeps it paired with the 300-weight body.
+      text(font: f-mono, size: 8.3pt, weight: 300, fill: c-ink, it)
     }
   }
 
@@ -872,11 +940,15 @@
   // replaces Typst's default figure layout with this panel + caption
   // composition, so the framing also covers code-fence figures and
   // tabular figures, not just images.
+  // Zero inset: the artwork bleeds to the panel's hairline border —
+  // target.pdf's grid-paper figure runs edge-to-edge with no gutter
+  // between image and frame. Assets carry their own background; the
+  // surface fill behind covers any transparency.
   show figure: it => block(below: 1.4em, width: 100%)[
     #block(
       fill: c-surface,
       stroke: 0.5pt + c-hairline,
-      inset: 14pt,
+      inset: 0pt,
       width: 100%,
     )[
       #set align(center)
@@ -950,7 +1022,10 @@
   // relative numbering. Supplement set to empty content so cross-refs
   // emit only the parenthesised numbering.
   set math.equation(
-    numbering: n => "(" + chapter-prefix + str(n) + ")",
+    numbering: n => text(
+      font: f-serif, style: "italic", size: 10pt, weight: 400, fill: c-muted,
+    )[(#{chapter-prefix + str(n)})],
+    number-align: top + end,
     supplement: [],
   )
   // Display math: bigger and bolder than body voice — target.pdf
