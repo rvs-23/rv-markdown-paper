@@ -1,21 +1,30 @@
 <svg width="320" height="110" viewBox="0 0 320 110" xmlns="http://www.w3.org/2000/svg">
+  <!-- Grayscale only — the design system's single-ink ramp. The grid-paper
+       background runs edge-to-edge so the figure panel reads as a drafting
+       sheet (matches target.pdf); the template renders the image full-bleed
+       inside its hairline-bordered panel. -->
   <defs>
     <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M0 0 L8 4 L0 8 z" fill="#2A2D36"></path>
     </marker>
+    <pattern id="grid" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M8 0 H0 V8" fill="none" stroke="#DCDCDC" stroke-width="0.5"></path>
+    </pattern>
   </defs>
+  <rect x="0" y="0" width="320" height="110" fill="#ECECEC"></rect>
+  <rect x="0" y="0" width="320" height="110" fill="url(#grid)"></rect>
   <g fill="none" stroke="#2A2D36" stroke-width=".75">
-    <rect x="10" y="40" width="70" height="30"></rect>
+    <rect x="10" y="40" width="70" height="30" fill="#F4F4F4"></rect>
     <text x="45" y="59" font-family="Archivo, sans-serif" font-size="9" text-anchor="middle" fill="#11131A" stroke="none">submitters</text>
     <path d="M80 55 L120 55" marker-end="url(#a)"></path>
-    <rect x="120" y="25" width="90" height="60" fill="#E4E1DA"></rect>
+    <rect x="120" y="25" width="90" height="60" fill="#E2E2E2"></rect>
     <text x="165" y="48" font-family="Archivo, sans-serif" font-size="9" text-anchor="middle" fill="#11131A" stroke="none">queue</text>
     <text x="165" y="62" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="middle" fill="#686C76" stroke="none">FIFO</text>
     <path d="M210 55 L240 42" marker-end="url(#a)"></path>
     <path d="M210 55 L240 55" marker-end="url(#a)"></path>
     <path d="M210 55 L240 68" marker-end="url(#a)"></path>
-    <rect x="240" y="30" width="60" height="16"></rect><text x="270" y="42" font-family="Archivo, sans-serif" font-size="8" text-anchor="middle" fill="#11131A" stroke="none">worker 1</text>
-    <rect x="240" y="50" width="60" height="16"></rect><text x="270" y="62" font-family="Archivo, sans-serif" font-size="8" text-anchor="middle" fill="#11131A" stroke="none">worker 2</text>
-    <rect x="240" y="70" width="60" height="16"></rect><text x="270" y="82" font-family="Archivo, sans-serif" font-size="8" text-anchor="middle" fill="#11131A" stroke="none">worker 3</text>
+    <rect x="240" y="30" width="60" height="16" fill="#F4F4F4"></rect><text x="270" y="42" font-family="Archivo, sans-serif" font-size="8" text-anchor="middle" fill="#11131A" stroke="none">worker 1</text>
+    <rect x="240" y="50" width="60" height="16" fill="#F4F4F4"></rect><text x="270" y="62" font-family="Archivo, sans-serif" font-size="8" text-anchor="middle" fill="#11131A" stroke="none">worker 2</text>
+    <rect x="240" y="70" width="60" height="16" fill="#F4F4F4"></rect><text x="270" y="82" font-family="Archivo, sans-serif" font-size="8" text-anchor="middle" fill="#11131A" stroke="none">worker 3</text>
   </g>
 </svg>

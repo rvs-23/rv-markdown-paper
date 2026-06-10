@@ -940,11 +940,15 @@
   // replaces Typst's default figure layout with this panel + caption
   // composition, so the framing also covers code-fence figures and
   // tabular figures, not just images.
+  // Zero inset: the artwork bleeds to the panel's hairline border —
+  // target.pdf's grid-paper figure runs edge-to-edge with no gutter
+  // between image and frame. Assets carry their own background; the
+  // surface fill behind covers any transparency.
   show figure: it => block(below: 1.4em, width: 100%)[
     #block(
       fill: c-surface,
       stroke: 0.5pt + c-hairline,
-      inset: 14pt,
+      inset: 0pt,
       width: 100%,
     )[
       #set align(center)

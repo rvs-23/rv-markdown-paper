@@ -452,7 +452,9 @@ function renderTableCell(cell: TableCell, ctx: Ctx): string {
 function renderFigure(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(image.url, ctx);
   const caption = (image.alt ?? "").trim();
-  const imgCall = `image("${escapeString(abs)}", width: 80%)`;
+  // Full column width: the figure panel renders the image edge-to-edge
+  // (target.pdf's grid-paper figure bleeds to the panel's hairline).
+  const imgCall = `image("${escapeString(abs)}", width: 100%)`;
   const attrs = getAttrs(image);
   const label = attrs?.id ? ` <${attrs.id}>` : "";
   if (caption === "") {
