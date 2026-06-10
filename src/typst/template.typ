@@ -529,10 +529,13 @@
       v(1.6em)
     }
 
-    // "In this chapter" — section list as a 3-col table with hairline
+    // "In this chapter" — section list as a 3-col grid with hairline
     // row separators (id / title / page). Per Mockup D each TOC row
-    // ends in a full-width hairline rule; the table primitive gives
-    // us that for free via `stroke: (bottom: ...)`.
+    // ends in a full-width hairline rule via `stroke: (bottom: ...)`.
+    // A `grid`, not a `table`: the document-level `show table.cell`
+    // rule styles row 0 as a tracked-uppercase header, which bolded
+    // the first TOC entry ("Threads & the GIL") — the TOC has no
+    // header row, so it must not participate in table-cell styling.
     #if toc.len() > 0 {
       line(length: 100%, stroke: 1pt + c-ink)
       v(0.6em)
@@ -577,7 +580,7 @@
           #if resolved != none { resolved } else { manual }
         ]
       }
-      table(
+      grid(
         columns: (52pt, 1fr, auto),
         align: (left + horizon, left + horizon, right + horizon),
         inset: (x: 0pt, y: 8pt),
