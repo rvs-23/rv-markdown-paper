@@ -62,6 +62,17 @@ export function generateTypst(tree: Root, options: GenerateOptions): string {
   // is endnote 1), which is what readers expect when scanning the
   // chapter-end notes. Definitions referenced more than once collapse
   // to a single entry — endnoteOrder is deduped.
+  //
+  // Definitions that were never referenced still belong in NOTES (the
+  // canonical fixture defines [^as-completed-timeout] without a body
+  // reference and target.pdf lists it). They append after the
+  // referenced ones, in definition order. Page mode has no equivalent:
+  // a native #footnote needs an anchor, so orphans stay dropped there.
+  if (ctx.footnoteMode === "endnotes") {
+    for (const id of footnotes.keys()) {
+      if (!ctx.endnoteOrder.includes(id)) ctx.endnoteOrder.push(id);
+    }
+  }
   if (ctx.footnoteMode === "endnotes" && ctx.endnoteOrder.length > 0) {
     const items = ctx.endnoteOrder
       .map((id) => {

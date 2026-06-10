@@ -97,6 +97,9 @@ const PAGE_INVARIANTS: Record<number, string[]> = {
     "Warm-up",
     "FURTHER READING",
     "ROB PIKE",
+    // Endnote 2 comes from a defined-but-unreferenced footnote — its
+    // presence pins the orphan-definition path in endnotes mode.
+    "timeout=",
   ],
 };
 
