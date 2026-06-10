@@ -433,8 +433,11 @@
   volume: none,
   page-start: none, page-end: none,
 ) = [
+  // Cover geometry per target.pdf: masthead strip sits ~40mm from the
+  // top edge (deeper than the body's 24mm) and the cover-foot runs
+  // ~16mm off the bottom.
   #set page(
-    margin: (top: 24mm, right: 22mm, bottom: 22mm, left: 22mm),
+    margin: (top: 40mm, right: 22mm, bottom: 16mm, left: 22mm),
     header: none, footer: none,
   )
   #block(height: 100%)[
@@ -464,13 +467,19 @@
       )
       v(6pt)
       line(length: 100%, stroke: 0.4pt + c-hairline)
-      v(20mm)
+      v(26mm)
     }
 
-    // Kicker line.
+    // Kicker line. Target.pdf separates the kicker's segments with a
+    // small filled bullet ("PART TWO ● CHAPTER 07"), so any middot in
+    // the authored kicker becomes a spaced ● at render time.
     #if kicker != none {
+      let segs = kicker.split("·").map(s => s.trim())
       text(font: f-sans, size: 9pt, weight: 600, tracking: 0.18em, fill: c-ink-2)[
-        #upper(kicker)
+        #for (i, seg) in segs.enumerate() {
+          if i > 0 [#h(0.9em)#text(size: 6.5pt, baseline: -1pt)[●]#h(0.9em)]
+          upper(seg)
+        }
       ]
     }
     #v(1.6em)
@@ -505,16 +514,20 @@
         ]
       ]
     }
+    // Subtitle shares the title's 95mm measure — full-width it ran two
+    // long lines; target.pdf wraps the deck inside the title column.
     #if subtitle != none {
       v(0.6em)
-      par(leading: 0.48em, text(
-        font: f-serif, style: "italic", size: 17pt, fill: c-ink-2,
-      )[#subtitle])
+      box(width: 95mm)[
+        #par(leading: 0.48em, text(
+          font: f-serif, style: "italic", size: 17pt, fill: c-ink-2,
+        )[#subtitle])
+      ]
     }
 
-    #v(2em)
-    #line(length: 60pt, stroke: 1pt + c-ink)
-    #v(1.6em)
+    // No ornament rule between deck and meta — target.pdf goes straight
+    // from the subtitle into the TOPIC / LANGUAGE / RUNTIME row.
+    #v(2.2em)
 
     // Meta — 3-col grid: (label / value) per cell, side by side.
     #if meta.len() > 0 {
@@ -528,6 +541,8 @@
           text(font: f-sans, size: 10pt, fill: c-ink-2)[#pair.value],
         )),
       )
+      v(1.4em)
+      line(length: 100%, stroke: 0.4pt + c-hairline)
       v(1.6em)
     }
 
@@ -540,18 +555,20 @@
     // header row, so it must not participate in table-cell styling.
     #if toc.len() > 0 {
       line(length: 100%, stroke: 1pt + c-ink)
-      v(0.6em)
+      v(1.4em)
       text(font: f-sans, size: 9pt, weight: 600, tracking: 0.16em, fill: c-ink-2)[
         #upper("In this chapter")
       ]
       v(0.8em)
-      // Resolve each TOC entry's page number via Typst's page counter
-      // at the entry's heading label, with `page-start` applied as an
-      // editorial offset (so a chapter that starts on absolute page 85
-      // shows folios 085, 086, … rather than the document's own 1, 2,
-      // …). Falls back to the manual `entry.page` field if no `ref`
-      // is set or the label can't be located — keeps the schema field
-      // useful as a manual override for special cases.
+      // Page-number precedence: an explicit `page:` on the entry wins.
+      // It is the editorial override for folios that follow the book's
+      // fiction rather than this document's own pagination (target.pdf
+      // lists 086/088/090… while the rendered chapter itself spans
+      // 085–089), and for entries pointing outside the rendered range
+      // (a reference card or appendix in a sibling file). Entries
+      // without an override resolve via Typst's page counter at the
+      // entry's heading label, with `page-start` applied as an
+      // editorial offset.
       //
       // Wrapped in a `context` block so `counter(page).at(label(…))`
       // can see the final document layout; `query(label(…)).first()`
@@ -570,7 +587,9 @@
       let toc-page-cell(entry) = context {
         let manual = entry.at("page", default: "")
         let ref = entry.at("ref", default: none)
-        let resolved = if ref != none and ref != "" {
+        let resolved = if manual != "" {
+          manual
+        } else if ref != none and ref != "" {
           let hits = query(label(ref))
           if hits.len() > 0 {
             let p = hits.first().location().page()
@@ -579,7 +598,7 @@
           } else { none }
         } else { none }
         text(font: f-serif, style: "italic", size: 12pt, fill: c-muted)[
-          #if resolved != none { resolved } else { manual }
+          #if resolved != none { resolved } else { "" }
         ]
       }
       grid(
