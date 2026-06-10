@@ -39,16 +39,15 @@
 // specified — Typst merges these into the existing page margins, so
 // top/left/bottom stay at the user's resolved values.
 //
-// `opener-margins` constrains the opener's prose to ~58ch per spec §12.4
-// ("Measure for body prose (opener): max-width: 58ch"). At 10.5pt
-// Archivo, 58ch ≈ 113mm, so right margin = 210 - 22 - 113 ≈ 75mm.
-// This is wider than the rail reservation (62mm), so the opener column
-// is narrower than the body column — visually matching the mockup's
-// generous left/right breathing room on the dropcap page.
+// `opener-margins` gives the opener a ~140mm measure (right margin
+// 48mm on A4). The spec's "58ch" reading put the column at 113mm, but
+// the def-list hairlines in target.pdf span to ~162mm from the page's
+// left edge — the opener runs wider than the rail-reserving body
+// column, narrower than full bleed.
 //
 // `body-margins` reserves the marginalia rail (62mm right) so the prose
 // column is ~126mm and the rail sits to its right.
-#let opener-margins = (right: 75mm)
+#let opener-margins = (right: 48mm)
 #let body-margins   = (right: rail-gap + rail-width + rail-outer)
 
 // ---------- marginalia ----------
@@ -118,30 +117,42 @@
 // ---------- ornamental helpers ----------
 
 // Eyebrow: an uppercase mono-ish kicker above a section. Driven by
-// `::: eyebrow ... :::` in markdown.
-#let eyebrow(body) = block(above: 1.2em, below: 0.6em)[
+// `::: eyebrow ... :::` in markdown. Closes with a short ink kicker
+// rule — target.pdf's opener eyebrow carries a ~32pt dash beneath it,
+// not a column-wide hairline.
+#let eyebrow(body) = block(above: 1.2em, below: 1.4em)[
   #text(
     font: f-sans, size: 8pt, weight: 600, tracking: 0.18em, fill: c-ink-2,
   )[#upper(body)]
-  #v(4pt)
-  #line(length: 100%, stroke: 0.5pt + c-hairline)
+  #v(12pt)
+  #line(length: 36pt, stroke: 0.8pt + c-ink)
 ]
 
 // Dropcap: the first paragraph of a chapter opener. The generator splits
 // the leading letter off the paragraph and passes it as the first argument;
 // the rest of the body flows as normal paragraph text after it.
 //
-// The big letter sits in a box with `baseline: 0.55em` so it protrudes
-// upward by roughly two baselines while the inline layout treats it as a
-// single glyph. Not a true text-wrapping lettrine (Typst doesn't do that),
-// but visually distinctive and unambiguously editorial.
+// Rendered as a two-column grid: the cap fills a full-height left cell
+// so the paragraph wraps beside it for the cap's whole height (4-5
+// lines in target.pdf), not just the first line. Typst has no native
+// text-wrapping lettrine; the one concession vs. a true lettrine is
+// that trailing lines stay in the right column instead of returning
+// under the cap. `top-edge: "cap-height"` pins the cap's top to the
+// first line's cap line.
 #let dropcap(letter, body) = block(above: 0.3em, below: 1em)[
-  #set par(first-line-indent: 0em, justify: false)
-  #box(baseline: 0.55em, text(
-    font: f-serif, style: "italic", weight: 400, size: 52pt, fill: c-ink,
-  )[#letter])
-  #h(1pt)
-  #body
+  #grid(
+    columns: (auto, 1fr),
+    column-gutter: 14pt,
+    align: (top, top),
+    text(
+      font: f-serif, style: "italic", weight: 400, size: 64pt, fill: c-ink,
+      top-edge: "cap-height",
+    )[#letter],
+    [
+      #set par(first-line-indent: 0em, justify: false)
+      #body
+    ],
+  )
 ]
 
 // Pull quote / epigraph: the loud, display-weight quote. Used by
@@ -757,17 +768,14 @@
       #it.body
     ]
   ]
-  // H2 = section eyebrow. Tracked-uppercase row + a short editorial
-  // kicker rule (60pt, ink-weight) beneath. Matches target.pdf's
-  // consistent section-opener mark (visible on the chapter opener
-  // and every body section) — short enough to read as a flourish
-  // under the eyebrow rather than a column-wide divider.
+  // H2 = section eyebrow. Bare tracked-uppercase row — a 160dpi crop
+  // of target.pdf shows no rule under the body-section eyebrows
+  // ("7.1 · THREADS & THE GIL" sits directly above the display H3).
+  // The short kicker rule lives only on the opener's :::eyebrow.
   show heading.where(level: 2): it => block(above: 2em, below: 1em, breakable: false)[
     #text(font: f-sans, weight: 500, size: 9pt, tracking: 0.16em, fill: c-ink-3)[
       #upper(it.body)
     ]
-    #v(6pt, weak: true)
-    #line(length: 60pt, stroke: 0.6pt + c-ink)
   ]
   // H3 — display heading inside a section. Below-spacing bumped to 1.6em
   // so the section opens with real breathing room before the first

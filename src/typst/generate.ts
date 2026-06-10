@@ -229,10 +229,14 @@ function renderHeading(node: Heading, ctx: Ctx): string {
     ctx.pageChoreo.sawOpener = true;
     ctx.pageChoreo.breakBeforeNextH2 = true;
     const label = attrs?.id ? ` <${attrs.id}>` : "";
+    // The trailing #v(26mm) sinks the opener's first content (the
+    // eyebrow) to ~54mm from the page top — target.pdf opens the
+    // chapter with a deep band of air above "CH. 7 · INTRODUCTION".
     return (
       `#pagebreak(weak: true)\n` +
       `#set page(margin: opener-margins)\n` +
-      `#metadata("opener")${label}`
+      `#metadata("opener")${label}\n` +
+      `#v(26mm)`
     );
   }
   // Page-break choreography:
