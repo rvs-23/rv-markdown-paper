@@ -667,7 +667,7 @@ function renderDefList(node: DefListNode, ctx: Ctx): string {
   // available width. Hairline stroke uses the palette token so the
   // colour tracks --paper-bg overrides; the prior hardcoded "#C5C2BC"
   // was stale (drifted from the canonical c-hairline #C1C1C1).
-  return `#grid(\n  columns: (60pt, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.7em,\n  stroke: (top: 0.3pt + c-hairline),\n  inset: (top: 5pt),\n${cells.join(",\n")},\n)`;
+  return `#grid(\n  columns: (60pt, 1fr),\n  column-gutter: 1.2em,\n  row-gutter: 0.9em,\n  stroke: (top: 0.3pt + c-hairline),\n  inset: (top: 6pt),\n${cells.join(",\n")},\n)`;
 }
 
 function renderDefListChild(

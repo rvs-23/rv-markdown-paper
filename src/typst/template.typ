@@ -136,7 +136,7 @@
 // single glyph. Not a true text-wrapping lettrine (Typst doesn't do that),
 // but visually distinctive and unambiguously editorial.
 #let dropcap(letter, body) = block(above: 0.3em, below: 1em)[
-  #set par(first-line-indent: 0em, justify: true)
+  #set par(first-line-indent: 0em, justify: false)
   #box(baseline: 0.55em, text(
     font: f-serif, style: "italic", weight: 400, size: 52pt, fill: c-ink,
   )[#letter])
@@ -200,46 +200,46 @@
 // which is materially worse. See examples/demos/07-oversized-admonition.md
 // for the regression fixture covering the early-break case.
 #let note(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-surface,
   stroke: (left: 1pt + c-ink-3),
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #_admonition-label("note")
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
 #let tip(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-surface,
   stroke: (left: 2pt + c-ink),
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #_admonition-label("tip")
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
 #let warning(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-surface-2,
   stroke: (
     left: 2pt + c-ink-2,
     top: 0.4pt + c-hairline,
     bottom: 0.4pt + c-hairline,
   ),
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #_admonition-label("warning")
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
 #let danger(body) = block(
-  above: 1em, below: 1em, width: 100%, breakable: false,
+  above: 1.6em, below: 1.6em, width: 100%, breakable: false,
   fill: c-danger-bg,
-  inset: (left: 0.9em, right: 0.9em, top: 0.7em, bottom: 0.7em),
+  inset: (left: 1.1em, right: 1.1em, top: 0.9em, bottom: 0.9em),
 )[
   #set text(fill: c-danger-fg)
   // Inline-code chips default to a light fill on dark text; invert here so
@@ -252,7 +252,7 @@
     text(font: f-mono, size: 0.92em, fill: c-danger-fg, it),
   )
   #text(font: f-sans, size: 8pt, weight: 500, tracking: 0.14em)[#upper("danger")]
-  #v(3pt)
+  #v(5pt)
   #body
 ]
 
@@ -342,7 +342,7 @@
 // items doubled up as `• ☑ Text`.
 
 #let task-box(checked) = box(
-  width: 0.78em, height: 0.78em, baseline: 0.1em,
+  width: 0.92em, height: 0.92em, baseline: 0.12em,
   stroke: 0.6pt + c-ink,
   fill: if checked { c-ink } else { none },
   inset: 0pt,
@@ -350,10 +350,11 @@
   #if checked {
     // Tick glyph (U+2713 CHECK MARK), not "x". Target.pdf uses a check
     // for completed items; "x" reads ambiguously as either "done" or
-    // "rejected" depending on context. Bumped weight to 700 + size to
-    // 0.78em so the tick fills the box cleanly at the paper colour.
+    // "rejected" depending on context. Weight 700 so the tick fills
+    // the box cleanly at the paper colour. Box at 0.92em — measured
+    // against target.pdf's checkboxes, which run nearly a full em.
     align(center + horizon, text(
-      font: f-sans, size: 0.78em, weight: 700, fill: c-paper,
+      font: f-sans, size: 0.8em, weight: 700, fill: c-paper,
     )[#"\u{2713}"])
   }
 ]
@@ -366,11 +367,12 @@
   if checked { text(fill: c-muted, body) } else { body },
 )
 
-// Item-to-item spacing was 0.45em — list felt loose against target,
-// which stacks task rows almost flush. 0.2em pulls items together
-// while still leaving the rows visually distinct.
+// Item-to-item spacing 0.55em. Earlier passes tightened this to 0.2em
+// on the belief that target stacks task rows almost flush — a raster
+// diff at matched DPI shows the opposite: target rows carry roughly
+// half a line of air between them.
 #let task-list(..items) = block(above: 1em, below: 0.8em)[
-  #stack(spacing: 0.2em, ..items.pos())
+  #stack(spacing: 0.55em, ..items.pos())
 ]
 
 // ---------- legacy callouts ----------
@@ -583,7 +585,7 @@
       grid(
         columns: (52pt, 1fr, auto),
         align: (left + horizon, left + horizon, right + horizon),
-        inset: (x: 0pt, y: 8pt),
+        inset: (x: 0pt, y: 12pt),
         stroke: (x, y) => (bottom: 0.4pt + c-hairline),
         ..toc.map(entry => (
           text(font: f-sans, size: 9pt, weight: 500, tracking: 0.04em, fill: c-ink-2)[
@@ -675,7 +677,24 @@
   // target's line rhythm; do not tighten without re-checking the
   // editorial fixture page count.
   set text(font: f-sans, size: 10.5pt, weight: 300, fill: c-ink, hyphenate: false)
-  set par(leading: 0.85em, spacing: 1.2em, justify: true, first-line-indent: 0em)
+  // Ragged-right, not justified: target.pdf sets every paragraph
+  // left-aligned with a soft rag. Justification produced visible
+  // inter-word gaps in the narrow body column (and worse ones in the
+  // 35mm marginalia rail, which inherits this rule).
+  set par(leading: 0.85em, spacing: 1.2em, justify: false, first-line-indent: 0em)
+
+  // --------- Lists ---------
+  // Target.pdf marks unordered items with an en-dash at every nesting
+  // level (no disc/triangle ladder), and sets ordered-list numerals in
+  // the ornament voice — Instrument Serif italic — against the sans
+  // body. Both lists indent off the column edge so the markers read as
+  // a separate rail.
+  set list(marker: ([–], [–], [–]), indent: 1.2em, body-indent: 0.6em)
+  set enum(
+    numbering: n => text(font: f-serif, style: "italic", fill: c-ink)[#n.],
+    indent: 1.2em,
+    body-indent: 0.6em,
+  )
 
   // --------- Page ---------
   // Right margin reserves the rail. The `marg()` helper places into that
