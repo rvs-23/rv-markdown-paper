@@ -70,4 +70,10 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect(text).toContain("A x(y) and l.z and n");
     expect(text).toContain(".Next");
   });
+
+  it("keeps the H1 when a configured cover is switched off", async () => {
+    const md = '---\ncover:\n  title: "Cover title"\n---\n# Thread pools\n\nBody.\n';
+    expect(await render(md, { showCover: false })).toContain("Thread pools");
+    expect(await render(md)).not.toContain("Thread pools");
+  });
 });

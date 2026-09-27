@@ -41,7 +41,7 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
 
   const tree = parseMarkdownToMdast(content);
   // Strip a leading H1 in two situations:
-  // (a) `cover` is configured — the cover block IS the chapter title, so
+  // (a) a cover is configured AND shown — the cover block IS the chapter title, so
   //     a `# Thread pools` H1 right after the cover renders the title
   //     a second time at body weight. The H1's text doesn't have to
   //     match `cover.title` exactly (the editorial fixture's H1 is just
@@ -52,7 +52,9 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
   const first = tree.children[0];
   const firstIsH1 =
     !!first && first.type === "heading" && first.depth === 1;
-  if (firstIsH1 && resolved.cover) {
+  // With `showCover: false` the cover never renders, so stripping the H1
+  // there would leave the document with no title at all.
+  if (firstIsH1 && resolved.cover && resolved.showCover) {
     tree.children.shift();
   } else if (firstIsH1 && resolved.title) {
     stripRedundantLeadingH1(tree, resolved.title);
