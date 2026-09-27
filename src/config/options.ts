@@ -56,11 +56,9 @@ export type DocumentOptions = {
   showFooter: boolean;
   showCover: boolean;
 
-  // Optional page-background override as a "#RRGGBB" hex string. When
-  // set, the surface, hairline, and danger-fg tokens are re-derived
-  // from this value so the whole neutral palette tracks the chosen
-  // paper colour. When omitted, the canonical defaults in
-  // src/typst/palette.typ apply.
+  // Optional page-background override as a "#RRGGBB" hex string. The
+  // surface, hairline, and danger-fg tokens derive from it (see
+  // typst/local/mdpaper/0.1.0/palette.typ); default #F4F4F4.
   paperBg?: string;
 
   // Footnote placement. "page" (default) uses Typst's native page-bottom

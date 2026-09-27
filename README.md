@@ -337,7 +337,7 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | Math | [`tex2typst`](https://github.com/qwinsi/tex2typst) — LaTeX → Typst math, strict mode |
 | Markdown parse | [`unified`](https://unifiedjs.com/) + `remark-parse` + `remark-gfm` + `remark-directive` + `remark-math` + `remark-definition-list` |
 | Typesetting | [Typst](https://typst.app/) compiler (external binary on `PATH`) |
-| Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](src/typst/theme.tmTheme) (grayscale only) |
+| Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme) (grayscale only) |
 | Fonts | Archivo (sans), Instrument Serif (ornament italic), JetBrains Mono (code) — all OFL-1.1, bundled in [`assets/fonts/`](assets/fonts/) and loaded with `--ignore-system-fonts` |
 | Tests | [`vitest`](https://vitest.dev/) — unit tests, a Typst-body snapshot of the canonical fixture, and a render integration test that compiles the fixture and asserts page count + per-page text invariants |
 | Lint / Types | `eslint` (flat config), `tsc --noEmit` |
@@ -351,8 +351,8 @@ src/
   config/      Options types, precedence resolver, validator
   core/        Pipeline orchestrator + reading-time estimator
   parser/      Frontmatter split, Markdown → mdast, Pandoc-attribute lift
-  typst/       Palette tokens, design template, mdast → Typst generator,
-               typst-compile subprocess runner
+  typst/       mdast → Typst generator, typst-compile subprocess runner
+typst/         The design as a Typst local package: template, palette, theme
 ```
 
 The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
@@ -360,14 +360,14 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 1. **Frontmatter** — `gray-matter` splits YAML off the top.
 2. **Parse** — Markdown → mdast via the remark plugin chain. A pre-parse pass normalises Pandoc-dialect surface forms (`::: name`, `:::{.class}`, attribute colons) so the canonical fixture parses without invoking Pandoc.
 3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math converts to Typst math via `tex2typst`.
-4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) writes the generated body alongside [`template.typ`](src/typst/template.typ), [`palette.typ`](src/typst/palette.typ), and [`theme.tmTheme`](src/typst/theme.tmTheme) into a temp directory, then spawns `typst compile` with `--root <sourceDir>`, `--font-path assets/fonts`, and `--ignore-system-fonts`.
+4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) pipes the generated document into `typst compile -` with `--root <sourceDir>`, `--font-path assets/fonts` and `--ignore-system-fonts`. The design ships as a Typst local package, `@local/mdpaper` ([`template.typ`](typst/local/mdpaper/0.1.0/template.typ), [`palette.typ`](typst/local/mdpaper/0.1.0/palette.typ), [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme)), loaded with `--package-path typst`, so nothing is written next to your Markdown. `--paper-bg` reaches the palette as `--input paper-bg=…`.
 
 ### Design principles
 
 1. **One design language, no themes.** The output looks the same on every machine and from every author. There is no theme registry, no accent palette, no light/dark toggle.
 2. **Single-ink ramp.** Body is `#11131A` near-ink on a `#F4F4F4` paper. Secondary text steps through ink-2 / ink-3 / muted / mute-2 — five levels of the same gray. The only color event in the whole system is the `:::danger` admonition, which inverts to paper-on-ink. Color inversion is reserved precisely because nothing else inverts.
 3. **Three fonts, one rule per font.** Archivo for body, UI, headings, captions, tables, admonitions. Instrument Serif **italic only**, ornament only — folio, dropcap, pull quotes, equation numbers, figcaption labels. JetBrains Mono for code and tabular numerics. Body italic stays in the Archivo family; the serif italic is too loud for prose.
-4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`src/typst/template.typ`](src/typst/template.typ). To restyle the system you edit the template, not the converter.
+4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`typst/local/mdpaper/0.1.0/template.typ`](typst/local/mdpaper/0.1.0/template.typ). To restyle the system you edit the template, not the converter.
 5. **Reproducible output.** Bundled fonts loaded with `--ignore-system-fonts` mean mismatched system fonts cannot silently substitute. PDF metadata is pinned via `--creation-timestamp` (honours `SOURCE_DATE_EPOCH`, defaults to `0`), so re-rendering the same source with the same Typst version produces a byte-identical PDF.
 6. **Fail loud.** Invalid attribute IDs throw at parse time. Remote image URLs are rejected before reaching the compiler. Missing fonts surface as a Typst error, not a silent substitution. The principle: errors with clear messages beat silent drift.
 7. **Page count is a contract.** The integration test renders the canonical fixture and asserts it compiles to exactly 6 pages. Page choreography regressions fail CI.
@@ -376,7 +376,7 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 
 - Image paths must resolve inside the source markdown's directory tree; remote URLs, `data:` URIs, absolute paths, and `..`-escapes are rejected at generate time.
 - Typst runs with `--root <sourceDir>` so the compiler cannot read files outside the document tree.
-- Math may not contain a raw `#` or `"`: either could run Typst code inside `$…$`. `\\#` stays allowed.
+- Math may not contain a raw `#` or `"`: either could run Typst code inside `$…$`. `\#` stays allowed.
 - Attribute IDs validate against `^[A-Za-z][A-Za-z0-9_:-]*$`; anything outside the grammar throws `ConfigError` before any Typst is generated, closing a label-injection path.
 - Typst stderr is tail-buffered to 64 KB so a runaway compile can't exhaust memory.
 

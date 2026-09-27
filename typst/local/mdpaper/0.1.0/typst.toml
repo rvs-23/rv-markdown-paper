@@ -1,0 +1,4 @@
+[package]
+name = "mdpaper"
+version = "0.1.0"
+entrypoint = "template.typ"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
@@ -95,5 +95,47 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
 
   it("names the formula when LaTeX can't be converted", async () => {
     await expect(render("$\\nosuchcommand x$\n")).rejects.toThrow(/\\nosuchcommand/);
+  });
+
+  it("renders from a read-only source dir and writes nothing beside the markdown", async () => {
+    const src = await mkdtemp(join(tmpdir(), "mdpdf-ro-"));
+    const out = await mkdtemp(join(tmpdir(), "mdpdf-ro-out-"));
+    try {
+      await writeFile(join(src, "doc.md"), "Hello.\n", "utf8");
+      await chmod(src, 0o555);
+      await convertMarkdownToPdf({
+        inputPath: join(src, "doc.md"),
+        outputPath: join(out, "doc.pdf"),
+      });
+      expect(await readdir(src)).toEqual(["doc.md"]);
+    } finally {
+      await chmod(src, 0o755);
+      await rm(src, { recursive: true, force: true });
+      await rm(out, { recursive: true, force: true });
+    }
+  });
+
+  it("paints the page with --paper-bg", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-bg-"));
+    try {
+      await writeFile(join(dir, "doc.md"), "Hello.\n", "utf8");
+      await convertMarkdownToPdf({
+        inputPath: join(dir, "doc.md"),
+        outputPath: join(dir, "doc.pdf"),
+        cli: { paperBg: "#FFE0C0" },
+      });
+      // Rasterise at 10 dpi and read the top-left pixel of the binary PPM.
+      const r = spawnSync("pdftoppm", ["-r", "10", "-singlefile", join(dir, "doc.pdf")], {
+        maxBuffer: 1 << 24,
+      });
+      const ppm = r.stdout as Buffer;
+      let offset = 0;
+      for (let fields = 0; fields < 4; offset++) {
+        if (/\s/.test(String.fromCharCode(ppm[offset]!))) fields++;
+      }
+      expect([...ppm.subarray(offset, offset + 3)]).toEqual([0xff, 0xe0, 0xc0]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
