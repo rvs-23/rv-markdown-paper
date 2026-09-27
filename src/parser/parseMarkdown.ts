@@ -19,12 +19,18 @@ const parser = unified()
 // so a bare `{#eq:little}` trips the directive tokenizer. We protect the
 // brace-enclosed attribute payload by swapping `:` for a unique placeholder
 // before parse, then swapping it back on the extracted attribute strings.
+//
+// Only brace groups that open like a Pandoc attribute bundle (`{#id`,
+// `{.class`, `{key=`) are touched, and a crossref's `@` must follow
+// whitespace, `[` or `(`. Anything looser also rewrites colons inside
+// link destinations (`https://user@host:8080`, `/{k:v}`), where the
+// placeholder is an illegal control character and the link stops parsing.
 const COLON_PLACEHOLDER = "\u0001";
-const ATTR_BLOCK_RE = /\{[^{}\n]*\}/g;
+const ATTR_BLOCK_RE = /\{\s*(?:[#.]|[A-Za-z_][\w-]*=)[^{}\n]*\}/g;
 // Pandoc-crossref `@fig:label` / `@eq:label` references. The colon again
 // collides with remark-directive's `:name` text-directive trigger, so we
 // protect the same way.
-const CROSSREF_RE = /@([A-Za-z][\w-]*):([\w-]+)/g;
+const CROSSREF_RE = /(^|[\s[(])@([A-Za-z][\w-]*):([\w-]+)/gm;
 
 export function parseMarkdownToMdast(markdown: string): MdastRoot {
   const normalized = normalizeDirectiveOpeners(markdown);
@@ -65,29 +71,24 @@ function normalizeDirectiveOpeners(markdown: string): string {
 function protectAttrColons(markdown: string): string {
   return markdown
     .replace(ATTR_BLOCK_RE, (m) => m.replace(/:/g, COLON_PLACEHOLDER))
-    .replace(CROSSREF_RE, (_m, prefix: string, tail: string) => `@${prefix}${COLON_PLACEHOLDER}${tail}`);
+    .replace(
+      CROSSREF_RE,
+      (_m, lead: string, prefix: string, tail: string) =>
+        `${lead}@${prefix}${COLON_PLACEHOLDER}${tail}`,
+    );
 }
 
-// Walk the tree and restore colons in any text/data values that may have
-// captured the placeholder. Covers text nodes, inlineCode, code blocks,
-// directive attribute records, and any other string-valued fields the
-// remark plugins might attach (e.g. `node.attributes` from
-// remark-directive). Recurses into `children`, `attributes`, and `data`.
+// Walk the tree and restore colons in every string field — text values,
+// code lang/meta, link and image url/title/alt, directive attribute
+// records, and anything a plugin attaches under `data`.
 function restoreAttrColons(node: unknown): void {
   if (node === null || typeof node !== "object") return;
   const n = node as Record<string, unknown>;
-  const restore = (s: string) => s.split(COLON_PLACEHOLDER).join(":");
-  if (typeof n.value === "string") n.value = restore(n.value);
-  if (typeof n.lang === "string") n.lang = restore(n.lang);
-  if (typeof n.meta === "string") n.meta = restore(n.meta);
-  if (n.attributes && typeof n.attributes === "object") {
-    const attrs = n.attributes as Record<string, unknown>;
-    for (const [k, v] of Object.entries(attrs)) {
-      if (typeof v === "string") attrs[k] = restore(v);
+  for (const [k, v] of Object.entries(n)) {
+    if (typeof v === "string") {
+      if (v.includes(COLON_PLACEHOLDER)) n[k] = v.split(COLON_PLACEHOLDER).join(":");
+    } else if (k !== "position") {
+      restoreAttrColons(v);
     }
-  }
-  if (n.data && typeof n.data === "object") restoreAttrColons(n.data);
-  if (n.children && Array.isArray(n.children)) {
-    for (const c of n.children) restoreAttrColons(c);
   }
 }

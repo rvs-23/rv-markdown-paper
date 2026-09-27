@@ -51,4 +51,11 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     );
     expect(text).toContain("either a // b or c");
   });
+
+  it("keeps links whose URL contains `@host:port` or `{k:v}`", async () => {
+    const text = await render(
+      "See [site](https://user@host:8080/path) and [api](http://a.com/{k:v}).\n",
+    );
+    expect(text).toContain("See site and api.");
+  });
 });

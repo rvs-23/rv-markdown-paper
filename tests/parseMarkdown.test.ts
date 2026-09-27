@@ -68,3 +68,14 @@ $$ a + b = c $$ {#eq:little}
 `)).toThrow(/foo>bar/);
   });
 });
+
+describe("colon protection leaves link destinations intact", () => {
+  it("does not rewrite `@host:port` or `{k:v}` inside URLs", () => {
+    const tree = parseMarkdownToMdast(
+      "[a](https://user@host:8080/p) [b](http://x.com/{k:v})",
+    );
+    const para = tree.children[0] as { children: Array<{ type: string; url?: string }> };
+    const urls = para.children.filter((c) => c.type === "link").map((c) => c.url);
+    expect(urls).toEqual(["https://user@host:8080/p", "http://x.com/{k:v}"]);
+  });
+});
