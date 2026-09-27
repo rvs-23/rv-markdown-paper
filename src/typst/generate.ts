@@ -19,7 +19,6 @@ import type {
   Table,
   TableRow,
   TableCell,
-  Break,
 } from "mdast";
 import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
@@ -33,12 +32,6 @@ export type GenerateOptions = {
   // every body is collected into a single NOTES block appended after
   // the body. Default at the call site is "page" if undefined.
   footnoteMode?: "page" | "endnotes";
-};
-
-const ALIGN_MAP: Record<string, string> = {
-  left: "left",
-  right: "right",
-  center: "center",
 };
 
 // Admonition container-directive names that map to a Typst call `#<name>[...]`.
@@ -56,7 +49,6 @@ export function generateTypst(tree: Root, options: GenerateOptions): string {
     pageChoreo: { sawOpener: false, breakBeforeNextH2: false },
     footnoteStack: [],
   };
-  reorderMarginDirectives(tree.children);
   const body = renderBlocks(tree.children, ctx).trimEnd();
   // In endnotes mode, emit a single NOTES block after the body. The
   // template's `endnotes` helper renders the section heading + the
@@ -133,34 +125,6 @@ function collectFootnotes(tree: Root): Map<string, RootContent[]> {
     }
   }
   return map;
-}
-
-// ---- margin reordering ----
-// Walk the block list; whenever a `containerDirective` with name `margin`
-// is followed by one or more block siblings, hoist it to sit before them.
-//
-// Rule: a `:::margin` attaches to the NEXT block that is not another
-// `:::margin`. Multiple consecutive `:::margin` notes are kept in order and
-// all hoisted to just before the next non-margin block.
-
-function reorderMarginDirectives(nodes: RootContent[]): void {
-  // Recurse into containers first.
-  for (const n of nodes) {
-    const anyN = n as { children?: RootContent[] };
-    if (Array.isArray(anyN.children)) {
-      // Container directives and blockquotes may contain block children.
-      if (n.type === "containerDirective" || n.type === "blockquote") {
-        reorderMarginDirectives(anyN.children);
-      }
-    }
-  }
-
-  // In `examples/editorial-swiss/paper.md`, the convention is that `:::margin`
-  // appears BEFORE the paragraph it annotates — so the natural source order
-  // already has notes preceding their anchor. We still provide this helper
-  // as an idempotent pass; if a future fixture moves notes after their
-  // anchor, we can flip the direction here.
-  void nodes;
 }
 
 // ---- block-level nodes ----
@@ -401,16 +365,15 @@ function renderTable(node: Table, ctx: Ctx): string {
   // Emit weighted fractional columns so the table stretches edge-to-
   // edge in the body column without short label cells wrapping.
   // Layout heuristic, modelled on target.pdf's body-column tables:
-  //   1 col            → `1fr`
-  //   2 cols           → `1fr, 1.5fr`             (label | description)
-  //   N ≥ 3 cols       → `1.4fr, 1.4fr, …, 1fr, 2fr`
-  //                       (label | named-data | numeric data… | description)
+  //   1 col      → `1fr`
+  //   2 cols     → `1fr, 1.5fr`                 (label | description)
+  //   3 cols     → `2fr, 1fr, 2fr`              (label | value | description)
+  //   N ≥ 4 cols → `2.2fr, 1.6fr, 1fr…, 2fr`
+  //                 (label | named-data | numeric data… | description)
   // The first two columns get extra weight because their headers are
   // typically multi-word (e.g. "Workload", "Good default"); the last
   // column gets double weight for descriptive prose; remaining middle
-  // columns share evenly. This avoids the prior `1.5fr/1fr/1fr/2fr`
-  // wrap where "Good default" landed in a 1fr cell too narrow for its
-  // own tracked-uppercase header.
+  // columns share evenly.
   let colSpecs: string;
   if (columns === 1) {
     colSpecs = "1fr";
@@ -437,12 +400,7 @@ function tableAlignArg(
   columns: number,
 ): string | null {
   if (!aligns || aligns.length === 0) return null;
-  const resolved = Array.from({ length: columns }, (_, i) => {
-    const a = aligns[i];
-    if (a && ALIGN_MAP[a]) return ALIGN_MAP[a];
-    return "left";
-  });
-  return resolved.join(", ");
+  return Array.from({ length: columns }, (_, i) => aligns[i] ?? "left").join(", ");
 }
 
 function renderTableRowCells(row: TableRow, ctx: Ctx): string[] {
@@ -703,7 +661,6 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
     case "image":
       return renderInlineImage(node as Image, ctx);
     case "break":
-      void (node as Break);
       return " \\\n";
     case "html":
       return "";
@@ -843,10 +800,6 @@ function getAttrs(node: unknown): Attributes | undefined {
   return n.data?.attrs;
 }
 
-// Extract the first visible grapheme from the first paragraph of `children`
-// and return it alongside a mutated children array with that leading
-// character removed from the paragraph's first text node. Used by the
-// dropcap directive to lift the initial letter out of the body flow.
 // Detect a leading `**bold prefix**` in the first paragraph and consume
 // it — returning the bold text as a label string and stripping it from
 // the paragraph in place so the rendered body doesn't repeat it.
@@ -880,6 +833,13 @@ function extractLeadingBoldLabel(children: RootContent[]): string | undefined {
   return text;
 }
 
+// Extract the first grapheme from the first paragraph of `children` and
+// return it alongside a copy of the children with that grapheme removed
+// from the paragraph's first text node. Used by the dropcap directive to
+// lift the initial letter out of the body flow. Graphemes, not UTF-16
+// units, so an accented letter or emoji isn't split in half.
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
 function splitDropcap(
   children: RootContent[],
 ): { letter: string; rest: RootContent[] } {
@@ -891,10 +851,11 @@ function splitDropcap(
   const firstInline = para.children[0]!;
   if (firstInline.type !== "text") return { letter: "", rest: children };
   const t = firstInline as Text;
-  const leading = t.value.match(/^\s*(\S)(.*)$/s);
-  if (!leading) return { letter: "", rest: children };
-  const letter = leading[1]!;
-  const tail = leading[2]!;
+  const text = t.value.trimStart();
+  const lead = graphemes.segment(text)[Symbol.iterator]().next().value;
+  if (!lead) return { letter: "", rest: children };
+  const letter = lead.segment;
+  const tail = text.slice(letter.length);
   const newText: Text = { type: "text", value: tail };
   const newParaChildren: PhrasingContent[] = [newText, ...para.children.slice(1)];
   const newPara: Paragraph = { type: "paragraph", children: newParaChildren };

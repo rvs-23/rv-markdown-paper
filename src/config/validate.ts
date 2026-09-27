@@ -6,7 +6,9 @@ import type {
   TocEntry,
 } from "./options.js";
 
-const CSS_LENGTH_RE = /^\d*\.?\d+(in|cm|mm|pt|px)$/;
+// Shared with the CLI flag parsers and render.ts (which reads the groups).
+export const CSS_LENGTH_RE = /^(\d*\.?\d+)(in|cm|mm|pt|px)$/;
+export const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -91,7 +93,7 @@ function expectFootnoteMode(value: unknown, path: string): "page" | "endnotes" {
 // the surface palette derivation predictable (the JS-side darken helper
 // expects an 8-bit-per-channel base).
 export function expectHexColor(value: unknown, path: string): string {
-  if (typeof value !== "string" || !/^#[0-9A-Fa-f]{6}$/.test(value)) {
+  if (typeof value !== "string" || !HEX_COLOR_RE.test(value)) {
     throw new ConfigError(
       `${path}: expected a #RRGGBB hex color, got ${describe(value)}.`,
     );

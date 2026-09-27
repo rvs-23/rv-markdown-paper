@@ -3,6 +3,7 @@ import { Command, InvalidArgumentError, type OptionValues } from "commander";
 import { createRequire } from "node:module";
 import { convertMarkdownToPdf } from "../core/convert.js";
 import type { DocumentOptionsLayer, Margins } from "../config/options.js";
+import { CSS_LENGTH_RE, HEX_COLOR_RE } from "../config/validate.js";
 
 // Read the package version at runtime so it stays in sync with
 // package.json — previously hardcoded `0.1.0` and drifted to `0.2.0+`.
@@ -104,14 +105,14 @@ function parsePageSize(value: string): "Letter" | "A4" {
 }
 
 function parseCssLength(value: string): string {
-  if (!/^\d*\.?\d+(in|cm|mm|pt|px)$/.test(value)) {
+  if (!CSS_LENGTH_RE.test(value)) {
     throw new InvalidArgumentError(`expected a CSS length like "0.85in" or "20mm", got "${value}".`);
   }
   return value;
 }
 
 function parseHexColor(value: string): string {
-  if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
+  if (!HEX_COLOR_RE.test(value)) {
     throw new InvalidArgumentError(
       `expected a #RRGGBB hex color (six digits, no shorthand), got "${value}".`,
     );

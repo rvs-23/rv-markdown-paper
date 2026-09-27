@@ -3,6 +3,7 @@ import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Cover, DocumentOptions } from "../config/options.js";
 import { escapeMarkup, typstString } from "./escape.js";
+import { CSS_LENGTH_RE } from "../config/validate.js";
 
 // The template ships as a Typst local package (`@local/mdpaper`) under
 // typst/, passed with --package-path. Together with reading the document
@@ -147,7 +148,7 @@ function pageSizeToTypst(size: "Letter" | "A4"): string {
 }
 
 function cssLengthToTypst(value: string): string {
-  const match = value.match(/^(\d*\.?\d+)(in|cm|mm|pt|px)$/);
+  const match = value.match(CSS_LENGTH_RE);
   if (!match) throw new Error(`Invalid length: ${value}`);
   const [, num, unit] = match;
   if (unit === "px") {

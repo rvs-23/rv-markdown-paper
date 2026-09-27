@@ -233,3 +233,9 @@ describe("generateTypst: footnote cycles", () => {
     expect(() => gen("A[^a]\n\n[^a]: loop[^a]\n", "endnotes")).not.toThrow();
   });
 });
+
+describe("generateTypst: dropcap", () => {
+  it("lifts a whole grapheme, not half of it", () => {
+    expect(gen(":::dropcap\ne\u0301clair text\n:::\n")).toContain('#dropcap("e\u0301")');
+  });
+});
