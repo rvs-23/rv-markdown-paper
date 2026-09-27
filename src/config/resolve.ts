@@ -33,7 +33,7 @@ function readConfigFile(path: string): DocumentOptionsLayer {
   } catch (err) {
     throw new Error(`Invalid JSON in ${path}: ${(err as Error).message}`);
   }
-  return validateOptions(raw, path);
+  return validateOptions(raw, path, { strictKeys: true });
 }
 
 function findConfigFile(startDir: string): string | null {

@@ -203,6 +203,8 @@ Options resolve in this order — first match wins:
 
 This lets you set a baseline in `mdpdf.config.json`, override per-document in frontmatter, and override per-render on the command line.
 
+An unknown key in `mdpdf.config.json` is an error. Frontmatter may carry keys for other tools (`tags`, `aliases`, …), so there an unknown key is ignored, unless it looks like a typo of a real option (`showheader`, `titel`), which prints a "did you mean" warning.
+
 **Minimal frontmatter:**
 
 ```yaml
