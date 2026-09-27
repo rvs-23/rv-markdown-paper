@@ -53,6 +53,7 @@ export function generateTypst(tree: Root, options: GenerateOptions): string {
     endnoteOrder: [],
     labels,
     pageChoreo: { sawOpener: false, breakBeforeNextH2: false },
+    footnoteStack: [],
   };
   reorderMarginDirectives(tree.children);
   const body = renderBlocks(tree.children, ctx).trimEnd();
@@ -100,6 +101,9 @@ type Ctx = {
   // page-break and whether the next H2 should be preceded by one (i.e.
   // the body returning to standard layout after the opener page).
   pageChoreo: { sawOpener: boolean; breakBeforeNextH2: boolean };
+  // Footnotes currently being inlined (page mode), to catch a definition
+  // that references itself before it recurses forever.
+  footnoteStack: string[];
 };
 
 // Harvest every `{#id}` found on headings, images, math blocks, and directive
@@ -754,7 +758,14 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
         }
         return `#endnote-ref(${idx + 1});`;
       }
+      if (ctx.footnoteStack.includes(ref)) {
+        throw new Error(
+          `Footnote [^${ref}] references itself: ${[...ctx.footnoteStack, ref].map((r) => `[^${r}]`).join(" → ")}`,
+        );
+      }
+      ctx.footnoteStack.push(ref);
       const body = renderBlocks(def, ctx);
+      ctx.footnoteStack.pop();
       return `#footnote[${body}];`;
     }
     default:

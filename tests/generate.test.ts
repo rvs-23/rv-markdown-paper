@@ -221,3 +221,15 @@ describe("generateTypst: thematic break", () => {
     expect(gen("One\n\n---\n\nTwo\n")).toContain("One\n\n#rule()\n\nTwo");
   });
 });
+
+describe("generateTypst: footnote cycles", () => {
+  it("names the cycle instead of overflowing the stack", () => {
+    expect(() => gen("A[^a]\n\n[^a]: see[^b]\n\n[^b]: back[^a]\n")).toThrow(
+      "Footnote [^a] references itself: [^a] → [^b] → [^a]",
+    );
+  });
+
+  it("allows a cycle in endnotes mode, where bodies are not inlined", () => {
+    expect(() => gen("A[^a]\n\n[^a]: loop[^a]\n", "endnotes")).not.toThrow();
+  });
+});
