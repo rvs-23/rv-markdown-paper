@@ -71,3 +71,13 @@ describe("escaping through the generator", () => {
     expect(out).toContain("\\~100 μs");
   });
 });
+
+describe("escapeMarkup line-start numbering", () => {
+  it("escapes the dot of a leading `N. ` enum marker", () => {
+    expect(escapeMarkup("1. not a list")).toBe("1\\. not a list");
+  });
+
+  it("leaves dotted section numbers alone", () => {
+    expect(escapeMarkup("7.1 Threads")).toBe("7.1 Threads");
+  });
+});

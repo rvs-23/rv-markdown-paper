@@ -21,7 +21,7 @@ import type {
   TableCell,
   Break,
 } from "mdast";
-import { escapeMarkup, escapeString } from "./escape.js";
+import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
 import { toString as mdastToString } from "mdast-util-to-string";
 
@@ -277,7 +277,7 @@ function renderHeading(node: Heading, ctx: Ctx): string {
       .join("");
     const m = /^(\d+(?:\.\d+)+|[A-Z]\.\d+)\b/.exec(headingText.trim());
     if (m) {
-      const sigLit = typstStringLiteral(m[1]!);
+      const sigLit = typstString(m[1]!);
       // `here()` must be evaluated inside a `context` block so it's a
       // located expression; capture the page first, then pass an
       // already-resolved record into the state update.
@@ -290,10 +290,6 @@ function renderHeading(node: Heading, ctx: Ctx): string {
     }
   }
   return `${prebreak}${sigUpdate}${prefix} ${body}${label}`;
-}
-
-function typstStringLiteral(s: string): string {
-  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 function renderCodeBlock(node: Code): string {
@@ -855,10 +851,6 @@ function indent(text: string, spaces: number): string {
 function getAttrs(node: unknown): Attributes | undefined {
   const n = node as { data?: { attrs?: Attributes } };
   return n.data?.attrs;
-}
-
-function typstString(s: string): string {
-  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 // Extract the first visible grapheme from the first paragraph of `children`

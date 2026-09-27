@@ -3,6 +3,7 @@ import { writeFile, mkdtemp, rm, copyFile } from "node:fs/promises";
 import { join, dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Cover, DocumentOptions } from "../config/options.js";
+import { escapeMarkup, typstString } from "./escape.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolvePath(HERE, "./template.typ");
@@ -79,7 +80,7 @@ function buildPreamble(options: DocumentOptions): string {
   pushOptionalNumber(lines, "page-start", options.pageStart);
   pushOptionalNumber(lines, "page-end", options.pageEnd);
   if (options.cover) lines.push(`  cover: ${renderCover(options.cover)},`);
-  lines.push(`  page-size: ${quote(pageSizeToTypst(options.pageSize))},`);
+  lines.push(`  page-size: ${typstString(pageSizeToTypst(options.pageSize))},`);
   lines.push(`  margin-top: ${cssLengthToTypst(options.margins.top)},`);
   lines.push(`  margin-right: ${cssLengthToTypst(options.margins.right)},`);
   lines.push(`  margin-bottom: ${cssLengthToTypst(options.margins.bottom)},`);
@@ -98,7 +99,7 @@ function buildPreamble(options: DocumentOptions): string {
 
 function pushOptionalString(lines: string[], key: string, value: string | undefined): void {
   if (value === undefined) return;
-  lines.push(`  ${key}: ${quote(value)},`);
+  lines.push(`  ${key}: ${typstString(value)},`);
 }
 
 function pushOptionalScalar(
@@ -108,7 +109,7 @@ function pushOptionalScalar(
 ): void {
   if (value === undefined) return;
   if (typeof value === "number") lines.push(`  ${key}: ${value},`);
-  else lines.push(`  ${key}: ${quote(value)},`);
+  else lines.push(`  ${key}: ${typstString(value)},`);
 }
 
 function pushOptionalNumber(lines: string[], key: string, value: number | undefined): void {
@@ -118,21 +119,21 @@ function pushOptionalNumber(lines: string[], key: string, value: number | undefi
 
 function renderCover(cover: Cover): string {
   const fields: string[] = [];
-  if (cover.kicker !== undefined) fields.push(`kicker: ${quote(cover.kicker)}`);
-  if (cover.title !== undefined) fields.push(`title: ${quote(cover.title)}`);
+  if (cover.kicker !== undefined) fields.push(`kicker: ${typstString(cover.kicker)}`);
+  if (cover.title !== undefined) fields.push(`title: ${typstString(cover.title)}`);
   if (cover.subtitle !== undefined) fields.push(`subtitle: ${typstContentWithBackticks(cover.subtitle)}`);
   if (cover.meta !== undefined) {
     const pairs = cover.meta
-      .map((p) => `(label: ${quote(p.label)}, value: ${quote(p.value)})`)
+      .map((p) => `(label: ${typstString(p.label)}, value: ${typstString(p.value)})`)
       .join(", ");
     fields.push(`meta: (${pairs}${cover.meta.length === 1 ? "," : ""})`);
   }
   if (cover.toc !== undefined) {
     const entries = cover.toc
       .map((e) => {
-        const parts = [`id: ${quote(e.id)}`, `title: ${quote(e.title)}`];
-        if (e.ref) parts.push(`ref: ${quote(e.ref)}`);
-        if (e.page) parts.push(`page: ${quote(e.page)}`);
+        const parts = [`id: ${typstString(e.id)}`, `title: ${typstString(e.title)}`];
+        if (e.ref) parts.push(`ref: ${typstString(e.ref)}`);
+        if (e.page) parts.push(`page: ${typstString(e.page)}`);
         return `(${parts.join(", ")})`;
       })
       .join(", ");
@@ -141,26 +142,12 @@ function renderCover(cover: Cover): string {
   return `(${fields.join(", ")})`;
 }
 
-function quote(s: string): string {
-  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-}
-
 // Narrow markdown-in-cover-field support: only backtick code spans are
 // recognised. The cover template renders the result as content (not a
 // string), so we emit `[text #raw(block: false, "code") text]` instead
-// of `"...with literal backticks..."`. Anything outside backticks goes
-// through Typst's markup-mode special-character escaper so the result
-// is safe even when the input contains `#`, `[`, `]`, `*`, `_`, `$`, etc.
-// Bold/italic/links and other markdown features are NOT recognised
-// (they're not in the canonical fixture's cover fields; broader support
-// is a separate commit if/when needed).
-function escapeTypstMarkupText(s: string): string {
-  // Escape every Typst-meaningful symbol at the start of a sequence: `\`,
-  // `#`, `[`, `]`, `*`, `_`, `$`, `@`, `<`, `>`, `~`, ``` ` ```, `'`,
-  // `"`. A leading backslash is sufficient in markup mode.
-  return s.replace(/[\\#\[\]*_$@<>~`'"]/g, "\\$&");
-}
-
+// of `"...with literal backticks..."`. Text outside backticks goes
+// through the same markup escaper as body text. Bold/italic/links are
+// NOT recognised.
 function typstContentWithBackticks(s: string): string {
   // Split on backtick code spans. Even indices are text, odd indices are
   // raw code. The regex requires non-greedy match between matching
@@ -169,8 +156,8 @@ function typstContentWithBackticks(s: string): string {
   const out = parts
     .map((segment, i) =>
       i % 2 === 0
-        ? escapeTypstMarkupText(segment)
-        : `#raw(block: false, ${quote(segment)})`,
+        ? escapeMarkup(segment)
+        : `#raw(block: false, ${typstString(segment)})`,
     )
     .join("");
   return `[${out}]`;
