@@ -11,7 +11,7 @@
    thread pool is a _bounded crew_ of workers that take jobs from a shared queue. You hand it a function and its arguments; it hands back a *future* — a promise that the answer will be ready later. Pools solve two problems at once: they cap how many threads exist, and they remove the cost of starting a new one for every task.
 ]
 
-This chapter assumes you have seen `threading.Thread` but have not yet reached Ch. 8 · asyncio. We stay deliberately in the `concurrent.futures` module, which is the right tool for the overwhelming majority of I\/O-bound Python programs.#endnote-ref(1)
+This chapter assumes you have seen `threading.Thread` but have not yet reached Ch. 8 · asyncio. We stay deliberately in the `concurrent.futures` module, which is the right tool for the overwhelming majority of I\/O-bound Python programs.#endnote-ref(1);
 
 ===== What you will learn
 
@@ -33,7 +33,7 @@ This chapter assumes you have seen `threading.Thread` but have not yet reached C
 
 ===== A note on scope
 
-We cover _thread_ pools specifically. Process pools (`ProcessPoolExecutor`) are touched on in §7.4 only to contrast sizing rules. #strike[Async pools] are deferred to chapter 8.
+We cover _thread_ pools specifically. Process pools (`ProcessPoolExecutor`) are touched on in §7.4 only to contrast sizing rules. #strike[Async pools]; are deferred to chapter 8.
 
 #pagebreak(weak: true)
 #set page(margin: body-margins)

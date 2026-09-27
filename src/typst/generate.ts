@@ -701,6 +701,9 @@ function isPhrasingNode(n: RootContent): boolean {
 
 // ---- inline nodes ----
 
+// Inline `#call(...)` / `#call[...]` emissions end with `;`. Without it,
+// text that follows directly — `~~x~~(y)`, `[^1].Next` — extends the
+// expression (a call or field access) and Typst fails to compile.
 function renderInlines(nodes: PhrasingContent[], ctx: Ctx): string {
   return nodes.map((n) => renderInline(n, ctx)).join("");
 }
@@ -714,7 +717,7 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
     case "emphasis":
       return `_${renderInlines((node as Emphasis).children, ctx)}_`;
     case "delete":
-      return `#strike[${renderInlines((node as Delete).children, ctx)}]`;
+      return `#strike[${renderInlines((node as Delete).children, ctx)}];`;
     case "inlineCode":
       return renderInlineCode((node as InlineCode).value);
     case "link":
@@ -746,10 +749,10 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
           ctx.endnoteOrder.push(ref);
           idx = ctx.endnoteOrder.length - 1;
         }
-        return `#endnote-ref(${idx + 1})`;
+        return `#endnote-ref(${idx + 1});`;
       }
       const body = renderBlocks(def, ctx);
-      return `#footnote[${body}]`;
+      return `#footnote[${body}];`;
     }
     default:
       return "";
@@ -799,14 +802,14 @@ function renderLink(node: Link, ctx: Ctx): string {
     // define.
     if (!ctx.labels.has(id)) return body || id;
     if (body === "") return `@${id}`;
-    return `#link(<${id}>)[${body}]`;
+    return `#link(<${id}>)[${body}];`;
   }
-  return `#link("${url}")[${body}]`;
+  return `#link("${url}")[${body}];`;
 }
 
 function renderInlineImage(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(image.url, ctx);
-  return `#image("${escapeString(abs)}")`;
+  return `#image("${escapeString(abs)}");`;
 }
 
 // ---- helpers ----

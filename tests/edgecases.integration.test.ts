@@ -64,4 +64,10 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     // The inline-code chip's padding shows up as a space in pdftotext.
     expect(text).toMatch(/A a`b and x```y then c`d ?\.method\./);
   });
+
+  it("keeps text glued to an inline call from extending it", async () => {
+    const text = await render("A ~~x~~(y) and [l](https://e.com).z and n[^1].Next\n\n[^1]: Note.\n");
+    expect(text).toContain("A x(y) and l.z and n");
+    expect(text).toContain(".Next");
+  });
 });
