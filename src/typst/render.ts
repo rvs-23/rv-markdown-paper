@@ -55,7 +55,7 @@ function buildPreamble(options: DocumentOptions): string {
     `#import "template.typ": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
-      `opener-margins, body-margins, endnote-ref, endnotes`,
+      `opener-margins, body-margins, endnote-ref, endnotes, rule`,
   );
   // Palette tokens are needed by generated body content (e.g. the
   // definition-list grid renders its hairline with `c-hairline`).

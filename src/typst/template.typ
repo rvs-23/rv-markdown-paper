@@ -392,6 +392,10 @@
   #stack(spacing: 0.55em, ..items.pos())
 ]
 
+// Markdown `---` thematic break: a full-width hairline, the same stroke
+// the cover uses for its rules.
+#let rule() = block(above: 1.6em, below: 1.6em, line(length: 100%, stroke: 0.4pt + c-hairline))
+
 // ---------- legacy callouts ----------
 // The old v0.2 generator emitted `#warn[...]` and `#system[...]`. Keep them
 // as thin aliases so any existing markdown continues to render.

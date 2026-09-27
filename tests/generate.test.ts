@@ -215,3 +215,9 @@ describe("generateTypst: inline code", () => {
     expect(gen("Quote ``` `tick ``` here.\n")).toContain('#raw("`tick");');
   });
 });
+
+describe("generateTypst: thematic break", () => {
+  it("emits a rule between paragraphs", () => {
+    expect(gen("One\n\n---\n\nTwo\n")).toContain("One\n\n#rule()\n\nTwo");
+  });
+});

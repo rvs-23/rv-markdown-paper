@@ -284,9 +284,10 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Link | `[text](url)` | Underlined hairline |
 | Footnote | `text[^1]` + `[^1]: body` | Page-bottom footnote by default; set `footnotes: endnotes` in frontmatter to collect every body into a chapter-end "NOTES" block with inline superscript numerals (definitions that are never referenced still appear, after the referenced ones) |
 | Unordered list | `- item` | En-dash marker at every nesting level |
-| Ordered list | `1. item` | Italic-serif numeral (ornament voice) |
+| Ordered list | `1. item` | Italic-serif numeral (ornament voice); a list starting at `5.` keeps its numbering |
 | Task list | `- [x] done` / `- [ ] todo` | Ink-bordered checkbox; checked is ink-filled with paper-colored tick + muted body |
 | Definition list | `Term`\n`:   definition` | 2-col grid with hairline-bordered rows |
+| Horizontal rule | `---` | Full-width hairline with generous space above and below |
 | Blockquote | `> ...` | Hairline left rule, sans body in muted ink |
 | Pull quote | `:::epigraph` … `:::` | 1.5pt ink left rule, 20pt italic-serif body, tracked uppercase cite |
 | Table | GFM pipe syntax | Label column in Archivo sans, data columns in JetBrains Mono Light; hairline header rule, no zebra striping |

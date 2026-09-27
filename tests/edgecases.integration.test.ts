@@ -76,4 +76,9 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect(await render(md, { showCover: false })).toContain("Thread pools");
     expect(await render(md)).not.toContain("Thread pools");
   });
+
+  it("honours an ordered list's start number", async () => {
+    const text = await render("5. five\n6. six\n");
+    expect(text).toMatch(/5\.\s*five\s*6\.\s*six/);
+  });
 });

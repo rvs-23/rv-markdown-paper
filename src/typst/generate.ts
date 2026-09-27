@@ -185,7 +185,7 @@ function renderBlock(node: RootContent, ctx: Ctx): string {
     case "table":
       return renderTable(node, ctx);
     case "thematicBreak":
-      return "";
+      return "#rule()";
     case "html":
       return "";
     case "math":
@@ -331,8 +331,11 @@ function renderList(node: List, ctx: Ctx): string {
     (c) => c.type === "listItem" && c.checked != null,
   );
   if (isTaskList) return renderTaskList(node, ctx);
+  // Typst's `+` auto-numbers from 1, so a list that starts elsewhere
+  // (`5. five`) spells every number out.
+  const start = node.ordered && node.start != null && node.start !== 1 ? node.start : null;
   const items = node.children.map((item, idx) =>
-    renderListItem(item, ctx, node.ordered ?? false, idx),
+    renderListItem(item, ctx, node.ordered ?? false, start === null ? null : start + idx),
   );
   return items.join("\n");
 }
@@ -358,9 +361,9 @@ function renderListItem(
   item: ListItem,
   ctx: Ctx,
   ordered: boolean,
-  _idx: number,
+  number: number | null,
 ): string {
-  const marker = ordered ? "+" : "-";
+  const marker = !ordered ? "-" : number === null ? "+" : `${number}.`;
   const body = item.children
     .map((child, i) => {
       if (child.type === "paragraph" && i === 0) {
