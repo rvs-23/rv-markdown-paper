@@ -81,4 +81,19 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     const text = await render("5. five\n6. six\n");
     expect(text).toMatch(/5\.\s*five\s*6\.\s*six/);
   });
+
+  it("renders real LaTeX math", async () => {
+    const text = await render("Area $ab + c$ and $\\frac{a}{b}$ and $\\sqrt{x}$.\n");
+    expect(text).not.toContain("frac");
+    expect(text).not.toContain("sqrt");
+  });
+
+  it("refuses Typst code smuggled into math", async () => {
+    await expect(render("$#text(red)[pwned]$\n")).rejects.toThrow(/raw # or "/);
+    await expect(render('$\\text{" #panic() "}$\n')).rejects.toThrow(/raw # or "/);
+  });
+
+  it("names the formula when LaTeX can't be converted", async () => {
+    await expect(render("$\\nosuchcommand x$\n")).rejects.toThrow(/\\nosuchcommand/);
+  });
 });

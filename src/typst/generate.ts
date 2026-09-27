@@ -24,6 +24,7 @@ import type {
 import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
 import { toString as mdastToString } from "mdast-util-to-string";
+import { tex2typst } from "tex2typst";
 
 export type GenerateOptions = {
   sourceDir: string;
@@ -599,51 +600,21 @@ function renderInlineMath(node: { value: string; data?: { attrs?: Attributes } }
   return `$${latexToTypst(node.value)}$`;
 }
 
-// Minimal LaTeX → Typst math translation. Phase 2: cover the symbols the
-// reference fixture uses. Bigger-ticket constructs (\frac, \mathbf, \text,
-// subscripts/superscripts with braces) arrive in a later phase.
-const LATEX_SYMBOLS: Record<string, string> = {
-  cdot: "dot.op",
-  times: "times",
-  infty: "infinity",
-  alpha: "alpha",
-  beta: "beta",
-  gamma: "gamma",
-  delta: "delta",
-  epsilon: "epsilon",
-  theta: "theta",
-  lambda: "lambda",
-  mu: "mu",
-  pi: "pi",
-  sigma: "sigma",
-  tau: "tau",
-  phi: "phi",
-  omega: "omega",
-  Delta: "Delta",
-  Sigma: "Sigma",
-  Omega: "Omega",
-  sum: "sum",
-  prod: "product",
-  int: "integral",
-  leq: "<=",
-  geq: ">=",
-  neq: "!=",
-  approx: "approx",
-  to: "->",
-  rightarrow: "->",
-  leftarrow: "<-",
-};
-
-function latexToTypst(s: string): string {
-  let out = s;
-  // Replace named commands first so `\lambda` becomes `lambda`, `\cdot`
-  // becomes `dot.op`, etc. The unknown-command fallback strips the backslash,
-  // which Typst will then read as a bare identifier (most LaTeX symbol names
-  // happen to be valid Typst names — not all, but enough for Phase 2).
-  out = out.replace(/\\([A-Za-z]+)/g, (_, name: string) => {
-    return LATEX_SYMBOLS[name] ?? name;
-  });
-  return out.trim();
+// LaTeX → Typst math via tex2typst, in strict mode so an unknown command
+// fails instead of degrading to a bare identifier. The source is checked
+// first: a raw `#` would start Typst code inside math, and a raw `"` could
+// close one of the string literals tex2typst emits for `\text{...}` and let
+// the rest run as code. Neither has a meaning in LaTeX math (`\#` is the
+// escaped hash and stays allowed).
+function latexToTypst(latex: string): string {
+  if (/(^|[^\\])#/.test(latex) || latex.includes('"')) {
+    throw new Error(`Math may not contain a raw # or ": $${latex}$`);
+  }
+  try {
+    return tex2typst(latex, { nonStrict: false }).trim();
+  } catch (err) {
+    throw new Error(`Could not convert math $${latex}$: ${(err as Error).message}`);
+  }
 }
 
 // ---- definition list (remark-definition-list) ----

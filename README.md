@@ -295,7 +295,7 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Code block + filename | `` ```python {filename="x.py" lang-label="Python 3.12"} `` | Adds a header strip above the panel with filename L, lang-label R |
 | Figure | `![caption](path)` | Full-bleed image in a hairline-bordered panel + caption row with italic-serif `Fig. N.M` lead |
 | Figure cross-ref | `![cap](p){#fig:x}` + `[@fig:x]` | Resolves to "Fig. N.M" inline |
-| Inline math | `$x^2$` | Native Typst math |
+| Inline math | `$x^2$` | LaTeX, converted to Typst math with [`tex2typst`](https://github.com/qwinsi/tex2typst); unknown commands fail the render |
 | Display math | `$$ N = \lambda \cdot W $$ {#eq:y}` | Centered with hairline frame, italic-serif `(N.M)` number top-right; `[@eq:y]` resolves to the same styled `(N.M)` |
 | Note callout | `:::note` … `:::` | Surface fill, ink-3 left rule, tracked label |
 | Tip callout | `:::tip` … `:::` | Surface fill, full-ink 2pt left rule |
@@ -332,6 +332,7 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | Runtime | Node.js ≥ 20, TypeScript with strict typing |
 | CLI | [`commander`](https://github.com/tj/commander.js) |
 | YAML | [`gray-matter`](https://github.com/jonschlinkert/gray-matter) |
+| Math | [`tex2typst`](https://github.com/qwinsi/tex2typst) — LaTeX → Typst math, strict mode |
 | Markdown parse | [`unified`](https://unifiedjs.com/) + `remark-parse` + `remark-gfm` + `remark-directive` + `remark-math` + `remark-definition-list` |
 | Typesetting | [Typst](https://typst.app/) compiler (external binary on `PATH`) |
 | Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](src/typst/theme.tmTheme) (grayscale only) |
@@ -356,7 +357,7 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 
 1. **Frontmatter** — `gray-matter` splits YAML off the top.
 2. **Parse** — Markdown → mdast via the remark plugin chain. A pre-parse pass normalises Pandoc-dialect surface forms (`::: name`, `:::{.class}`, attribute colons) so the canonical fixture parses without invoking Pandoc.
-3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math symbols map to Typst equivalents.
+3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math converts to Typst math via `tex2typst`.
 4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) writes the generated body alongside [`template.typ`](src/typst/template.typ), [`palette.typ`](src/typst/palette.typ), and [`theme.tmTheme`](src/typst/theme.tmTheme) into a temp directory, then spawns `typst compile` with `--root <sourceDir>`, `--font-path assets/fonts`, and `--ignore-system-fonts`.
 
 ### Design principles
@@ -373,6 +374,7 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 
 - Image paths must resolve inside the source markdown's directory tree; remote URLs, `data:` URIs, absolute paths, and `..`-escapes are rejected at generate time.
 - Typst runs with `--root <sourceDir>` so the compiler cannot read files outside the document tree.
+- Math may not contain a raw `#` or `"`: either could run Typst code inside `$…$`. `\\#` stays allowed.
 - Attribute IDs validate against `^[A-Za-z][A-Za-z0-9_:-]*$`; anything outside the grammar throws `ConfigError` before any Typst is generated, closing a label-injection path.
 - Typst stderr is tail-buffered to 64 KB so a runaway compile can't exhaust memory.
 
