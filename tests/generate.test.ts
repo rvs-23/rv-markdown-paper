@@ -206,13 +206,12 @@ describe("generateTypst: cross-references and math", () => {
 });
 
 describe("generateTypst: inline code", () => {
-  it("grows the fence beyond the longest backtick run in the value", () => {
-    const out = gen("Run `` a`b `` now.\n");
-    expect(out).toContain("``a`b``");
+  it("uses a plain backtick span when the value has no backtick", () => {
+    expect(gen("Run `a.b` now.\n")).toContain("Run `a.b` now.");
   });
 
-  it("pads values that start or end with a backtick", () => {
-    const out = gen("Quote ``` `tick ``` here.\n");
-    expect(out).toContain("`` `tick``");
+  it("switches to a terminated #raw call when the value contains a backtick", () => {
+    expect(gen("Run `` a`b `` now.\n")).toContain('Run #raw("a`b"); now.');
+    expect(gen("Quote ``` `tick ``` here.\n")).toContain('#raw("`tick");');
   });
 });

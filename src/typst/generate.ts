@@ -779,12 +779,14 @@ function renderTextWithRefs(value: string, ctx: Ctx): string {
   return out;
 }
 
+// Typst raw fences can't carry a backtick run the way CommonMark can: two
+// backticks are an empty raw, and three or more read the first word as a
+// language tag. Code containing a backtick goes through `#raw(...)`
+// instead; the trailing `;` ends the expression so following text such
+// as `.method` isn't parsed as a field access.
 function renderInlineCode(value: string): string {
-  const fenceLen = Math.max(1, longestBacktickRun(value) + 1);
-  const fence = "`".repeat(fenceLen);
-  const padStart = value.startsWith("`") ? " " : "";
-  const padEnd = value.endsWith("`") ? " " : "";
-  return `${fence}${padStart}${value}${padEnd}${fence}`;
+  if (value.includes("`")) return `#raw(${typstString(value)});`;
+  return `\`${value}\``;
 }
 
 function renderLink(node: Link, ctx: Ctx): string {

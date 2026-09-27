@@ -58,4 +58,10 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     );
     expect(text).toContain("See site and api.");
   });
+
+  it("renders inline code that contains backticks", async () => {
+    const text = await render("A ``a`b`` and ````x```y```` then ``c`d``.method.\n");
+    // The inline-code chip's padding shows up as a space in pdftotext.
+    expect(text).toMatch(/A a`b and x```y then c`d ?\.method\./);
+  });
 });
