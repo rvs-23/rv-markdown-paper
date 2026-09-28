@@ -272,6 +272,8 @@ Two details of the `cover` block:
 
 ## Feature Support
 
+**Writing a document?** [`MARKDOWN-GUIDE.md`](MARKDOWN-GUIDE.md) is the plain syntax reference: every feature as the Markdown to write plus what it renders as. Hand it to anyone (or any agent) authoring for `mdpdf`. A test renders every example in it, so it stays accurate.
+
 The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pandoc-dialect extensions: `{#id .class key=value}` attribute bundles, `:::name`-style fenced divs, math, and definition lists.
 
 ### Quick reference
