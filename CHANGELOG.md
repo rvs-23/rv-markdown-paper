@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added — scripts
+
+- Devanagari, Kannada and emoji render via bundled fallback fonts (Noto
+  Sans Devanagari / Kannada, weights 300–700, and monochrome Noto Emoji).
+  Before, they rendered as blanks because only the three design fonts
+  were loaded.
+
+### Fixed
+
+- Bold or italic starting inside a word (`oota**kke**`) no longer fails
+  to compile.
+
 ### Fixed — review pass (Markdown outside the canonical fixture)
 
 - LaTeX math now converts through `tex2typst`: `$ab$` no longer fails
