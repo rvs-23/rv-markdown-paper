@@ -138,4 +138,9 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("renders bold and italic that start inside a word", async () => {
+    const text = await render("oota**kke** = for the meal; un*believ*able.\n");
+    expect(text).toContain("ootakke = for the meal; unbelievable.");
+  });
 });

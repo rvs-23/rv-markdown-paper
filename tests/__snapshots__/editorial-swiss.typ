@@ -8,7 +8,7 @@
 #eyebrow[Ch. 7 · Introduction]
 
 #dropcap("A")[
-   thread pool is a _bounded crew_ of workers that take jobs from a shared queue. You hand it a function and its arguments; it hands back a *future* — a promise that the answer will be ready later. Pools solve two problems at once: they cap how many threads exist, and they remove the cost of starting a new one for every task.
+   thread pool is a #emph[bounded crew]; of workers that take jobs from a shared queue. You hand it a function and its arguments; it hands back a #strong[future]; — a promise that the answer will be ready later. Pools solve two problems at once: they cap how many threads exist, and they remove the cost of starting a new one for every task.
 ]
 
 This chapter assumes you have seen `threading.Thread` but have not yet reached Ch. 8 · asyncio. We stay deliberately in the `concurrent.futures` module, which is the right tool for the overwhelming majority of I\/O-bound Python programs.#endnote-ref(1);
@@ -33,7 +33,7 @@ This chapter assumes you have seen `threading.Thread` but have not yet reached C
 
 ===== A note on scope
 
-We cover _thread_ pools specifically. Process pools (`ProcessPoolExecutor`) are touched on in §7.4 only to contrast sizing rules. #strike[Async pools]; are deferred to chapter 8.
+We cover #emph[thread]; pools specifically. Process pools (`ProcessPoolExecutor`) are touched on in §7.4 only to contrast sizing rules. #strike[Async pools]; are deferred to chapter 8.
 
 #pagebreak(weak: true)
 #set page(margin: body-margins)
@@ -46,7 +46,7 @@ We cover _thread_ pools specifically. Process pools (`ProcessPoolExecutor`) are 
 
 === Why a pool, and why bounded.
 
-Spawning a thread in Python is cheap but not free. Each thread carries an OS-level stack (8 MB on Linux by default), a bookkeeping structure in the interpreter, and contention for the *GIL*. Unbounded spawning is the single most common cause of a Python server going sideways under load.
+Spawning a thread in Python is cheap but not free. Each thread carries an OS-level stack (8 MB on Linux by default), a bookkeeping structure in the interpreter, and contention for the #strong[GIL];. Unbounded spawning is the single most common cause of a Python server going sideways under load.
 
 #marg(label: "The GIL in 3.13", )[
   PEP 703 introduces a no-GIL build. Until it is the default, reason as if the GIL is there.
@@ -58,11 +58,11 @@ Spawning a thread in Python is cheap but not free. Each thread carries an OS-lev
 
 ==== 7.1.1 Three reasons to pool
 
-+ *Bound memory.* A fixed worker count caps stack usage to a predictable multiple of the stack size.
-+ *Amortize startup.* Thread creation is \~100 μs; reusing a worker for a 1 ms task matters.
-+ *Backpressure for free.* When the queue fills, submitters block — the pool refuses to paper over a too-slow consumer.
++ #strong[Bound memory.]; A fixed worker count caps stack usage to a predictable multiple of the stack size.
++ #strong[Amortize startup.]; Thread creation is \~100 μs; reusing a worker for a 1 ms task matters.
++ #strong[Backpressure for free.]; When the queue fills, submitters block — the pool refuses to paper over a too-slow consumer.
 
-==== 7.1.2 When threads do _not_ help
+==== 7.1.2 When threads do #emph[not]; help
 
 - Pure CPU work in pure Python — the GIL serializes it.
   - Use `ProcessPoolExecutor` instead.
@@ -89,7 +89,7 @@ Spawning a thread in Python is cheap but not free. Each thread carries an OS-lev
 }
 == 7.2 · What a pool actually is <sec-pool-is>
 
-_(This section is listed in the chapter TOC but its content lives in the companion reference card; see Appendix A.)_
+#emph[(This section is listed in the chapter TOC but its content lives in the companion reference card; see Appendix A.)];
 
 #pagebreak(weak: true)
 #_sig-numeral.update("7.3")
@@ -163,7 +163,7 @@ A reasonable default for I\/O-bound work is given by Little's law:
 
 $ N = lambda dot.op W $ <eq:little>
 
-where _N_ is the pool size, _λ_ the arrival rate of requests, and _W_ the average time a worker spends per request (mostly blocked on I\/O).
+where #emph[N]; is the pool size, #emph[λ]; the arrival rate of requests, and #emph[W]; the average time a worker spends per request (mostly blocked on I\/O).
 
 #table(
   columns: (2.2fr, 1.6fr, 1fr, 2fr),
@@ -200,7 +200,7 @@ where _N_ is the pool size, _λ_ the arrival rate of requests, and _W_ the avera
 Model solutions are in Appendix C, pp. 342–346.
 
 #exbox(number: "01", title: "Warm-up", tag: "submit / result", )[
-  Using `ThreadPoolExecutor`, compute the length of ten URLs in parallel and print them in _submission_ order, not completion order.
+  Using `ThreadPoolExecutor`, compute the length of ten URLs in parallel and print them in #emph[submission]; order, not completion order.
 ]
 
 #exbox(number: "02", title: "Sizing", tag: "Little's law", )[
@@ -208,7 +208,7 @@ Model solutions are in Appendix C, pp. 342–346.
 ]
 
 #exbox(number: "03", title: "Trap", tag: "deadlock", )[
-  Construct a program where a worker in pool _A_ submits to the same pool and waits on the result. Show the deadlock; fix it with two pools.
+  Construct a program where a worker in pool #emph[A]; submits to the same pool and waits on the result. Show the deadlock; fix it with two pools.
 ]
 
 #epigraph(cite: "Rob Pike · Concurrency is not parallelism (2012)", )[
@@ -226,8 +226,8 @@ Model solutions are in Appendix C, pp. 342–346.
   Ch. 8 · asyncio; Ch. 9 · process pools.
 ]
 
-- *Kleinrock, L.* _Queueing Systems, Vol. 1._ Wiley, 1975.
-- *Beazley, D.* _Python Concurrency From the Ground Up._ PyCon US, 2015.
-- *CPython source* — `Lib/concurrent/futures/thread.py`.
+- #strong[Kleinrock, L.]; #emph[Queueing Systems, Vol. 1.]; Wiley, 1975.
+- #strong[Beazley, D.]; #emph[Python Concurrency From the Ground Up.]; PyCon US, 2015.
+- #strong[CPython source]; — `Lib/concurrent/futures/thread.py`.
 
 #endnotes(([For CPU-bound work, substitute `ProcessPoolExecutor`; the API is identical, the cost model is not.], [The `as_completed` iterator accepts a `timeout=` keyword.]))
