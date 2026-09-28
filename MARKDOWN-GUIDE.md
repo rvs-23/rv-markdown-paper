@@ -99,13 +99,16 @@ Italic stays in the sans body face. Links are ink with an underline.
 1. Ordered item
 2. Next item
 
-5. A list can start at any number
+A list can also start at any number:
+
+5. Fifth item
+6. Sixth item
 
 - [x] Done task
 - [ ] Open task
 ```
 
-Unordered lists use en-dash markers. Ordered numbers are italic serif. Task lists get checkboxes, and done items are muted.
+Two lists separated only by a blank line merge into one, so put a line of text between them. Unordered lists use en-dash markers. Ordered numbers are italic serif. Task lists get checkboxes, and done items are muted.
 
 ## Definition list
 

@@ -6,16 +6,27 @@ import { join, resolve } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
 
 // MARKDOWN-GUIDE.md is handed to people and agents as the syntax
-// reference, so every ```markdown example in it must actually render.
+// reference, so every ```markdown example in it must actually render,
+// and render as the feature it documents.
 // Frontmatter examples render as their own documents; the rest are
 // joined into one body.
 
 const ROOT = resolve(__dirname, "..");
-const hasTypst = spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0;
+const hasTools =
+  spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0 &&
+  [0, 99].includes(spawnSync("pdftotext", ["-v"], { stdio: "ignore" }).status ?? -1);
 
 function markdownExamples(guide: string): string[] {
   // Outer fence of 3+ backticks tagged `markdown`, closed by the same run.
   return [...guide.matchAll(/^(`{3,})markdown\n([\s\S]*?)^\1$/gm)].map((m) => m[2]!);
+}
+
+function pdfText(pdf: string): string {
+  return spawnSync("pdftotext", [pdf, "-"], { encoding: "utf8" }).stdout;
+}
+
+function squash(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, "");
 }
 
 async function renderIn(dir: string, name: string, markdown: string): Promise<void> {
@@ -23,7 +34,7 @@ async function renderIn(dir: string, name: string, markdown: string): Promise<vo
   await convertMarkdownToPdf({ inputPath: join(dir, `${name}.md`), outputPath: join(dir, `${name}.pdf`) });
 }
 
-describe.skipIf(!hasTypst)("MARKDOWN-GUIDE.md examples", () => {
+describe.skipIf(!hasTools)("MARKDOWN-GUIDE.md examples", () => {
   it("all render", async () => {
     const guide = await readFile(join(ROOT, "MARKDOWN-GUIDE.md"), "utf8");
     const examples = markdownExamples(guide);
@@ -42,6 +53,35 @@ describe.skipIf(!hasTypst)("MARKDOWN-GUIDE.md examples", () => {
         await renderIn(dir, `frontmatter-${i}`, `${fm}\n# Title\n\nBody.\n`);
       }
       await renderIn(dir, "body", `Intro paragraph.\n\n${body.join("\n\n")}`);
+
+      // Rendering without error isn't enough: a feature that silently
+      // degraded to plain text would still compile. Each marker below
+      // only appears when its feature went through the real component.
+      // Compared case- and space-insensitively, since tracked labels
+      // extract as "S TA C K" and eyebrows are uppercased.
+      const text = squash(pdfText(join(dir, "body.pdf")));
+      const markers = [
+        "ootakke",                        // intraword bold
+        "5.fifthitem6.sixthitem",         // list start number
+        "✓donetask",                      // task checkbox
+        "—donaldknuth",                   // epigraph attribution line
+        "notebackground", "tiparecommendation", "warningsomething", "dangertheone", // callout labels
+        "fetch_all.py",                   // code-block header strip
+        "fig.1workerspull",               // figure caption numbering
+        "asfig.1shows",                   // figure cross-reference
+        "by(1),",                         // equation cross-reference
+        "poolscapmemory.1",               // footnote marker
+        "1eachthreadreserves",            // footnote body
+        "stacksize",                      // margin-note label
+        "01submitandcollect", "warm-up",  // exercise box number, title, tag
+        "ch.7·introduction",              // eyebrow
+        "7.4·sizingthepool",              // section eyebrow with numeral
+      ];
+      for (const marker of markers) expect(text, marker).toContain(marker);
+
+      const cover = squash(pdfText(join(dir, `frontmatter-${frontmatter.findIndex((f) => f.includes("cover:"))}.pdf`)));
+      expect(cover).toContain("threadpools,orhowtoshare");
+      expect(cover).toContain("threadpools&futures");
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
