@@ -9,11 +9,20 @@
   Before, they rendered as blanks because only the three design fonts
   were loaded.
 
+### Changed — page width
+
+- The right-hand marginalia rail is reserved only when a document has
+  `:::margin` notes or `7.1`-style H2 numerals. Other documents get a
+  ~140mm text column instead of an empty 40mm band. Documents that use
+  the rail render unchanged.
+
 ### Fixed
 
 - Tables break across pages. A table taller than the space left on a
   page used to jump whole to the next page, leaving its heading on a
   near-empty page; the header row now repeats on the continuation.
+- `--margin-right` / `margins.right` was ignored (the right margin was
+  hardwired to the rail); it now sets the outer margin.
 - Bold or italic starting inside a word (`oota**kke**`) no longer fails
   to compile.
 

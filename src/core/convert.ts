@@ -7,7 +7,7 @@ import { extractFrontmatter } from "../parser/frontmatter.js";
 import { loadConfigFromPath, loadProjectConfig, resolveOptions } from "../config/resolve.js";
 import type { Cover, DocumentOptions, DocumentOptionsLayer } from "../config/options.js";
 import { estimateReadingTime } from "./readingTime.js";
-import { generateTypst } from "../typst/generate.js";
+import { generateTypst, usesRail } from "../typst/generate.js";
 import { renderTypstToPdf } from "../typst/render.js";
 
 export type ConvertOptions = {
@@ -83,6 +83,7 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     outputPath: outputAbsolute,
     options: templateOptions,
     sourceDir: inputDir,
+    rail: usesRail(tree),
   });
 }
 

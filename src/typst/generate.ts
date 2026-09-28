@@ -240,25 +240,54 @@ function renderHeading(node: Heading, ctx: Ctx): string {
   // Match runs against the raw heading text before inline emission so
   // e.g. "7.1 · Threads & the GIL" → "7.1".
   let sigUpdate = "";
-  if (node.depth === 2) {
-    const headingText = node.children
-      .map((c) => ("value" in c ? (c as { value?: string }).value ?? "" : ""))
-      .join("");
-    const m = /^(\d+(?:\.\d+)+|[A-Z]\.\d+)\b/.exec(headingText.trim());
-    if (m) {
-      const sigLit = typstString(m[1]!);
-      // `here()` must be evaluated inside a `context` block so it's a
-      // located expression; capture the page first, then pass an
-      // already-resolved record into the state update.
-      sigUpdate =
-        `#_sig-numeral.update(${sigLit})\n` +
-        `#context {\n` +
-        `  let p = here().page()\n` +
-        `  _sig-history.update(h => h + ((page: p, sig: ${sigLit}),))\n` +
-        `}\n`;
-    }
+  const sig = sectionNumeral(node);
+  if (sig) {
+    const sigLit = typstString(sig);
+    // `here()` must be evaluated inside a `context` block so it's a
+    // located expression; capture the page first, then pass an
+    // already-resolved record into the state update.
+    sigUpdate =
+      `#_sig-numeral.update(${sigLit})\n` +
+      `#context {\n` +
+      `  let p = here().page()\n` +
+      `  _sig-history.update(h => h + ((page: p, sig: ${sigLit}),))\n` +
+      `}\n`;
   }
   return `${prebreak}${sigUpdate}${prefix} ${body}${label}`;
+}
+
+// The dotted section ID an H2 opens with ("7.1 · Threads" → "7.1"), which
+// the template sets as the big rail numeral. Undefined for other headings.
+function sectionNumeral(node: Heading): string | undefined {
+  if (node.depth !== 2) return undefined;
+  const text = node.children
+    .map((c) => ("value" in c ? (c as { value?: string }).value ?? "" : ""))
+    .join("");
+  return /^(\d+(?:\.\d+)+|[A-Z]\.\d+)\b/.exec(text.trim())?.[1];
+}
+
+/**
+ * Whether the document puts anything in the right-hand marginalia rail.
+ *
+ * Only `:::margin` notes and `7.1`-style H2 section numerals draw there;
+ * a document with neither doesn't reserve the rail, so its text column
+ * runs wider instead of leaving an empty band on the right.
+ *
+ * Args:
+ *   tree: The parsed document.
+ *
+ * Returns:
+ *   True when the rail has content.
+ */
+export function usesRail(tree: Root): boolean {
+  const visit = (node: RootContent | Root): boolean => {
+    if (node.type === "containerDirective" && (node as unknown as DirectiveNode).name === "margin") {
+      return true;
+    }
+    if (node.type === "heading" && sectionNumeral(node)) return true;
+    return "children" in node && (node.children as RootContent[]).some(visit);
+  };
+  return visit(tree);
 }
 
 function renderCodeBlock(node: Code): string {

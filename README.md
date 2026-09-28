@@ -57,7 +57,7 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 | `--reading-time` | text | Reading time, e.g. `"14 min"` (auto-estimated if omitted) |
 | `--page-size` | `Letter` \| `A4` | Page size — default `A4` |
 | `--margin-top` | CSS length | Top margin (`24mm`, `0.85in`, `72pt`) |
-| `--margin-right` | CSS length | Right margin |
+| `--margin-right` | CSS length | Right (outer) margin; the template adds the marginalia rail or a reading-measure gutter inside it — see [Page width](#page-width) |
 | `--margin-bottom` | CSS length | Bottom margin |
 | `--margin-left` | CSS length | Left margin |
 | `--paper-bg` | `#RRGGBB` | Page background; surface, hairline, and danger-foreground derive from it automatically |
@@ -361,6 +361,15 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 2. **Parse** — Markdown → mdast via the remark plugin chain. A pre-parse pass normalises Pandoc-dialect surface forms (`::: name`, `:::{.class}`, attribute colons) so the canonical fixture parses without invoking Pandoc.
 3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math converts to Typst math via `tex2typst`.
 4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) pipes the generated document into `typst compile -` with `--root <sourceDir>`, `--font-path assets/fonts` and `--ignore-system-fonts`. The design ships as a Typst local package, `@local/mdpaper` ([`template.typ`](typst/local/mdpaper/0.1.0/template.typ), [`palette.typ`](typst/local/mdpaper/0.1.0/palette.typ), [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme)), loaded with `--package-path typst`, so nothing is written next to your Markdown. `--paper-bg` reaches the palette as `--input paper-bg=…`.
+
+### Page width
+
+The right side of the page holds a **marginalia rail**, a 35mm column for `:::margin` notes and the large section numeral of `7.1`-style H2s. It is reserved only when the document uses one of those. Without them, the text column runs wider (a ~140mm reading measure on A4) instead of leaving an empty band.
+
+| Document | Right margin (defaults) |
+|---|---|
+| Uses the rail | `margin-right` + 5mm gap + 35mm rail = 62mm |
+| No rail | `margin-right` + 26mm measure gutter = 48mm |
 
 ### Design principles
 
