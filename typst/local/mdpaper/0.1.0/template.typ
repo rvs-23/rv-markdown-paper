@@ -24,30 +24,38 @@
 #let f-mono   = "JetBrains Mono"
 
 // ---------- geometry ----------
-// `rail-width` = 35mm, `rail-gap` = 5mm between content column and rail,
-// `rail-outer` = 22mm from rail to page edge. Right margin of the page is
-// their sum. The `place(dx:, dy:)` offset in `marg()` is `content-width +
-// rail-gap` so the note lands at the left edge of the rail.
-
-#let rail-width = 35mm
-#let rail-gap   = 5mm
-#let rail-outer = 22mm
-
-// Pre-built `margin` dicts the generator can `#set page(margin: ...)`
-// with to switch layout mode mid-document. Only the right margin is
-// specified — Typst merges these into the existing page margins, so
-// top/left/bottom stay at the user's resolved values.
+// `rail-width` = 35mm, `rail-gap` = 5mm between content column and rail.
+// The rail sits inside the right margin, outboard of which is the
+// document's own `margin-right` (22mm by default). The `place(dx:, dy:)`
+// offset in `marg()` is `content-width + rail-gap` so the note lands at
+// the left edge of the rail.
 //
-// `opener-margins` gives the opener a ~140mm measure (right margin
-// 48mm on A4). The spec's "58ch" reading put the column at 113mm, but
-// the def-list hairlines in target.pdf span to ~162mm from the page's
-// left edge — the opener runs wider than the rail-reserving body
-// column, narrower than full bleed.
+// The rail is only reserved when the document uses it (`:::margin` notes
+// or `7.1`-style section numerals); the generator decides and passes
+// `rail` to `paper`. Without it, `measure-gutter` keeps the text column
+// at a ~140mm reading measure on A4 rather than running full width.
+
+#let rail-width     = 35mm
+#let rail-gap       = 5mm
+#let measure-gutter = 26mm
+
+// The page's right margin for a given outer margin, with or without the
+// rail. Defaults: 22 + 5 + 35 = 62mm with the rail, 22 + 26 = 48mm without.
+#let page-right(margin-right, rail) = {
+  margin-right + if rail { rail-gap + rail-width } else { measure-gutter }
+}
+
+// The generator switches layout mode mid-document with
+// `#set page(margin: opener-margins)` / `body-margins`. The preamble
+// (render.ts) defines those two dicts from `page-right`, because they
+// depend on the document's margin-right and rail. Only the right margin
+// is specified — Typst merges it into the existing page margins.
 //
-// `body-margins` reserves the marginalia rail (62mm right) so the prose
-// column is ~126mm and the rail sits to its right.
-#let opener-margins = (right: 48mm)
-#let body-margins   = (right: rail-gap + rail-width + rail-outer)
+// The opener always runs without the rail: a ~140mm measure (48mm right
+// on A4). The spec's "58ch" reading put the column at 113mm, but the
+// def-list hairlines in target.pdf span to ~162mm from the page's left
+// edge — wider than the rail-reserving body column, narrower than full
+// bleed.
 
 // ---------- marginalia ----------
 // `#marg(label, body)` places a labelled note in the right rail, anchored to
@@ -702,6 +710,7 @@
   show-header: true,
   show-footer: true,
   show-cover: true,
+  rail: true,
   theme-path: none,
   body,
 ) = {
@@ -736,11 +745,11 @@
   )
 
   // --------- Page ---------
-  // Right margin reserves the rail. The `marg()` helper places into that
-  // reserved band; we publish the geometry it needs via `_marg-geom` so
-  // its dx computation tracks actual page width / margins instead of
-  // hardcoding A4.
-  let effective-right = rail-gap + rail-width + rail-outer
+  // Right margin reserves the rail when the document uses one. The
+  // `marg()` helper places into that reserved band; we publish the
+  // geometry it needs via `_marg-geom` so its dx computation tracks
+  // actual page width / margins instead of hardcoding A4.
+  let effective-right = page-right(margin-right, rail)
   _marg-geom.update((
     left: margin-left,
     right: effective-right,
@@ -873,14 +882,9 @@
     inset: (x: 7pt, y: 7pt),
     align: left + horizon,
   )
-  // Tables fill the column width by default so they don't sit as a
-  // narrow island in the middle of the body — target.pdf stretches
-  // tables edge-to-edge inside the body column. Using `layout(...)`
-  // resolves the table inside a `box(width:)` of the actual available
-  // measure, which is what Typst needs to compute `fr` columns into
-  // absolute lengths (a bare `block(width: 100%, table)` doesn't
-  // propagate the container width to the table's fr resolution).
-  show table: it => layout(size => box(width: size.width, it))
+  // No wrapper around tables: the generator's `fr` columns already fill
+  // the body width, and a `box` wrapper made every table unbreakable, so
+  // a tall one jumped whole to the next page and stranded its heading.
   // Document-level `set par(justify: true)` propagates into table cells,
   // producing ugly inter-word gaps in narrow columns (visible in the Notes
   // columns of 03-structured.pdf and 06-full-paper.pdf before this rule).

@@ -22,27 +22,34 @@ export type TypstRenderOptions = {
   // Source markdown's directory. Used as Typst's `--root` so the compiler
   // can only read files under the document's own tree.
   sourceDir: string;
+  // Whether to reserve the right-hand marginalia rail (see usesRail).
+  rail: boolean;
 };
 
 export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> {
-  const source = `${buildPreamble(opts.options)}\n\n${opts.body}\n`;
+  const source = `${buildPreamble(opts.options, opts.rail)}\n\n${opts.body}\n`;
   const inputs: Record<string, string> = {};
   if (opts.options.paperBg) inputs["paper-bg"] = opts.options.paperBg;
   await runTypst(source, opts.outputPath, opts.sourceDir, inputs);
 }
 
-function buildPreamble(options: DocumentOptions): string {
+function buildPreamble(options: DocumentOptions, rail: boolean): string {
   const lines: string[] = [];
   lines.push(
     `#import "${TEMPLATE_PACKAGE}": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
-      `opener-margins, body-margins, endnote-ref, endnotes, rule`,
+      `page-right, endnote-ref, endnotes, rule`,
   );
   // Palette tokens are needed by generated body content (e.g. the
   // definition-list grid renders its hairline with `c-hairline`); the
   // template module re-exports the ones it imports from palette.typ.
   lines.push(`#import "${TEMPLATE_PACKAGE}": c-hairline`);
+  // Right-margin dicts the generated body switches between around the
+  // chapter opener; they depend on this document's margin and rail.
+  const marginRight = cssLengthToTypst(options.margins.right);
+  lines.push(`#let opener-margins = (right: page-right(${marginRight}, false))`);
+  lines.push(`#let body-margins = (right: page-right(${marginRight}, ${rail}))`);
   lines.push("");
   lines.push("#show: paper.with(");
   pushOptionalString(lines, "title", options.title);
@@ -68,6 +75,7 @@ function buildPreamble(options: DocumentOptions): string {
   lines.push(`  show-header: ${options.showHeader},`);
   lines.push(`  show-footer: ${options.showFooter},`);
   lines.push(`  show-cover: ${options.showCover},`);
+  lines.push(`  rail: ${rail},`);
   lines.push(`  theme-path: "theme.tmTheme",`);
   // footnote-mode is consumed at generation time (it controls whether
   // the body emits #footnote or #endnote-ref calls) and is NOT passed

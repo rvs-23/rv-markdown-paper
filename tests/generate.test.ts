@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseMarkdownToMdast } from "../src/parser/parseMarkdown.js";
-import { generateTypst } from "../src/typst/generate.js";
+import { generateTypst, usesRail } from "../src/typst/generate.js";
 
 function gen(md: string, footnoteMode?: "page" | "endnotes"): string {
   const tree = parseMarkdownToMdast(md);
@@ -237,5 +237,21 @@ describe("generateTypst: footnote cycles", () => {
 describe("generateTypst: dropcap", () => {
   it("lifts a whole grapheme, not half of it", () => {
     expect(gen(":::dropcap\ne\u0301clair text\n:::\n")).toContain('#dropcap("e\u0301")');
+  });
+});
+
+describe("usesRail", () => {
+  const rail = (md: string) => usesRail(parseMarkdownToMdast(md));
+
+  it("is false for plain documents and non-dotted headings", () => {
+    expect(rail("## 1. History\n\nText.\n")).toBe(false);
+  });
+
+  it("is true for a :::margin note, even nested", () => {
+    expect(rail(":::note\n:::margin\nSide.\n:::\n:::\n")).toBe(true);
+  });
+
+  it("is true for a dotted H2 section numeral", () => {
+    expect(rail("## 7.1 · Threads\n")).toBe(true);
   });
 });

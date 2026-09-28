@@ -157,4 +157,48 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("lets a table taller than the remaining page break across pages", async () => {
+    const rows = Array.from({ length: 60 }, (_, i) => `| row ${i} | value ${i} |`).join("\n");
+    const text = await render(`## Heading\n\nIntro.\n\n| Key | Value |\n|---|---|\n${rows}\n`, {}, true);
+    const pages = text.split("\f");
+    // The first rows share page 1 with the heading instead of moving on.
+    expect(pages[0]).toContain("row 0");
+    // The header row repeats on the continuation page.
+    expect(pages[1]).toMatch(/Key\s+Value/);
+  });
+
+  // Right edge (pt) of the rightmost word on page 1, via pdftotext -bbox.
+  async function rightEdge(markdown: string, cli: DocumentOptionsLayer = {}): Promise<number> {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-edge-x-"));
+    try {
+      await writeFile(join(dir, "doc.md"), markdown, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf"), cli });
+      const html = spawnSync("pdftotext", ["-bbox", "-f", "1", "-l", "1", join(dir, "doc.pdf"), "-"], {
+        encoding: "utf8",
+      }).stdout;
+      return Math.max(...[...html.matchAll(/xMax="([\d.]+)"/g)].map((m) => Number(m[1])));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+  const prose = `${"A long line of ordinary prose that wraps. ".repeat(40)}\n`;
+  const mm = (n: number) => (n * 72) / 25.4;
+
+  it("reserves the rail only when the document uses it", async () => {
+    // A4 is 210mm; left margin 22mm. Rail: right margin 62mm. None: 48mm.
+    const withRail = await rightEdge(`:::margin\nSide note.\n:::\n\n${prose}`);
+    const without = await rightEdge(prose);
+    expect(without).toBeGreaterThan(mm(210 - 62) + 5);
+    expect(without).toBeLessThanOrEqual(mm(210 - 48) + 1);
+    // With the rail the note itself sits in the rail, so only check the
+    // body column didn't widen past the rail's outer edge.
+    expect(withRail).toBeLessThanOrEqual(mm(210 - 22) + 1);
+  });
+
+  it("honours --margin-right", async () => {
+    const edge = await rightEdge(prose, { margins: { right: "50mm" } });
+    expect(edge).toBeLessThanOrEqual(mm(210 - 50 - 26) + 1);
+    expect(edge).toBeGreaterThan(mm(210 - 50 - 26) - 20);
+  });
 });
