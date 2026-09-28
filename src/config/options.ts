@@ -10,10 +10,8 @@ export type MetaPair = { label: string; value: string };
 
 // A single entry in the cover TOC. `id` is what the reader sees (e.g. "7.1"),
 // `title` is the section title, `ref` is the Typst label / heading ID used for
-// cross-referencing from body copy. `page` is the page number to display in the
-// TOC; provisional manual values today, will become a Typst-side
-// `counter(page).at(label)` lookup once page choreography stabilises (see
-// commit 15 of the post-review plan).
+// cross-referencing from body copy. `page` overrides the displayed page number;
+// without it the template resolves the page at `ref`, offset by `pageStart`.
 export type TocEntry = {
   id: string;
   title: string;
@@ -56,11 +54,9 @@ export type DocumentOptions = {
   showFooter: boolean;
   showCover: boolean;
 
-  // Optional page-background override as a "#RRGGBB" hex string. When
-  // set, the surface, hairline, and danger-fg tokens are re-derived
-  // from this value so the whole neutral palette tracks the chosen
-  // paper colour. When omitted, the canonical defaults in
-  // src/typst/palette.typ apply.
+  // Optional page-background override as a "#RRGGBB" hex string. The
+  // surface, hairline, and danger-fg tokens derive from it (see
+  // typst/local/mdpaper/0.1.0/palette.typ); default #F4F4F4.
   paperBg?: string;
 
   // Footnote placement. "page" (default) uses Typst's native page-bottom
@@ -72,29 +68,10 @@ export type DocumentOptions = {
   footnotes: "page" | "endnotes";
 };
 
-export type DocumentOptionsLayer = {
-  title?: string;
-  subtitle?: string;
-  section?: string;
-  author?: string;
-  date?: string;
-  readingTime?: string;
-  chapter?: number | string;
-  part?: string;
-  series?: string;
-  edition?: string;
-  editionShort?: string;
-  volume?: string;
-  pageStart?: number;
-  pageEnd?: number;
-  cover?: Cover;
-  pageSize?: "Letter" | "A4";
+// One precedence layer (CLI, frontmatter, project config): every field
+// optional, and margins may set any subset of sides.
+export type DocumentOptionsLayer = Partial<Omit<DocumentOptions, "margins">> & {
   margins?: Partial<Margins>;
-  showHeader?: boolean;
-  showFooter?: boolean;
-  showCover?: boolean;
-  paperBg?: string;
-  footnotes?: "page" | "endnotes";
 };
 
 export const DEFAULTS: DocumentOptions = {

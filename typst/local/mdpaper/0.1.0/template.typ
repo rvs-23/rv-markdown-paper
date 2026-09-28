@@ -1,6 +1,6 @@
 // rv-markdown-paper — Editorial + Swiss template.
 //
-// Design language: neutral light-gray page (#E8E8E8), single-ink ramp, three-font
+// Design language: neutral light-gray page (#F4F4F4), single-ink ramp, three-font
 // system. Body sans is Archivo; ornament voice is Instrument Serif Italic
 // (folios, dropcaps, pull quotes, equation tags); code is JetBrains Mono.
 //
@@ -9,9 +9,8 @@
 // notes are rendered there and auto-align to the paragraph that follows.
 
 // ---------- color tokens ----------
-// Imported from palette.typ so render.ts can swap in a derived palette
-// when the CLI passes --paper-bg. Defaults are the canonical Editorial+
-// Swiss neutral grays; see palette.typ for the full reference.
+// From palette.typ, which derives the neutral tones from the page colour
+// (`--input paper-bg`, set by the CLI's --paper-bg).
 
 #import "palette.typ": *
 
@@ -391,6 +390,10 @@
 #let task-list(..items) = block(above: 1em, below: 0.8em)[
   #stack(spacing: 0.55em, ..items.pos())
 ]
+
+// Markdown `---` thematic break: a full-width hairline, the same stroke
+// the cover uses for its rules.
+#let rule() = block(above: 1.6em, below: 1.6em, line(length: 100%, stroke: 0.4pt + c-hairline))
 
 // ---------- legacy callouts ----------
 // The old v0.2 generator emitted `#warn[...]` and `#system[...]`. Keep them

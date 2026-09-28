@@ -6,7 +6,9 @@ import type {
   TocEntry,
 } from "./options.js";
 
-const CSS_LENGTH_RE = /^\d*\.?\d+(in|cm|mm|pt|px)$/;
+// Shared with the CLI flag parsers and render.ts (which reads the groups).
+export const CSS_LENGTH_RE = /^(\d*\.?\d+)(in|cm|mm|pt|px)$/;
+export const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -15,13 +17,38 @@ export class ConfigError extends Error {
   }
 }
 
-export function validateOptions(raw: unknown, source: string): DocumentOptionsLayer {
+const KNOWN_KEYS = [
+  "title", "subtitle", "section", "author", "date", "readingTime", "chapter",
+  "part", "series", "edition", "editionShort", "volume", "page-start",
+  "page-end", "pageStart", "pageEnd", "cover", "pageSize", "margins",
+  "showHeader", "showFooter", "showCover", "paperBg", "footnotes",
+];
+
+// `strictKeys` is for mdpdf.config.json, which holds nothing but options,
+// so an unknown key there is an error. Frontmatter is shared with other
+// tools (Obsidian's `tags`, `aliases`, …), so there only a key that looks
+// like a typo of a real option (`showheader`, `titel`) gets a warning.
+export function validateOptions(
+  raw: unknown,
+  source: string,
+  { strictKeys = false }: { strictKeys?: boolean } = {},
+): DocumentOptionsLayer {
   if (raw === null || raw === undefined) return {};
   if (typeof raw !== "object" || Array.isArray(raw)) {
     throw new ConfigError(`${source}: expected an object, got ${describe(raw)}.`);
   }
   const r = raw as Record<string, unknown>;
   const out: DocumentOptionsLayer = {};
+
+  for (const key of Object.keys(r)) {
+    if (KNOWN_KEYS.includes(key)) continue;
+    const guess = closestKnownKey(key);
+    const hint = guess ? ` Did you mean "${guess}"?` : "";
+    if (strictKeys) {
+      throw new ConfigError(`${source}.${key}: unknown option.${hint}`);
+    }
+    if (guess) console.warn(`mdpdf: ${source}.${key} is not an option and is ignored.${hint}`);
+  }
 
   if ("title" in r) out.title = expectString(r.title, `${source}.title`);
   if ("subtitle" in r) out.subtitle = expectString(r.subtitle, `${source}.subtitle`);
@@ -66,7 +93,7 @@ function expectFootnoteMode(value: unknown, path: string): "page" | "endnotes" {
 // the surface palette derivation predictable (the JS-side darken helper
 // expects an 8-bit-per-channel base).
 export function expectHexColor(value: unknown, path: string): string {
-  if (typeof value !== "string" || !/^#[0-9A-Fa-f]{6}$/.test(value)) {
+  if (typeof value !== "string" || !HEX_COLOR_RE.test(value)) {
     throw new ConfigError(
       `${path}: expected a #RRGGBB hex color, got ${describe(value)}.`,
     );
@@ -191,6 +218,34 @@ function expectToc(value: unknown, path: string): TocEntry[] {
     }
     return out;
   });
+}
+
+// The known key within edit distance 2 (case-insensitive), if any.
+function closestKnownKey(key: string): string | undefined {
+  const k = key.toLowerCase();
+  let best: string | undefined;
+  let bestDist = 3;
+  for (const known of KNOWN_KEYS) {
+    const d = editDistance(k, known.toLowerCase());
+    if (d < bestDist) {
+      best = known;
+      bestDist = d;
+    }
+  }
+  return best;
+}
+
+function editDistance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const sub = prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1);
+      cur.push(Math.min(sub, prev[j]! + 1, cur[j - 1]! + 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length]!;
 }
 
 function describe(value: unknown): string {

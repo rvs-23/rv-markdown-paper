@@ -1,67 +1,48 @@
 import { spawn } from "node:child_process";
-import { writeFile, mkdtemp, rm, copyFile } from "node:fs/promises";
-import { join, dirname, resolve as resolvePath } from "node:path";
+import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Cover, DocumentOptions } from "../config/options.js";
+import { escapeMarkup, typstString } from "./escape.js";
+import { CSS_LENGTH_RE } from "../config/validate.js";
 
+// The template ships as a Typst local package (`@local/mdpaper`) under
+// typst/, passed with --package-path. Together with reading the document
+// from stdin, nothing has to be written next to the user's markdown:
+// --root stays the source dir (images resolve and are sandboxed there)
+// while the template loads from outside it.
 const HERE = dirname(fileURLToPath(import.meta.url));
-const TEMPLATE_PATH = resolvePath(HERE, "./template.typ");
-const THEME_PATH = resolvePath(HERE, "./theme.tmTheme");
-const PALETTE_PATH = resolvePath(HERE, "./palette.typ");
+const PACKAGE_DIR = resolvePath(HERE, "../../typst");
 const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
+const TEMPLATE_PACKAGE = "@local/mdpaper:0.1.0";
 
 export type TypstRenderOptions = {
   body: string;
   outputPath: string;
   options: DocumentOptions;
   // Source markdown's directory. Used as Typst's `--root` so the compiler
-  // can only read files under the document's own tree. The temp build dir
-  // is created inside it so template.typ + theme.tmTheme are reachable.
+  // can only read files under the document's own tree.
   sourceDir: string;
 };
 
 export async function renderTypstToPdf(opts: TypstRenderOptions): Promise<void> {
-  const tempDir = await mkdtemp(join(opts.sourceDir, ".mdpdf-"));
-  try {
-    const tempTemplate = join(tempDir, "template.typ");
-    const tempTheme = join(tempDir, "theme.tmTheme");
-    const tempPalette = join(tempDir, "palette.typ");
-    await copyFile(TEMPLATE_PATH, tempTemplate);
-    await copyFile(THEME_PATH, tempTheme);
-    // palette.typ: defaults from disk unless --paper-bg overrides it.
-    // template.typ does `#import "palette.typ": *`, so any helper that
-    // closes over a colour token automatically picks up the override.
-    if (opts.options.paperBg) {
-      await writeFile(tempPalette, derivePaletteTyp(opts.options.paperBg), "utf8");
-    } else {
-      await copyFile(PALETTE_PATH, tempPalette);
-    }
-
-    const preamble = buildPreamble(opts.options);
-    const source = `${preamble}\n\n${opts.body}\n`;
-    const docPath = join(tempDir, "document.typ");
-    await writeFile(docPath, source, "utf8");
-
-    await runTypst(docPath, opts.outputPath, opts.sourceDir);
-  } finally {
-    await rm(tempDir, { recursive: true, force: true });
-  }
+  const source = `${buildPreamble(opts.options)}\n\n${opts.body}\n`;
+  const inputs: Record<string, string> = {};
+  if (opts.options.paperBg) inputs["paper-bg"] = opts.options.paperBg;
+  await runTypst(source, opts.outputPath, opts.sourceDir, inputs);
 }
 
 function buildPreamble(options: DocumentOptions): string {
   const lines: string[] = [];
   lines.push(
-    `#import "template.typ": paper, note, tip, warning, danger, warn, system, ` +
+    `#import "${TEMPLATE_PACKAGE}": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
-      `opener-margins, body-margins, endnote-ref, endnotes`,
+      `opener-margins, body-margins, endnote-ref, endnotes, rule`,
   );
   // Palette tokens are needed by generated body content (e.g. the
-  // definition-list grid renders its hairline with `c-hairline`).
-  // template.typ imports palette.typ at its top level, but those
-  // bindings don't leak into the document scope where the body is
-  // evaluated, so import them explicitly here.
-  lines.push(`#import "palette.typ": *`);
+  // definition-list grid renders its hairline with `c-hairline`); the
+  // template module re-exports the ones it imports from palette.typ.
+  lines.push(`#import "${TEMPLATE_PACKAGE}": c-hairline`);
   lines.push("");
   lines.push("#show: paper.with(");
   pushOptionalString(lines, "title", options.title);
@@ -79,7 +60,7 @@ function buildPreamble(options: DocumentOptions): string {
   pushOptionalNumber(lines, "page-start", options.pageStart);
   pushOptionalNumber(lines, "page-end", options.pageEnd);
   if (options.cover) lines.push(`  cover: ${renderCover(options.cover)},`);
-  lines.push(`  page-size: ${quote(pageSizeToTypst(options.pageSize))},`);
+  lines.push(`  page-size: ${typstString(pageSizeToTypst(options.pageSize))},`);
   lines.push(`  margin-top: ${cssLengthToTypst(options.margins.top)},`);
   lines.push(`  margin-right: ${cssLengthToTypst(options.margins.right)},`);
   lines.push(`  margin-bottom: ${cssLengthToTypst(options.margins.bottom)},`);
@@ -98,7 +79,7 @@ function buildPreamble(options: DocumentOptions): string {
 
 function pushOptionalString(lines: string[], key: string, value: string | undefined): void {
   if (value === undefined) return;
-  lines.push(`  ${key}: ${quote(value)},`);
+  lines.push(`  ${key}: ${typstString(value)},`);
 }
 
 function pushOptionalScalar(
@@ -108,7 +89,7 @@ function pushOptionalScalar(
 ): void {
   if (value === undefined) return;
   if (typeof value === "number") lines.push(`  ${key}: ${value},`);
-  else lines.push(`  ${key}: ${quote(value)},`);
+  else lines.push(`  ${key}: ${typstString(value)},`);
 }
 
 function pushOptionalNumber(lines: string[], key: string, value: number | undefined): void {
@@ -118,21 +99,21 @@ function pushOptionalNumber(lines: string[], key: string, value: number | undefi
 
 function renderCover(cover: Cover): string {
   const fields: string[] = [];
-  if (cover.kicker !== undefined) fields.push(`kicker: ${quote(cover.kicker)}`);
-  if (cover.title !== undefined) fields.push(`title: ${quote(cover.title)}`);
+  if (cover.kicker !== undefined) fields.push(`kicker: ${typstString(cover.kicker)}`);
+  if (cover.title !== undefined) fields.push(`title: ${typstString(cover.title)}`);
   if (cover.subtitle !== undefined) fields.push(`subtitle: ${typstContentWithBackticks(cover.subtitle)}`);
   if (cover.meta !== undefined) {
     const pairs = cover.meta
-      .map((p) => `(label: ${quote(p.label)}, value: ${quote(p.value)})`)
+      .map((p) => `(label: ${typstString(p.label)}, value: ${typstString(p.value)})`)
       .join(", ");
     fields.push(`meta: (${pairs}${cover.meta.length === 1 ? "," : ""})`);
   }
   if (cover.toc !== undefined) {
     const entries = cover.toc
       .map((e) => {
-        const parts = [`id: ${quote(e.id)}`, `title: ${quote(e.title)}`];
-        if (e.ref) parts.push(`ref: ${quote(e.ref)}`);
-        if (e.page) parts.push(`page: ${quote(e.page)}`);
+        const parts = [`id: ${typstString(e.id)}`, `title: ${typstString(e.title)}`];
+        if (e.ref) parts.push(`ref: ${typstString(e.ref)}`);
+        if (e.page) parts.push(`page: ${typstString(e.page)}`);
         return `(${parts.join(", ")})`;
       })
       .join(", ");
@@ -141,26 +122,12 @@ function renderCover(cover: Cover): string {
   return `(${fields.join(", ")})`;
 }
 
-function quote(s: string): string {
-  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-}
-
 // Narrow markdown-in-cover-field support: only backtick code spans are
 // recognised. The cover template renders the result as content (not a
 // string), so we emit `[text #raw(block: false, "code") text]` instead
-// of `"...with literal backticks..."`. Anything outside backticks goes
-// through Typst's markup-mode special-character escaper so the result
-// is safe even when the input contains `#`, `[`, `]`, `*`, `_`, `$`, etc.
-// Bold/italic/links and other markdown features are NOT recognised
-// (they're not in the canonical fixture's cover fields; broader support
-// is a separate commit if/when needed).
-function escapeTypstMarkupText(s: string): string {
-  // Escape every Typst-meaningful symbol at the start of a sequence: `\`,
-  // `#`, `[`, `]`, `*`, `_`, `$`, `@`, `<`, `>`, `~`, ``` ` ```, `'`,
-  // `"`. A leading backslash is sufficient in markup mode.
-  return s.replace(/[\\#\[\]*_$@<>~`'"]/g, "\\$&");
-}
-
+// of `"...with literal backticks..."`. Text outside backticks goes
+// through the same markup escaper as body text. Bold/italic/links are
+// NOT recognised.
 function typstContentWithBackticks(s: string): string {
   // Split on backtick code spans. Even indices are text, odd indices are
   // raw code. The regex requires non-greedy match between matching
@@ -169,8 +136,8 @@ function typstContentWithBackticks(s: string): string {
   const out = parts
     .map((segment, i) =>
       i % 2 === 0
-        ? escapeTypstMarkupText(segment)
-        : `#raw(block: false, ${quote(segment)})`,
+        ? escapeMarkup(segment)
+        : `#raw(block: false, ${typstString(segment)})`,
     )
     .join("");
   return `[${out}]`;
@@ -180,60 +147,8 @@ function pageSizeToTypst(size: "Letter" | "A4"): string {
   return size === "Letter" ? "us-letter" : "a4";
 }
 
-// Derive the full neutral palette from a paper hex by multiplicative
-// channel darkening. Matches the relative steps the canonical palette
-// uses against the default #E8E8E8 paper: surface ~7%, surface-2 ~11%,
-// hairline ~21%. Danger-fg always tracks paper. The ink/mute ramp is
-// independent of paper colour and stays at its canonical values.
-export function derivePaletteTyp(paperHex: string): string {
-  const paper = parseHex(paperHex);
-  const surface = darken(paper, 0.07);
-  const surface2 = darken(paper, 0.11);
-  const hairline = darken(paper, 0.21);
-  const dangerFg = paper;
-  const hex = (rgb: [number, number, number]) =>
-    "#" +
-    rgb
-      .map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, "0").toUpperCase())
-      .join("");
-  return [
-    `// Derived palette — generated at render time from --paper-bg ${paperHex.toUpperCase()}.`,
-    `// Do not commit edits to this file directly; the source-of-truth defaults`,
-    `// live in src/typst/palette.typ.`,
-    ``,
-    `#let c-paper     = rgb("${hex(paper)}")`,
-    `#let c-ink       = rgb("#11131A")`,
-    `#let c-ink-2     = rgb("#2A2D36")`,
-    `#let c-ink-3     = rgb("#4A4D57")`,
-    `#let c-muted     = rgb("#686C76")`,
-    `#let c-mute-2    = rgb("#8B8E97")`,
-    `#let c-hairline  = rgb("${hex(hairline)}")`,
-    `#let c-surface   = rgb("${hex(surface)}")`,
-    `#let c-surface-2 = rgb("${hex(surface2)}")`,
-    `#let c-accent    = rgb("#11131A")`,
-    `#let c-danger-bg = rgb("#11131A")`,
-    `#let c-danger-fg = rgb("${hex(dangerFg)}")`,
-    ``,
-  ].join("\n");
-}
-
-function parseHex(hex: string): [number, number, number] {
-  const m = /^#([0-9A-Fa-f]{6})$/.exec(hex);
-  if (!m) throw new Error(`invalid hex color: ${hex}`);
-  const n = parseInt(m[1]!, 16);
-  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
-}
-
-function darken(
-  rgb: [number, number, number],
-  amount: number,
-): [number, number, number] {
-  const f = 1 - amount;
-  return [rgb[0] * f, rgb[1] * f, rgb[2] * f];
-}
-
 function cssLengthToTypst(value: string): string {
-  const match = value.match(/^(\d*\.?\d+)(in|cm|mm|pt|px)$/);
+  const match = value.match(CSS_LENGTH_RE);
   if (!match) throw new Error(`Invalid length: ${value}`);
   const [, num, unit] = match;
   if (unit === "px") {
@@ -247,7 +162,12 @@ function cssLengthToTypst(value: string): string {
 // Typst error needs, while bounding memory if a runaway compile floods stderr.
 const STDERR_TAIL_BYTES = 64 * 1024;
 
-function runTypst(inputPath: string, outputPath: string, root: string): Promise<void> {
+function runTypst(
+  source: string,
+  outputPath: string,
+  root: string,
+  inputs: Record<string, string>,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     // Honour SOURCE_DATE_EPOCH for reproducible builds; default to 0
     // (Unix epoch) so re-rendering the same source produces a
@@ -256,18 +176,21 @@ function runTypst(inputPath: string, outputPath: string, root: string): Promise<
     // (via the document ID seed) the PDF /ID entry that otherwise
     // randomises per run.
     const epoch = process.env.SOURCE_DATE_EPOCH ?? "0";
+    const inputArgs = Object.entries(inputs).flatMap(([k, v]) => ["--input", `${k}=${v}`]);
     const child = spawn(
       "typst",
       [
         "compile",
         "--root", root,
+        "--package-path", PACKAGE_DIR,
         "--font-path", FONTS_DIR,
         "--ignore-system-fonts",
         "--creation-timestamp", epoch,
-        inputPath,
+        ...inputArgs,
+        "-",
         outputPath,
       ],
-      { stdio: ["ignore", "pipe", "pipe"] },
+      { stdio: ["pipe", "pipe", "pipe"] },
     );
     let stderr = "";
     let truncated = false;
@@ -288,5 +211,6 @@ function runTypst(inputPath: string, outputPath: string, root: string): Promise<
         reject(new Error(msg));
       }
     });
+    child.stdin.end(source);
   });
 }

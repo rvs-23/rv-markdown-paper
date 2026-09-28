@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ConfigError, validateOptions } from "../src/config/validate.js";
 
 describe("validateOptions", () => {
@@ -43,5 +43,23 @@ describe("validateOptions", () => {
         "frontmatter",
       ),
     ).toThrow(/frontmatter\.margins\.top/);
+  });
+});
+
+describe("validateOptions unknown keys", () => {
+  it("throws on an unknown key in strict mode, suggesting the near miss", () => {
+    expect(() => validateOptions({ showheader: false }, "mdpdf.config.json", { strictKeys: true }))
+      .toThrow('mdpdf.config.json.showheader: unknown option. Did you mean "showHeader"?');
+  });
+
+  it("warns on a frontmatter typo but stays silent on unrelated keys", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      validateOptions({ titel: "X", tags: ["a"], aliases: ["b"] }, "frontmatter");
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain('Did you mean "title"?');
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

@@ -5,7 +5,7 @@ import type { Root as MdastRoot } from "mdast";
 import { parseMarkdownToMdast } from "../parser/parseMarkdown.js";
 import { extractFrontmatter } from "../parser/frontmatter.js";
 import { loadConfigFromPath, loadProjectConfig, resolveOptions } from "../config/resolve.js";
-import type { DocumentOptions, DocumentOptionsLayer } from "../config/options.js";
+import type { Cover, DocumentOptions, DocumentOptionsLayer } from "../config/options.js";
 import { estimateReadingTime } from "./readingTime.js";
 import { generateTypst } from "../typst/generate.js";
 import { renderTypstToPdf } from "../typst/render.js";
@@ -41,7 +41,7 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
 
   const tree = parseMarkdownToMdast(content);
   // Strip a leading H1 in two situations:
-  // (a) `cover` is configured — the cover block IS the chapter title, so
+  // (a) a cover is configured AND shown — the cover block IS the chapter title, so
   //     a `# Thread pools` H1 right after the cover renders the title
   //     a second time at body weight. The H1's text doesn't have to
   //     match `cover.title` exactly (the editorial fixture's H1 is just
@@ -52,7 +52,9 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
   const first = tree.children[0];
   const firstIsH1 =
     !!first && first.type === "heading" && first.depth === 1;
-  if (firstIsH1 && resolved.cover) {
+  // With `showCover: false` the cover never renders, so stripping the H1
+  // there would leave the document with no title at all.
+  if (firstIsH1 && resolved.cover && resolved.showCover) {
     tree.children.shift();
   } else if (firstIsH1 && resolved.title) {
     stripRedundantLeadingH1(tree, resolved.title);
@@ -89,9 +91,9 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
 // a dead parameter on `paper(...)`. Skipped when the author has already
 // supplied a Runtime/Reading time entry — explicit wins over auto-inject.
 function injectReadingTimeIntoCoverMeta(
-  cover: import("../config/options.js").Cover | undefined,
+  cover: Cover | undefined,
   readingTime: string | undefined,
-): import("../config/options.js").Cover | undefined {
+): Cover | undefined {
   if (!cover || !readingTime) return cover;
   const meta = cover.meta ?? [];
   const hasRuntimeKey = meta.some((p) =>

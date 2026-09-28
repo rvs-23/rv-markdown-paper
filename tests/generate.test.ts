@@ -206,13 +206,36 @@ describe("generateTypst: cross-references and math", () => {
 });
 
 describe("generateTypst: inline code", () => {
-  it("grows the fence beyond the longest backtick run in the value", () => {
-    const out = gen("Run `` a`b `` now.\n");
-    expect(out).toContain("``a`b``");
+  it("uses a plain backtick span when the value has no backtick", () => {
+    expect(gen("Run `a.b` now.\n")).toContain("Run `a.b` now.");
   });
 
-  it("pads values that start or end with a backtick", () => {
-    const out = gen("Quote ``` `tick ``` here.\n");
-    expect(out).toContain("`` `tick``");
+  it("switches to a terminated #raw call when the value contains a backtick", () => {
+    expect(gen("Run `` a`b `` now.\n")).toContain('Run #raw("a`b"); now.');
+    expect(gen("Quote ``` `tick ``` here.\n")).toContain('#raw("`tick");');
+  });
+});
+
+describe("generateTypst: thematic break", () => {
+  it("emits a rule between paragraphs", () => {
+    expect(gen("One\n\n---\n\nTwo\n")).toContain("One\n\n#rule()\n\nTwo");
+  });
+});
+
+describe("generateTypst: footnote cycles", () => {
+  it("names the cycle instead of overflowing the stack", () => {
+    expect(() => gen("A[^a]\n\n[^a]: see[^b]\n\n[^b]: back[^a]\n")).toThrow(
+      "Footnote [^a] references itself: [^a] → [^b] → [^a]",
+    );
+  });
+
+  it("allows a cycle in endnotes mode, where bodies are not inlined", () => {
+    expect(() => gen("A[^a]\n\n[^a]: loop[^a]\n", "endnotes")).not.toThrow();
+  });
+});
+
+describe("generateTypst: dropcap", () => {
+  it("lifts a whole grapheme, not half of it", () => {
+    expect(gen(":::dropcap\ne\u0301clair text\n:::\n")).toContain('#dropcap("e\u0301")');
   });
 });

@@ -19,11 +19,11 @@ import type {
   Table,
   TableRow,
   TableCell,
-  Break,
 } from "mdast";
-import { escapeMarkup, escapeString } from "./escape.js";
+import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
 import { toString as mdastToString } from "mdast-util-to-string";
+import { tex2typst } from "tex2typst";
 
 export type GenerateOptions = {
   sourceDir: string;
@@ -32,12 +32,6 @@ export type GenerateOptions = {
   // every body is collected into a single NOTES block appended after
   // the body. Default at the call site is "page" if undefined.
   footnoteMode?: "page" | "endnotes";
-};
-
-const ALIGN_MAP: Record<string, string> = {
-  left: "left",
-  right: "right",
-  center: "center",
 };
 
 // Admonition container-directive names that map to a Typst call `#<name>[...]`.
@@ -53,8 +47,8 @@ export function generateTypst(tree: Root, options: GenerateOptions): string {
     endnoteOrder: [],
     labels,
     pageChoreo: { sawOpener: false, breakBeforeNextH2: false },
+    footnoteStack: [],
   };
-  reorderMarginDirectives(tree.children);
   const body = renderBlocks(tree.children, ctx).trimEnd();
   // In endnotes mode, emit a single NOTES block after the body. The
   // template's `endnotes` helper renders the section heading + the
@@ -100,6 +94,9 @@ type Ctx = {
   // page-break and whether the next H2 should be preceded by one (i.e.
   // the body returning to standard layout after the opener page).
   pageChoreo: { sawOpener: boolean; breakBeforeNextH2: boolean };
+  // Footnotes currently being inlined (page mode), to catch a definition
+  // that references itself before it recurses forever.
+  footnoteStack: string[];
 };
 
 // Harvest every `{#id}` found on headings, images, math blocks, and directive
@@ -130,34 +127,6 @@ function collectFootnotes(tree: Root): Map<string, RootContent[]> {
   return map;
 }
 
-// ---- margin reordering ----
-// Walk the block list; whenever a `containerDirective` with name `margin`
-// is followed by one or more block siblings, hoist it to sit before them.
-//
-// Rule: a `:::margin` attaches to the NEXT block that is not another
-// `:::margin`. Multiple consecutive `:::margin` notes are kept in order and
-// all hoisted to just before the next non-margin block.
-
-function reorderMarginDirectives(nodes: RootContent[]): void {
-  // Recurse into containers first.
-  for (const n of nodes) {
-    const anyN = n as { children?: RootContent[] };
-    if (Array.isArray(anyN.children)) {
-      // Container directives and blockquotes may contain block children.
-      if (n.type === "containerDirective" || n.type === "blockquote") {
-        reorderMarginDirectives(anyN.children);
-      }
-    }
-  }
-
-  // In `examples/editorial-swiss/paper.md`, the convention is that `:::margin`
-  // appears BEFORE the paragraph it annotates — so the natural source order
-  // already has notes preceding their anchor. We still provide this helper
-  // as an idempotent pass; if a future fixture moves notes after their
-  // anchor, we can flip the direction here.
-  void nodes;
-}
-
 // ---- block-level nodes ----
 
 function renderBlocks(nodes: RootContent[], ctx: Ctx): string {
@@ -185,7 +154,7 @@ function renderBlock(node: RootContent, ctx: Ctx): string {
     case "table":
       return renderTable(node, ctx);
     case "thematicBreak":
-      return "";
+      return "#rule()";
     case "html":
       return "";
     case "math":
@@ -277,7 +246,7 @@ function renderHeading(node: Heading, ctx: Ctx): string {
       .join("");
     const m = /^(\d+(?:\.\d+)+|[A-Z]\.\d+)\b/.exec(headingText.trim());
     if (m) {
-      const sigLit = typstStringLiteral(m[1]!);
+      const sigLit = typstString(m[1]!);
       // `here()` must be evaluated inside a `context` block so it's a
       // located expression; capture the page first, then pass an
       // already-resolved record into the state update.
@@ -290,10 +259,6 @@ function renderHeading(node: Heading, ctx: Ctx): string {
     }
   }
   return `${prebreak}${sigUpdate}${prefix} ${body}${label}`;
-}
-
-function typstStringLiteral(s: string): string {
-  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
 function renderCodeBlock(node: Code): string {
@@ -335,8 +300,11 @@ function renderList(node: List, ctx: Ctx): string {
     (c) => c.type === "listItem" && c.checked != null,
   );
   if (isTaskList) return renderTaskList(node, ctx);
+  // Typst's `+` auto-numbers from 1, so a list that starts elsewhere
+  // (`5. five`) spells every number out.
+  const start = node.ordered && node.start != null && node.start !== 1 ? node.start : null;
   const items = node.children.map((item, idx) =>
-    renderListItem(item, ctx, node.ordered ?? false, idx),
+    renderListItem(item, ctx, node.ordered ?? false, start === null ? null : start + idx),
   );
   return items.join("\n");
 }
@@ -362,9 +330,9 @@ function renderListItem(
   item: ListItem,
   ctx: Ctx,
   ordered: boolean,
-  _idx: number,
+  number: number | null,
 ): string {
-  const marker = ordered ? "+" : "-";
+  const marker = !ordered ? "-" : number === null ? "+" : `${number}.`;
   const body = item.children
     .map((child, i) => {
       if (child.type === "paragraph" && i === 0) {
@@ -397,16 +365,15 @@ function renderTable(node: Table, ctx: Ctx): string {
   // Emit weighted fractional columns so the table stretches edge-to-
   // edge in the body column without short label cells wrapping.
   // Layout heuristic, modelled on target.pdf's body-column tables:
-  //   1 col            → `1fr`
-  //   2 cols           → `1fr, 1.5fr`             (label | description)
-  //   N ≥ 3 cols       → `1.4fr, 1.4fr, …, 1fr, 2fr`
-  //                       (label | named-data | numeric data… | description)
+  //   1 col      → `1fr`
+  //   2 cols     → `1fr, 1.5fr`                 (label | description)
+  //   3 cols     → `2fr, 1fr, 2fr`              (label | value | description)
+  //   N ≥ 4 cols → `2.2fr, 1.6fr, 1fr…, 2fr`
+  //                 (label | named-data | numeric data… | description)
   // The first two columns get extra weight because their headers are
   // typically multi-word (e.g. "Workload", "Good default"); the last
   // column gets double weight for descriptive prose; remaining middle
-  // columns share evenly. This avoids the prior `1.5fr/1fr/1fr/2fr`
-  // wrap where "Good default" landed in a 1fr cell too narrow for its
-  // own tracked-uppercase header.
+  // columns share evenly.
   let colSpecs: string;
   if (columns === 1) {
     colSpecs = "1fr";
@@ -433,12 +400,7 @@ function tableAlignArg(
   columns: number,
 ): string | null {
   if (!aligns || aligns.length === 0) return null;
-  const resolved = Array.from({ length: columns }, (_, i) => {
-    const a = aligns[i];
-    if (a && ALIGN_MAP[a]) return ALIGN_MAP[a];
-    return "left";
-  });
-  return resolved.join(", ");
+  return Array.from({ length: columns }, (_, i) => aligns[i] ?? "left").join(", ");
 }
 
 function renderTableRowCells(row: TableRow, ctx: Ctx): string[] {
@@ -596,51 +558,21 @@ function renderInlineMath(node: { value: string; data?: { attrs?: Attributes } }
   return `$${latexToTypst(node.value)}$`;
 }
 
-// Minimal LaTeX → Typst math translation. Phase 2: cover the symbols the
-// reference fixture uses. Bigger-ticket constructs (\frac, \mathbf, \text,
-// subscripts/superscripts with braces) arrive in a later phase.
-const LATEX_SYMBOLS: Record<string, string> = {
-  cdot: "dot.op",
-  times: "times",
-  infty: "infinity",
-  alpha: "alpha",
-  beta: "beta",
-  gamma: "gamma",
-  delta: "delta",
-  epsilon: "epsilon",
-  theta: "theta",
-  lambda: "lambda",
-  mu: "mu",
-  pi: "pi",
-  sigma: "sigma",
-  tau: "tau",
-  phi: "phi",
-  omega: "omega",
-  Delta: "Delta",
-  Sigma: "Sigma",
-  Omega: "Omega",
-  sum: "sum",
-  prod: "product",
-  int: "integral",
-  leq: "<=",
-  geq: ">=",
-  neq: "!=",
-  approx: "approx",
-  to: "->",
-  rightarrow: "->",
-  leftarrow: "<-",
-};
-
-function latexToTypst(s: string): string {
-  let out = s;
-  // Replace named commands first so `\lambda` becomes `lambda`, `\cdot`
-  // becomes `dot.op`, etc. The unknown-command fallback strips the backslash,
-  // which Typst will then read as a bare identifier (most LaTeX symbol names
-  // happen to be valid Typst names — not all, but enough for Phase 2).
-  out = out.replace(/\\([A-Za-z]+)/g, (_, name: string) => {
-    return LATEX_SYMBOLS[name] ?? name;
-  });
-  return out.trim();
+// LaTeX → Typst math via tex2typst, in strict mode so an unknown command
+// fails instead of degrading to a bare identifier. The source is checked
+// first: a raw `#` would start Typst code inside math, and a raw `"` could
+// close one of the string literals tex2typst emits for `\text{...}` and let
+// the rest run as code. Neither has a meaning in LaTeX math (`\#` is the
+// escaped hash and stays allowed).
+function latexToTypst(latex: string): string {
+  if (/(^|[^\\])#/.test(latex) || latex.includes('"')) {
+    throw new Error(`Math may not contain a raw # or ": $${latex}$`);
+  }
+  try {
+    return tex2typst(latex, { nonStrict: false }).trim();
+  } catch (err) {
+    throw new Error(`Could not convert math $${latex}$: ${(err as Error).message}`);
+  }
 }
 
 // ---- definition list (remark-definition-list) ----
@@ -705,6 +637,9 @@ function isPhrasingNode(n: RootContent): boolean {
 
 // ---- inline nodes ----
 
+// Inline `#call(...)` / `#call[...]` emissions end with `;`. Without it,
+// text that follows directly — `~~x~~(y)`, `[^1].Next` — extends the
+// expression (a call or field access) and Typst fails to compile.
 function renderInlines(nodes: PhrasingContent[], ctx: Ctx): string {
   return nodes.map((n) => renderInline(n, ctx)).join("");
 }
@@ -718,7 +653,7 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
     case "emphasis":
       return `_${renderInlines((node as Emphasis).children, ctx)}_`;
     case "delete":
-      return `#strike[${renderInlines((node as Delete).children, ctx)}]`;
+      return `#strike[${renderInlines((node as Delete).children, ctx)}];`;
     case "inlineCode":
       return renderInlineCode((node as InlineCode).value);
     case "link":
@@ -726,7 +661,6 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
     case "image":
       return renderInlineImage(node as Image, ctx);
     case "break":
-      void (node as Break);
       return " \\\n";
     case "html":
       return "";
@@ -750,10 +684,17 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
           ctx.endnoteOrder.push(ref);
           idx = ctx.endnoteOrder.length - 1;
         }
-        return `#endnote-ref(${idx + 1})`;
+        return `#endnote-ref(${idx + 1});`;
       }
+      if (ctx.footnoteStack.includes(ref)) {
+        throw new Error(
+          `Footnote [^${ref}] references itself: ${[...ctx.footnoteStack, ref].map((r) => `[^${r}]`).join(" → ")}`,
+        );
+      }
+      ctx.footnoteStack.push(ref);
       const body = renderBlocks(def, ctx);
-      return `#footnote[${body}]`;
+      ctx.footnoteStack.pop();
+      return `#footnote[${body}];`;
     }
     default:
       return "";
@@ -783,12 +724,14 @@ function renderTextWithRefs(value: string, ctx: Ctx): string {
   return out;
 }
 
+// Typst raw fences can't carry a backtick run the way CommonMark can: two
+// backticks are an empty raw, and three or more read the first word as a
+// language tag. Code containing a backtick goes through `#raw(...)`
+// instead; the trailing `;` ends the expression so following text such
+// as `.method` isn't parsed as a field access.
 function renderInlineCode(value: string): string {
-  const fenceLen = Math.max(1, longestBacktickRun(value) + 1);
-  const fence = "`".repeat(fenceLen);
-  const padStart = value.startsWith("`") ? " " : "";
-  const padEnd = value.endsWith("`") ? " " : "";
-  return `${fence}${padStart}${value}${padEnd}${fence}`;
+  if (value.includes("`")) return `#raw(${typstString(value)});`;
+  return `\`${value}\``;
 }
 
 function renderLink(node: Link, ctx: Ctx): string {
@@ -801,14 +744,14 @@ function renderLink(node: Link, ctx: Ctx): string {
     // define.
     if (!ctx.labels.has(id)) return body || id;
     if (body === "") return `@${id}`;
-    return `#link(<${id}>)[${body}]`;
+    return `#link(<${id}>)[${body}];`;
   }
-  return `#link("${url}")[${body}]`;
+  return `#link("${url}")[${body}];`;
 }
 
 function renderInlineImage(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(image.url, ctx);
-  return `#image("${escapeString(abs)}")`;
+  return `#image("${escapeString(abs)}");`;
 }
 
 // ---- helpers ----
@@ -857,14 +800,6 @@ function getAttrs(node: unknown): Attributes | undefined {
   return n.data?.attrs;
 }
 
-function typstString(s: string): string {
-  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-}
-
-// Extract the first visible grapheme from the first paragraph of `children`
-// and return it alongside a mutated children array with that leading
-// character removed from the paragraph's first text node. Used by the
-// dropcap directive to lift the initial letter out of the body flow.
 // Detect a leading `**bold prefix**` in the first paragraph and consume
 // it — returning the bold text as a label string and stripping it from
 // the paragraph in place so the rendered body doesn't repeat it.
@@ -898,6 +833,13 @@ function extractLeadingBoldLabel(children: RootContent[]): string | undefined {
   return text;
 }
 
+// Extract the first grapheme from the first paragraph of `children` and
+// return it alongside a copy of the children with that grapheme removed
+// from the paragraph's first text node. Used by the dropcap directive to
+// lift the initial letter out of the body flow. Graphemes, not UTF-16
+// units, so an accented letter or emoji isn't split in half.
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
 function splitDropcap(
   children: RootContent[],
 ): { letter: string; rest: RootContent[] } {
@@ -909,10 +851,11 @@ function splitDropcap(
   const firstInline = para.children[0]!;
   if (firstInline.type !== "text") return { letter: "", rest: children };
   const t = firstInline as Text;
-  const leading = t.value.match(/^\s*(\S)(.*)$/s);
-  if (!leading) return { letter: "", rest: children };
-  const letter = leading[1]!;
-  const tail = leading[2]!;
+  const text = t.value.trimStart();
+  const lead = graphemes.segment(text)[Symbol.iterator]().next().value;
+  if (!lead) return { letter: "", rest: children };
+  const letter = lead.segment;
+  const tail = text.slice(letter.length);
   const newText: Text = { type: "text", value: tail };
   const newParaChildren: PhrasingContent[] = [newText, ...para.children.slice(1)];
   const newPara: Paragraph = { type: "paragraph", children: newParaChildren };

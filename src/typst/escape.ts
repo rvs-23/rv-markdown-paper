@@ -18,8 +18,9 @@
 const MARKUP_SPECIAL_RE = /[\\*_`$#@<>[\]~/]/g;
 // Only `^` can match this — newlines are collapsed to spaces upstream of
 // the regex, so the `(\n)` alternative would never fire. The previous
-// `(^|\n)` form was dead code on that branch.
-const LINE_START_SPECIAL_RE = /^([=\-+/])/;
+// `(^|\n)` form was dead code on that branch. `N.` at line start is
+// Typst's numbered-list marker, so its dot is escaped too ("1\\. text").
+const LINE_START_SPECIAL_RE = /^(?:([=\-+/])|(\d+)\.(?=\s|$))/;
 
 export function escapeMarkup(text: string): string {
   // Soft line breaks inside mdast text nodes (from Markdown line-wrap) become
@@ -29,9 +30,16 @@ export function escapeMarkup(text: string): string {
   return text
     .replace(/\n/g, " ")
     .replace(MARKUP_SPECIAL_RE, (c) => `\\${c}`)
-    .replace(LINE_START_SPECIAL_RE, (_, ch: string) => `\\${ch}`);
+    .replace(LINE_START_SPECIAL_RE, (_, ch: string | undefined, num: string | undefined) =>
+      ch !== undefined ? `\\${ch}` : `${num}\\.`,
+    );
 }
 
 export function escapeString(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+// A complete Typst string literal, quotes included.
+export function typstString(text: string): string {
+  return `"${escapeString(text)}"`;
 }

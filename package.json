@@ -34,12 +34,13 @@
   },
   "files": [
     "dist",
+    "typst",
     "assets/fonts",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && cp src/typst/template.typ src/typst/theme.tmTheme src/typst/palette.typ dist/typst/",
+    "build": "tsc",
     "prepack": "npm run build",
     "mdpdf": "tsx src/cli/index.ts",
     "dev": "tsx src/cli/index.ts",
@@ -61,6 +62,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "remark-parse": "^11.0.0",
+    "tex2typst": "^0.6.2",
     "unified": "^11.0.5"
   },
   "devDependencies": {

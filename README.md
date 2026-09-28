@@ -203,6 +203,8 @@ Options resolve in this order — first match wins:
 
 This lets you set a baseline in `mdpdf.config.json`, override per-document in frontmatter, and override per-render on the command line.
 
+An unknown key in `mdpdf.config.json` is an error. Frontmatter may carry keys for other tools (`tags`, `aliases`, …), so there an unknown key is ignored, unless it looks like a typo of a real option (`showheader`, `titel`), which prints a "did you mean" warning.
+
 **Minimal frontmatter:**
 
 ```yaml
@@ -284,9 +286,10 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Link | `[text](url)` | Underlined hairline |
 | Footnote | `text[^1]` + `[^1]: body` | Page-bottom footnote by default; set `footnotes: endnotes` in frontmatter to collect every body into a chapter-end "NOTES" block with inline superscript numerals (definitions that are never referenced still appear, after the referenced ones) |
 | Unordered list | `- item` | En-dash marker at every nesting level |
-| Ordered list | `1. item` | Italic-serif numeral (ornament voice) |
+| Ordered list | `1. item` | Italic-serif numeral (ornament voice); a list starting at `5.` keeps its numbering |
 | Task list | `- [x] done` / `- [ ] todo` | Ink-bordered checkbox; checked is ink-filled with paper-colored tick + muted body |
 | Definition list | `Term`\n`:   definition` | 2-col grid with hairline-bordered rows |
+| Horizontal rule | `---` | Full-width hairline with generous space above and below |
 | Blockquote | `> ...` | Hairline left rule, sans body in muted ink |
 | Pull quote | `:::epigraph` … `:::` | 1.5pt ink left rule, 20pt italic-serif body, tracked uppercase cite |
 | Table | GFM pipe syntax | Label column in Archivo sans, data columns in JetBrains Mono Light; hairline header rule, no zebra striping |
@@ -294,7 +297,7 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Code block + filename | `` ```python {filename="x.py" lang-label="Python 3.12"} `` | Adds a header strip above the panel with filename L, lang-label R |
 | Figure | `![caption](path)` | Full-bleed image in a hairline-bordered panel + caption row with italic-serif `Fig. N.M` lead |
 | Figure cross-ref | `![cap](p){#fig:x}` + `[@fig:x]` | Resolves to "Fig. N.M" inline |
-| Inline math | `$x^2$` | Native Typst math |
+| Inline math | `$x^2$` | LaTeX, converted to Typst math with [`tex2typst`](https://github.com/qwinsi/tex2typst); unknown commands fail the render |
 | Display math | `$$ N = \lambda \cdot W $$ {#eq:y}` | Centered with hairline frame, italic-serif `(N.M)` number top-right; `[@eq:y]` resolves to the same styled `(N.M)` |
 | Note callout | `:::note` … `:::` | Surface fill, ink-3 left rule, tracked label |
 | Tip callout | `:::tip` … `:::` | Surface fill, full-ink 2pt left rule |
@@ -331,9 +334,10 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | Runtime | Node.js ≥ 20, TypeScript with strict typing |
 | CLI | [`commander`](https://github.com/tj/commander.js) |
 | YAML | [`gray-matter`](https://github.com/jonschlinkert/gray-matter) |
+| Math | [`tex2typst`](https://github.com/qwinsi/tex2typst) — LaTeX → Typst math, strict mode |
 | Markdown parse | [`unified`](https://unifiedjs.com/) + `remark-parse` + `remark-gfm` + `remark-directive` + `remark-math` + `remark-definition-list` |
 | Typesetting | [Typst](https://typst.app/) compiler (external binary on `PATH`) |
-| Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](src/typst/theme.tmTheme) (grayscale only) |
+| Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme) (grayscale only) |
 | Fonts | Archivo (sans), Instrument Serif (ornament italic), JetBrains Mono (code) — all OFL-1.1, bundled in [`assets/fonts/`](assets/fonts/) and loaded with `--ignore-system-fonts` |
 | Tests | [`vitest`](https://vitest.dev/) — unit tests, a Typst-body snapshot of the canonical fixture, and a render integration test that compiles the fixture and asserts page count + per-page text invariants |
 | Lint / Types | `eslint` (flat config), `tsc --noEmit` |
@@ -347,23 +351,23 @@ src/
   config/      Options types, precedence resolver, validator
   core/        Pipeline orchestrator + reading-time estimator
   parser/      Frontmatter split, Markdown → mdast, Pandoc-attribute lift
-  typst/       Palette tokens, design template, mdast → Typst generator,
-               typst-compile subprocess runner
+  typst/       mdast → Typst generator, typst-compile subprocess runner
+typst/         The design as a Typst local package: template, palette, theme
 ```
 
 The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 
 1. **Frontmatter** — `gray-matter` splits YAML off the top.
 2. **Parse** — Markdown → mdast via the remark plugin chain. A pre-parse pass normalises Pandoc-dialect surface forms (`::: name`, `:::{.class}`, attribute colons) so the canonical fixture parses without invoking Pandoc.
-3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math symbols map to Typst equivalents.
-4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) writes the generated body alongside [`template.typ`](src/typst/template.typ), [`palette.typ`](src/typst/palette.typ), and [`theme.tmTheme`](src/typst/theme.tmTheme) into a temp directory, then spawns `typst compile` with `--root <sourceDir>`, `--font-path assets/fonts`, and `--ignore-system-fonts`.
+3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math converts to Typst math via `tex2typst`.
+4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) pipes the generated document into `typst compile -` with `--root <sourceDir>`, `--font-path assets/fonts` and `--ignore-system-fonts`. The design ships as a Typst local package, `@local/mdpaper` ([`template.typ`](typst/local/mdpaper/0.1.0/template.typ), [`palette.typ`](typst/local/mdpaper/0.1.0/palette.typ), [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme)), loaded with `--package-path typst`, so nothing is written next to your Markdown. `--paper-bg` reaches the palette as `--input paper-bg=…`.
 
 ### Design principles
 
 1. **One design language, no themes.** The output looks the same on every machine and from every author. There is no theme registry, no accent palette, no light/dark toggle.
 2. **Single-ink ramp.** Body is `#11131A` near-ink on a `#F4F4F4` paper. Secondary text steps through ink-2 / ink-3 / muted / mute-2 — five levels of the same gray. The only color event in the whole system is the `:::danger` admonition, which inverts to paper-on-ink. Color inversion is reserved precisely because nothing else inverts.
 3. **Three fonts, one rule per font.** Archivo for body, UI, headings, captions, tables, admonitions. Instrument Serif **italic only**, ornament only — folio, dropcap, pull quotes, equation numbers, figcaption labels. JetBrains Mono for code and tabular numerics. Body italic stays in the Archivo family; the serif italic is too loud for prose.
-4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`src/typst/template.typ`](src/typst/template.typ). To restyle the system you edit the template, not the converter.
+4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`typst/local/mdpaper/0.1.0/template.typ`](typst/local/mdpaper/0.1.0/template.typ). To restyle the system you edit the template, not the converter.
 5. **Reproducible output.** Bundled fonts loaded with `--ignore-system-fonts` mean mismatched system fonts cannot silently substitute. PDF metadata is pinned via `--creation-timestamp` (honours `SOURCE_DATE_EPOCH`, defaults to `0`), so re-rendering the same source with the same Typst version produces a byte-identical PDF.
 6. **Fail loud.** Invalid attribute IDs throw at parse time. Remote image URLs are rejected before reaching the compiler. Missing fonts surface as a Typst error, not a silent substitution. The principle: errors with clear messages beat silent drift.
 7. **Page count is a contract.** The integration test renders the canonical fixture and asserts it compiles to exactly 6 pages. Page choreography regressions fail CI.
@@ -372,6 +376,7 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 
 - Image paths must resolve inside the source markdown's directory tree; remote URLs, `data:` URIs, absolute paths, and `..`-escapes are rejected at generate time.
 - Typst runs with `--root <sourceDir>` so the compiler cannot read files outside the document tree.
+- Math may not contain a raw `#` or `"`: either could run Typst code inside `$…$`. `\#` stays allowed.
 - Attribute IDs validate against `^[A-Za-z][A-Za-z0-9_:-]*$`; anything outside the grammar throws `ConfigError` before any Typst is generated, closing a label-injection path.
 - Typst stderr is tail-buffered to 64 KB so a runaway compile can't exhaust memory.
 
