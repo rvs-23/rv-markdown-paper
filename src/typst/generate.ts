@@ -648,10 +648,13 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
   switch (node.type) {
     case "text":
       return renderTextWithRefs((node as Text).value, ctx);
+    // Function form, not `*…*` / `_…_`: Typst's shorthand doesn't open or
+    // close inside a word, so Markdown's intraword `oota**kke**` would
+    // leave the delimiters unbalanced and fail to compile.
     case "strong":
-      return `*${renderInlines((node as Strong).children, ctx)}*`;
+      return `#strong[${renderInlines((node as Strong).children, ctx)}];`;
     case "emphasis":
-      return `_${renderInlines((node as Emphasis).children, ctx)}_`;
+      return `#emph[${renderInlines((node as Emphasis).children, ctx)}];`;
     case "delete":
       return `#strike[${renderInlines((node as Delete).children, ctx)}];`;
     case "inlineCode":

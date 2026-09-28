@@ -138,4 +138,23 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("renders bold and italic that start inside a word", async () => {
+    const text = await render("oota**kke** = for the meal; un*believ*able.\n");
+    expect(text).toContain("ootakke = for the meal; unbelievable.");
+  });
+
+  it("renders Devanagari, Kannada and emoji through the bundled fallbacks", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-scripts-"));
+    try {
+      await writeFile(join(dir, "doc.md"), "Hindi नमस्ते, Kannada ಕನ್ನಡ, ok ✅\n", "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const fonts = spawnSync("pdffonts", [join(dir, "doc.pdf")], { encoding: "utf8" }).stdout;
+      expect(fonts).toContain("NotoSansDevanagari");
+      expect(fonts).toContain("NotoSansKannada");
+      expect(fonts).toContain("NotoEmoji");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
