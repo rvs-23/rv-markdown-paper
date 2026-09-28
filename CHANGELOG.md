@@ -11,6 +11,9 @@
 
 ### Fixed
 
+- Tables break across pages. A table taller than the space left on a
+  page used to jump whole to the next page, leaving its heading on a
+  near-empty page; the header row now repeats on the continuation.
 - Bold or italic starting inside a word (`oota**kke**`) no longer fails
   to compile.
 

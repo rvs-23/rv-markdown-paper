@@ -873,14 +873,9 @@
     inset: (x: 7pt, y: 7pt),
     align: left + horizon,
   )
-  // Tables fill the column width by default so they don't sit as a
-  // narrow island in the middle of the body — target.pdf stretches
-  // tables edge-to-edge inside the body column. Using `layout(...)`
-  // resolves the table inside a `box(width:)` of the actual available
-  // measure, which is what Typst needs to compute `fr` columns into
-  // absolute lengths (a bare `block(width: 100%, table)` doesn't
-  // propagate the container width to the table's fr resolution).
-  show table: it => layout(size => box(width: size.width, it))
+  // No wrapper around tables: the generator's `fr` columns already fill
+  // the body width, and a `box` wrapper made every table unbreakable, so
+  // a tall one jumped whole to the next page and stranded its heading.
   // Document-level `set par(justify: true)` propagates into table cells,
   // producing ugly inter-word gaps in narrow columns (visible in the Notes
   // columns of 03-structured.pdf and 06-full-paper.pdf before this rule).

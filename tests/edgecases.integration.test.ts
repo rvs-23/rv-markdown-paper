@@ -157,4 +157,14 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("lets a table taller than the remaining page break across pages", async () => {
+    const rows = Array.from({ length: 60 }, (_, i) => `| row ${i} | value ${i} |`).join("\n");
+    const text = await render(`## Heading\n\nIntro.\n\n| Key | Value |\n|---|---|\n${rows}\n`, {}, true);
+    const pages = text.split("\f");
+    // The first rows share page 1 with the heading instead of moving on.
+    expect(pages[0]).toContain("row 0");
+    // The header row repeats on the continuation page.
+    expect(pages[1]).toMatch(/Key\s+Value/);
+  });
 });
