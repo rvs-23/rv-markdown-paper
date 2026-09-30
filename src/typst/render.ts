@@ -42,9 +42,10 @@ function buildPreamble(options: DocumentOptions, rail: boolean): string {
       `page-right, endnote-ref, endnotes, rule, md-table`,
   );
   // Palette tokens are needed by generated body content (e.g. the
-  // definition-list grid renders its hairline with `c-hairline`); the
-  // template module re-exports the ones it imports from palette.typ.
-  lines.push(`#import "${TEMPLATE_PACKAGE}": c-hairline`);
+  // definition-list grid renders its hairline with `c-hairline`, a
+  // `.muted` span its ink with `c-muted`); the template module re-exports
+  // the ones it imports from palette.typ.
+  lines.push(`#import "${TEMPLATE_PACKAGE}": c-hairline, c-muted`);
   // Right-margin dicts the generated body switches between around the
   // chapter opener; they depend on this document's margin and rail.
   const marginRight = cssLengthToTypst(options.margins.right);

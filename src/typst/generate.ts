@@ -22,6 +22,7 @@ import type {
 } from "mdast";
 import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
+import type { Span } from "../parser/spans.js";
 import { toString as mdastToString } from "mdast-util-to-string";
 import { tex2typst } from "tex2typst";
 
@@ -661,7 +662,8 @@ function isPhrasingNode(n: RootContent): boolean {
     n.type === "image" ||
     n.type === "inlineCode" ||
     n.type === "break" ||
-    n.type === "html"
+    n.type === "html" ||
+    n.type === "span"
   );
 }
 
@@ -699,6 +701,8 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
       return "";
     case "inlineMath":
       return renderInlineMath(node as unknown as { value: string });
+    case "span":
+      return renderSpan(node, ctx);
     case "textDirective": {
       const dir = node as unknown as DirectiveNode;
       return renderInlines((dir.children ?? []) as PhrasingContent[], ctx);
@@ -732,6 +736,18 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
     default:
       return "";
   }
+}
+
+// Bracketed spans: `.muted` sets the palette's muted ink, `.underline`
+// draws the same rule the template puts under links. Other classes (the
+// unbundled `.smallcaps` included) render the text plainly, as unknown
+// `:::name` blocks do.
+function renderSpan(node: Span, ctx: Ctx): string {
+  const classes = node.data?.attrs?.classes ?? [];
+  let body = renderInlines(node.children, ctx);
+  if (classes.includes("underline")) body = `#underline(offset: 1.8pt, stroke: 0.5pt)[${body}];`;
+  if (classes.includes("muted")) body = `#text(fill: c-muted)[${body}];`;
+  return body;
 }
 
 // Scan a text node for Pandoc-crossref references (`@fig:x`, `[@eq:y]`).

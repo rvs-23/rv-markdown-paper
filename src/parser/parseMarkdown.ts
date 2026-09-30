@@ -6,6 +6,7 @@ import remarkMath from "remark-math";
 import remarkDefinitionList from "remark-definition-list";
 import type { Root as MdastRoot } from "mdast";
 import { extractAttributes } from "./attributes.js";
+import { liftBracketedSpans } from "./spans.js";
 
 const parser = unified()
   .use(remarkParse)
@@ -37,6 +38,10 @@ export function parseMarkdownToMdast(markdown: string): MdastRoot {
   const protectedSource = protectAttrColons(normalized);
   const tree = parser.parse(protectedSource) as MdastRoot;
   restoreAttrColons(tree);
+  // Spans first, so a heading ending in `[x]{.muted}` keeps its span rather
+  // than handing `{.muted}` to the heading. Positions index the normalized
+  // source; the colon placeholder is a same-length swap, so offsets agree.
+  liftBracketedSpans(tree, normalized);
   extractAttributes(tree);
   return tree;
 }
