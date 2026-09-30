@@ -21,7 +21,9 @@
 // back automatically to another bundled font that has it: Noto Sans
 // Devanagari/Kannada, Noto Emoji, or Libertinus Serif (e.g. Greek `λ`,
 // which Archivo lacks). Math uses New Computer Modern Math. A character
-// no bundled font covers is silently dropped: Typst gives no warning.
+// no bundled font covers would be silently dropped (Typst gives no
+// warning), so the converter rejects such documents before Typst runs
+// (src/typst/fonts.ts).
 
 #let f-sans   = "Archivo"
 #let f-serif  = "Instrument Serif"

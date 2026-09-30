@@ -9,6 +9,7 @@ import type { Cover, DocumentOptions, DocumentOptionsLayer } from "../config/opt
 import { estimateReadingTime } from "./readingTime.js";
 import { generateTypst, usesRail } from "../typst/generate.js";
 import { renderTypstToPdf } from "../typst/render.js";
+import { assertFontCoverage, collectOptionText, collectRenderedText } from "../typst/fonts.js";
 
 export type ConvertOptions = {
   inputPath: string;
@@ -71,6 +72,17 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     readingTime,
     cover: injectReadingTimeIntoCoverMeta(resolved.cover, readingTime),
   };
+
+  // Typst drops characters no font covers without a word, so refuse them
+  // here, before any PDF is written. mdast lines count from the end of
+  // the frontmatter; the offset maps them back to the source file.
+  const lineOffset = raw.endsWith(content)
+    ? raw.slice(0, raw.length - content.length).split("\n").length - 1
+    : 0;
+  assertFontCoverage([
+    ...collectOptionText(templateOptions),
+    ...collectRenderedText(tree, resolved.footnotes, lineOffset),
+  ]);
 
   const body = generateTypst(tree, {
     sourceDir: inputDir,

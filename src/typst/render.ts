@@ -12,7 +12,7 @@ import { CSS_LENGTH_RE } from "../config/validate.js";
 // while the template loads from outside it.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_DIR = resolvePath(HERE, "../../typst");
-const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
+export const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
 const TEMPLATE_PACKAGE = "@local/mdpaper:0.1.0";
 
 export type TypstRenderOptions = {
