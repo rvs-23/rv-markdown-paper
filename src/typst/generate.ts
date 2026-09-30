@@ -378,50 +378,55 @@ function renderBlockquote(node: Blockquote, ctx: Ctx): string {
   return `#quote(block: true)[\n${indent(renderBlocks(node.children, ctx), 2)}\n]`;
 }
 
+// Tables go through the template's `md-table`, which measures the cells
+// in their real fonts and sizes the columns to their content. The one
+// thing Typst can't do is split content into words, so each column's
+// longest word (header and body separately, as they're set in different
+// voices) is found here for the no-mid-word-break floor.
 function renderTable(node: Table, ctx: Ctx): string {
   const rows = node.children;
   if (rows.length === 0) return "";
   const columns = Math.max(...rows.map((r) => r.children.length));
   const alignArg = tableAlignArg(node.align, columns);
 
-  const header = rows[0]!;
-  const headerCells = renderTableRowCells(header, ctx);
-  const bodyRows = rows
-    .slice(1)
-    .map((row) => renderTableRowCells(row, ctx))
-    .flat();
+  const cellsOf = (row: TableRow) =>
+    Array.from({ length: columns }, (_, x) => row.children[x]);
+  const [header, ...body] = rows.map(cellsOf);
+  const render = (cell: TableCell | undefined) => (cell ? renderTableCell(cell, ctx) : "[]");
+  const words = Array.from({ length: columns }, (_, x) => {
+    const head = longestWord([header![x]]);
+    const rest = longestWord(body.map((row) => row[x]));
+    return `(${typstString(head)}, ${typstString(rest)})`;
+  });
 
-  // Emit weighted fractional columns so the table stretches edge-to-
-  // edge in the body column without short label cells wrapping.
-  // Layout heuristic, modelled on target.pdf's body-column tables:
-  //   1 col      → `1fr`
-  //   2 cols     → `1fr, 1.5fr`                 (label | description)
-  //   3 cols     → `2fr, 1fr, 2fr`              (label | value | description)
-  //   N ≥ 4 cols → `2.2fr, 1.6fr, 1fr…, 2fr`
-  //                 (label | named-data | numeric data… | description)
-  // The first two columns get extra weight because their headers are
-  // typically multi-word (e.g. "Workload", "Good default"); the last
-  // column gets double weight for descriptive prose; remaining middle
-  // columns share evenly.
-  let colSpecs: string;
-  if (columns === 1) {
-    colSpecs = "1fr";
-  } else if (columns === 2) {
-    colSpecs = "1fr, 1.5fr";
-  } else if (columns === 3) {
-    colSpecs = "2fr, 1fr, 2fr";
-  } else {
-    const middle = Array(columns - 3).fill("1fr");
-    colSpecs = ["2.2fr", "1.6fr", ...middle, "2fr"].join(", ");
-  }
-  const fracColumns = `(${colSpecs})`;
-  const parts = [
-    `columns: ${fracColumns}`,
-    ...(alignArg ? [`align: (${alignArg})`] : []),
-    `table.header(${headerCells.join(", ")})`,
+  const bodyRows = body.map((row) => `    (${row.map(render).join(", ")},),`);
+  return [
+    "#md-table(",
+    `  (${header!.map(render).join(", ")},),`,
+    "  (",
     ...bodyRows,
-  ];
-  return `#table(\n  ${parts.join(",\n  ")},\n)`;
+    "  ),",
+    `  (${words.join(", ")},),`,
+    ...(alignArg ? [`  align: (${alignArg}),`] : []),
+    ")",
+  ].join("\n");
+}
+
+// The longest whitespace-separated word across `cells`, in graphemes.
+function longestWord(cells: Array<TableCell | undefined>): string {
+  let best = "";
+  let bestLength = 0;
+  for (const cell of cells) {
+    if (!cell) continue;
+    for (const word of mdastToString(cell).split(/\s+/)) {
+      const length = [...graphemes.segment(word)].length;
+      if (length > bestLength) {
+        best = word;
+        bestLength = length;
+      }
+    }
+  }
+  return best;
 }
 
 function tableAlignArg(
@@ -430,10 +435,6 @@ function tableAlignArg(
 ): string | null {
   if (!aligns || aligns.length === 0) return null;
   return Array.from({ length: columns }, (_, i) => aligns[i] ?? "left").join(", ");
-}
-
-function renderTableRowCells(row: TableRow, ctx: Ctx): string[] {
-  return row.children.map((cell) => renderTableCell(cell, ctx));
 }
 
 function renderTableCell(cell: TableCell, ctx: Ctx): string {

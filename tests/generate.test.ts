@@ -113,18 +113,17 @@ Body of the next section.
 });
 
 describe("generateTypst: tables", () => {
-  it("emits weighted fr columns per the 3-column heuristic", () => {
-    const out = gen(`| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n`);
-    expect(out).toContain("columns: (2fr, 1fr, 2fr)");
-    expect(out).toContain("table.header([A], [B], [C])");
+  it("emits md-table with header, rows and each column's longest words", () => {
+    const out = gen(`| Key | Long description |\n| --- | --- |\n| a | short words here |\n| bb | unbreakable-token |\n`);
+    expect(out).toContain("#md-table(\n  ([Key], [Long description],),");
+    expect(out).toContain("    ([a], [short words here],),");
+    expect(out).toContain('(("Key", "bb"), ("description", "unbreakable-token"),)');
   });
 
-  it("emits the 4-column spec and honours authored alignment", () => {
-    const out = gen(
-      `| W | G | C | Why |\n| :-- | :-- | --: | :-- |\n| a | b | c | d |\n`,
-    );
-    expect(out).toContain("columns: (2.2fr, 1.6fr, 1fr, 2fr)");
-    expect(out).toContain("align: (left, left, right, left)");
+  it("pads short rows and honours authored alignment", () => {
+    const out = gen(`| W | G | C |\n| :-- | :-- | --: |\n| a |\n`);
+    expect(out).toContain("    ([a], [], [],),");
+    expect(out).toContain("align: (left, left, right)");
   });
 });
 

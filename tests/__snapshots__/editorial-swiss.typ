@@ -165,26 +165,16 @@ $ N = lambda dot.op W $ <eq:little>
 
 where #emph[N]; is the pool size, #emph[λ]; the arrival rate of requests, and #emph[W]; the average time a worker spends per request (mostly blocked on I\/O).
 
-#table(
-  columns: (2.2fr, 1.6fr, 1fr, 2fr),
+#md-table(
+  ([Workload], [Good default], [Ceiling], [Why],),
+  (
+    ([Local disk I\/O], [4 – 8], [32], [Kernel queue depth],),
+    ([HTTP calls], [8 – 32], [256], [Remote capacity],),
+    ([DNS lookups], [16], [64], [Resolver cache],),
+    ([Pure Python CPU], [1], [1], [GIL],),
+  ),
+  (("Workload", "lookups"), ("default", "32"), ("Ceiling", "256"), ("Why", "capacity"),),
   align: (left, left, left, left),
-  table.header([Workload], [Good default], [Ceiling], [Why]),
-  [Local disk I\/O],
-  [4 – 8],
-  [32],
-  [Kernel queue depth],
-  [HTTP calls],
-  [8 – 32],
-  [256],
-  [Remote capacity],
-  [DNS lookups],
-  [16],
-  [64],
-  [Resolver cache],
-  [Pure Python CPU],
-  [1],
-  [1],
-  [GIL],
 )
 
 #pagebreak(weak: true)

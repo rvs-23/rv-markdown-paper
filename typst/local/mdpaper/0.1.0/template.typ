@@ -399,6 +399,66 @@
   #stack(spacing: 0.55em, ..items.pos())
 ]
 
+// Table cell voices, shared by the `table.cell` show rule and `md-table`'s
+// column sizing so what gets measured is exactly what gets drawn.
+//   header row   → tracked eyebrow voice, sans 8.5pt
+//   label column → body sans 9.3pt
+//   data columns → JetBrains Mono Light 8.3pt, the code voice. Target.pdf
+//                  sets every non-label cell ("4 – 8", "32", "Kernel queue
+//                  depth") in mono; the Light face keeps it paired with
+//                  the 300-weight body.
+#let _cell-style(x, y, body) = if y == 0 {
+  text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, body)
+} else if x == 0 {
+  text(font: f-sans, size: 9.3pt, fill: c-ink, body)
+} else {
+  text(font: f-mono, size: 8.3pt, weight: 300, fill: c-ink, body)
+}
+
+// Column widths for a Markdown table, the way browsers size auto tables.
+// Each column's natural width is its widest cell on one line; its floor
+// is its longest unbreakable word (capped at 40% of the line, so one URL
+// can't starve the rest). If every column fits at natural width, the
+// spare room is shared in proportion to those widths, so the table still
+// runs edge to edge. If not, every column gets its floor and the rest of
+// the line goes to columns in proportion to how much more they want.
+#let _column-widths(avail, natural, floor) = {
+  let floor = floor.map(f => calc.min(f, avail * 0.4))
+  let natural = natural.zip(floor).map(((n, f)) => calc.max(n, f))
+  let total = natural.sum()
+  if total <= avail {
+    return natural.map(n => avail * (n / total))
+  }
+  let floor-total = floor.sum()
+  if floor-total >= avail {
+    return floor.map(f => avail * (f / floor-total))
+  }
+  let want = natural.zip(floor).map(((n, f)) => n - f)
+  let want-total = want.sum()
+  floor.zip(want).map(((f, w)) => f + (avail - floor-total) * (w / want-total))
+}
+
+// A Markdown table with content-sized columns. `header` is one row of
+// cells, `rows` an array of rows, and `words` holds each column's
+// longest word as (header word, body word) strings — Typst can't split
+// content into words, so the generator finds them.
+#let md-table(header, rows, words, align: auto) = layout(size => {
+  // 7pt table inset on each side of every cell.
+  let inset = 14pt
+  let columns = range(header.len())
+  let natural = columns.map(x => {
+    let cells = (header.at(x),) + rows.map(r => r.at(x))
+    calc.max(..cells.enumerate().map(((y, c)) => measure(_cell-style(x, y, c)).width)) + inset
+  })
+  let floor = columns.map(x => {
+    let (head, body) = words.at(x)
+    calc.max(measure(_cell-style(x, 0, head)).width, measure(_cell-style(x, 1, body)).width) + inset
+  })
+  let args = (columns: _column-widths(size.width, natural, floor))
+  if align != auto { args.insert("align", align) }
+  table(..args, table.header(..header), ..rows.flatten())
+})
+
 // Markdown `---` thematic break: a full-width hairline, the same stroke
 // the cover uses for its rules.
 #let rule() = block(above: 1.6em, below: 1.6em, line(length: 100%, stroke: 0.4pt + c-hairline))
@@ -891,20 +951,7 @@
   // Tabular content should ragged-right; turn justification off here.
   show table.cell: it => {
     set par(justify: false)
-    if it.y == 0 {
-      // Header row — tracked uppercase eyebrow voice.
-      text(font: f-sans, size: 8.5pt, weight: 500, fill: c-ink-2, tracking: 0.02em, it)
-    } else if it.x == 0 {
-      // Label column — body sans.
-      text(font: f-sans, size: 9.3pt, fill: c-ink, it)
-    } else {
-      // Data columns — JetBrains Mono Light, the code voice. Target.pdf
-      // sets every non-label cell ("4 – 8", "32", "Kernel queue depth")
-      // in mono; an earlier pass flattened the whole table to sans on
-      // the belief mono read too heavy, but the bundled Light face
-      // keeps it paired with the 300-weight body.
-      text(font: f-mono, size: 8.3pt, weight: 300, fill: c-ink, it)
-    }
+    _cell-style(it.x, it.y, it)
   }
 
   // --------- Figures ---------
