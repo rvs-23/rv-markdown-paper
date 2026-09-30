@@ -70,7 +70,11 @@ CSS length units accepted: `in`, `cm`, `mm`, `pt`, `px`.
 
 ## Library Usage
 
-The package also ships a small library API for embedding the converter in other Node tools — pipelines that fan out many documents, CMS export jobs, build scripts, etc. After `npm install rv-markdown-paper`, import `convertMarkdownToPdf`:
+The package also ships a small library API for embedding the converter in other Node tools — pipelines that fan out many documents, CMS export jobs, build scripts, etc. It isn't on the npm registry; install it from GitHub (npm builds it during install), then import `convertMarkdownToPdf`:
+
+```bash
+npm install github:rvs-23/rv-markdown-paper
+```
 
 ```ts
 import { convertMarkdownToPdf } from "rv-markdown-paper";
@@ -417,7 +421,13 @@ The committed PDFs are the visual regression surface; they only have value when 
 
 ### Distribution
 
-The package builds to `dist/` and exposes both a CLI (`bin: { "mdpdf": ... }`) and a library entry (`exports`). After `npm install rv-markdown-paper` you get the `mdpdf` binary on your `PATH` and can `import { convertMarkdownToPdf } from "rv-markdown-paper"` — see [Library Usage](#library-usage) for the full API.
+The package is not published to the npm registry. Use it from a clone (see [Getting Started](#getting-started)), or install it into another project straight from GitHub:
+
+```bash
+npm install github:rvs-23/rv-markdown-paper
+```
+
+The `prepare` script builds `dist/` during that install. You then get the CLI as `npx mdpdf <input.md> <output.pdf>` and the library as `import { convertMarkdownToPdf } from "rv-markdown-paper"` — see [Library Usage](#library-usage) for the full API. Typst still has to be on `PATH`.
 
 ## AI stack used for development
 

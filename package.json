@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepack": "npm run build",
+    "prepare": "npm run build",
     "mdpdf": "tsx src/cli/index.ts",
     "dev": "tsx src/cli/index.ts",
     "lint": "eslint src",
