@@ -870,7 +870,8 @@ function extractLeadingBoldLabel(children: RootContent[]): string | undefined {
 // return it alongside a copy of the children with that grapheme removed
 // from the paragraph's first text node. Used by the dropcap directive to
 // lift the initial letter out of the body flow. Graphemes, not UTF-16
-// units, so an accented letter or emoji isn't split in half.
+// units, so an accented letter or emoji isn't split in half; leading
+// opening punctuation is kept with the letter.
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
 function splitDropcap(
@@ -884,10 +885,15 @@ function splitDropcap(
   const firstInline = para.children[0]!;
   if (firstInline.type !== "text") return { letter: "", rest: children };
   const t = firstInline as Text;
+  // Opening punctuation (“ ‘ « ( and ASCII quotes) rides along with the
+  // first letter, as in book typography: the drop cap is “A, not “.
   const text = t.value.trimStart();
-  const lead = graphemes.segment(text)[Symbol.iterator]().next().value;
-  if (!lead) return { letter: "", rest: children };
-  const letter = lead.segment;
+  let letter = "";
+  for (const { segment } of graphemes.segment(text)) {
+    letter += segment;
+    if (!/^[\p{Ps}\p{Pi}"']$/u.test(segment)) break;
+  }
+  if (letter === "") return { letter: "", rest: children };
   const tail = text.slice(letter.length);
   const newText: Text = { type: "text", value: tail };
   const newParaChildren: PhrasingContent[] = [newText, ...para.children.slice(1)];

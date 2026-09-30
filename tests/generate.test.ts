@@ -234,6 +234,11 @@ describe("generateTypst: footnote cycles", () => {
 });
 
 describe("generateTypst: dropcap", () => {
+  it("keeps opening punctuation with the first letter", () => {
+    expect(gen(":::dropcap\n“A quote begins.\n:::\n")).toContain('#dropcap("“A")');
+    expect(gen(':::dropcap\n"Plain quotes too."\n:::\n')).toContain('#dropcap("\\"P")');
+  });
+
   it("lifts a whole grapheme, not half of it", () => {
     expect(gen(":::dropcap\ne\u0301clair text\n:::\n")).toContain('#dropcap("e\u0301")');
   });

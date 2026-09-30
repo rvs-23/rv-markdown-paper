@@ -238,7 +238,7 @@ chapter: 7
 part: "Two"
 edition: "Edition 2 · 2026"
 volume: "Volume I"
-pageStart: 85
+pageStart: 85          # `page-start` / `page-end` are accepted too
 pageEnd: 98
 
 # layout
