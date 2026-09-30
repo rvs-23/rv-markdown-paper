@@ -20,6 +20,9 @@
 - A character no bundled font covers now fails the render (with its code
   point and line) instead of silently disappearing.
 - A drop cap keeps leading opening punctuation with its letter (`“A`).
+- Reference-style links and images (`[text][ref]`, `[ref]`, `![alt][ref]`
+  with a `[ref]: url` definition) rendered as nothing; they now render
+  like their inline forms.
 
 ### Added — scripts
 

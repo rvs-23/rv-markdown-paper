@@ -90,6 +90,17 @@ breaks here.
 
 Italic stays in the sans body face. Links are ink with an underline.
 
+Links can also be written reference-style, with the URL defined once elsewhere in the document:
+
+```markdown
+The [Typst docs][typst] and [remark] both explain this.
+
+[typst]: https://typst.app/docs
+[remark]: https://remark.js.org
+```
+
+`![alt][ref]` works the same way for images. A reference with no matching definition stays as literal text.
+
 ## Lists
 
 ```markdown

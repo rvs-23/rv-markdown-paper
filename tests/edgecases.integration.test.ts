@@ -223,4 +223,9 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("renders reference-style links instead of dropping them", async () => {
+    const text = await render("Read [the spec][spec] and [spec] today.\n\n[spec]: https://example.com\n");
+    expect(text).toContain("Read the spec and spec today.");
+  });
 });

@@ -79,3 +79,29 @@ describe("colon protection leaves link destinations intact", () => {
     expect(urls).toEqual(["https://user@host:8080/p", "http://x.com/{k:v}"]);
   });
 });
+
+describe("reference-style links and images", () => {
+  const md = `See [full][r], [collapsed][], [r] and [missing][nope].
+
+![A figure][img]
+
+[r]: https://example.com
+[collapsed]: #sec-x
+[img]: figures/pic.png
+`;
+
+  it("rewrites every reference form into the inline node it stands for", () => {
+    const tree = parseMarkdownToMdast(md);
+    const para = tree.children[0] as { children: Array<{ type: string; url?: string; value?: string }> };
+    const links = para.children.filter((c) => c.type === "link").map((c) => c.url);
+    expect(links).toEqual(["https://example.com", "#sec-x", "https://example.com"]);
+    // No definition, so remark leaves it as text, and so do we.
+    expect(para.children.at(-1)!.value).toBe(" and [missing][nope].");
+    const figure = tree.children[1] as { children: Array<{ type: string; url?: string; alt?: string }> };
+    expect(figure.children[0]).toMatchObject({ type: "image", url: "figures/pic.png", alt: "A figure" });
+  });
+
+  it("drops the definitions themselves", () => {
+    expect(parseMarkdownToMdast(md).children.map((c) => c.type)).toEqual(["paragraph", "paragraph"]);
+  });
+});
