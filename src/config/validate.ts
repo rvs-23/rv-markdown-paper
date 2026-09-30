@@ -5,6 +5,7 @@ import type {
   MetaPair,
   TocEntry,
 } from "./options.js";
+import { PAPER_PRESETS } from "./options.js";
 
 // Shared with the CLI flag parsers and render.ts (which reads the groups).
 export const CSS_LENGTH_RE = /^(\d*\.?\d+)(in|cm|mm|pt|px)$/;
@@ -74,7 +75,7 @@ export function validateOptions(
   if ("showHeader" in r) out.showHeader = expectBool(r.showHeader, `${source}.showHeader`);
   if ("showFooter" in r) out.showFooter = expectBool(r.showFooter, `${source}.showFooter`);
   if ("showCover" in r) out.showCover = expectBool(r.showCover, `${source}.showCover`);
-  if ("paperBg" in r) out.paperBg = expectHexColor(r.paperBg, `${source}.paperBg`);
+  if ("paperBg" in r) out.paperBg = expectPaper(r.paperBg, `${source}.paperBg`);
   if ("footnotes" in r) out.footnotes = expectFootnoteMode(r.footnotes, `${source}.footnotes`);
 
   return out;
@@ -89,16 +90,32 @@ function expectFootnoteMode(value: unknown, path: string): "page" | "endnotes" {
   return value;
 }
 
-// Strict #RRGGBB matcher — six hex digits, no shorthand, no alpha. Keeps
-// the surface palette derivation predictable (the JS-side darken helper
-// expects an 8-bit-per-channel base).
-export function expectHexColor(value: unknown, path: string): string {
-  if (typeof value !== "string" || !HEX_COLOR_RE.test(value)) {
-    throw new ConfigError(
-      `${path}: expected a #RRGGBB hex color, got ${describe(value)}.`,
-    );
+/**
+ * Resolves a page colour: a preset name (any case) or a strict #RRGGBB.
+ *
+ * Hex is six digits, no shorthand or alpha, so the palette's darkened
+ * tones derive from an 8-bit-per-channel base.
+ *
+ * Args:
+ *   value: What the author wrote, e.g. "parchment" or "#F5EEDD".
+ *
+ * Returns:
+ *   The upper-case hex, or null when `value` is neither.
+ */
+export function paperHex(value: string): string | null {
+  const name = value.toLowerCase();
+  if (Object.hasOwn(PAPER_PRESETS, name)) return PAPER_PRESETS[name as keyof typeof PAPER_PRESETS];
+  return HEX_COLOR_RE.test(value) ? value.toUpperCase() : null;
+}
+
+export const PAPER_CHOICES = `${Object.keys(PAPER_PRESETS).join(", ")}, or a #RRGGBB hex color`;
+
+function expectPaper(value: unknown, path: string): string {
+  const hex = typeof value === "string" ? paperHex(value) : null;
+  if (hex === null) {
+    throw new ConfigError(`${path}: expected ${PAPER_CHOICES}, got ${describe(value)}.`);
   }
-  return value.toUpperCase();
+  return hex;
 }
 
 function expectString(value: unknown, path: string): string {

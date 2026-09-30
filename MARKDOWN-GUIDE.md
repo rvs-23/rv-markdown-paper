@@ -29,7 +29,7 @@ pageSize: "A4"                # or "Letter"
 margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
-paperBg: "#F4F4F4"            # page colour; the greys derive from it
+paperBg: "platinum"           # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "page"             # or "endnotes" for a NOTES block at the end
 ---
 ```

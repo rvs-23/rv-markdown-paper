@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added — paper colours
+
+- `--paper-bg` / `paperBg` take three named presets: `glacier`
+  (#FAFBFC), `platinum` (#F4F4F4, the default) and `parchment`
+  (#F5EEDD). Any #RRGGBB still works.
+
 ### Added — notes fixture, spans
 
 - `examples/kannada-notes/`: a real 17-page study document as a

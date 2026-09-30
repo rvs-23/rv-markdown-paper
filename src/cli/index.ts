@@ -3,7 +3,7 @@ import { Command, InvalidArgumentError, type OptionValues } from "commander";
 import { createRequire } from "node:module";
 import { convertMarkdownToPdf } from "../core/convert.js";
 import type { DocumentOptionsLayer, Margins } from "../config/options.js";
-import { CSS_LENGTH_RE, HEX_COLOR_RE } from "../config/validate.js";
+import { CSS_LENGTH_RE, PAPER_CHOICES, paperHex } from "../config/validate.js";
 
 // Read the package version at runtime so it stays in sync with
 // package.json — previously hardcoded `0.1.0` and drifted to `0.2.0+`.
@@ -40,9 +40,9 @@ program
   .option("--no-footer", "Hide the running footer")
   .option("--no-cover", "Skip the dedicated cover page (title block goes inline)")
   .option(
-    "--paper-bg <hex>",
-    "Page background as #RRGGBB; surface + hairline + danger-fg derive from it",
-    parseHexColor,
+    "--paper-bg <color>",
+    "Page colour: glacier, platinum (default), parchment, or #RRGGBB; the greys derive from it",
+    parsePaper,
   )
   .option(
     "--config <path>",
@@ -111,13 +111,10 @@ function parseCssLength(value: string): string {
   return value;
 }
 
-function parseHexColor(value: string): string {
-  if (!HEX_COLOR_RE.test(value)) {
-    throw new InvalidArgumentError(
-      `expected a #RRGGBB hex color (six digits, no shorthand), got "${value}".`,
-    );
-  }
-  return value.toUpperCase();
+function parsePaper(value: string): string {
+  const hex = paperHex(value);
+  if (hex === null) throw new InvalidArgumentError(`expected ${PAPER_CHOICES}, got "${value}".`);
+  return hex;
 }
 
 function formatError(error: unknown): string {

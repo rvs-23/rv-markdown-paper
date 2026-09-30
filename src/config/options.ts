@@ -1,3 +1,12 @@
+// Named page colours for --paper-bg / paperBg. Quiet, near-neutral tints
+// so the single-ink design holds on all three. platinum is the template's
+// default paper.
+export const PAPER_PRESETS = {
+  glacier: "#FAFBFC",
+  platinum: "#F4F4F4",
+  parchment: "#F5EEDD",
+} as const;
+
 export type Margins = {
   top: string;
   right: string;
@@ -54,9 +63,10 @@ export type DocumentOptions = {
   showFooter: boolean;
   showCover: boolean;
 
-  // Optional page-background override as a "#RRGGBB" hex string. The
+  // Optional page colour, stored as a "#RRGGBB" hex string (a preset
+  // name from PAPER_PRESETS resolves to its hex during validation). The
   // surface, hairline, and danger-fg tokens derive from it (see
-  // typst/local/mdpaper/0.1.0/palette.typ); default #F4F4F4.
+  // typst/local/mdpaper/0.1.0/palette.typ); default platinum, #F4F4F4.
   paperBg?: string;
 
   // Footnote placement. "page" (default) uses Typst's native page-bottom
