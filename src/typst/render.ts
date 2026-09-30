@@ -12,7 +12,7 @@ import { CSS_LENGTH_RE } from "../config/validate.js";
 // while the template loads from outside it.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_DIR = resolvePath(HERE, "../../typst");
-const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
+export const FONTS_DIR = resolvePath(HERE, "../../assets/fonts");
 const TEMPLATE_PACKAGE = "@local/mdpaper:0.1.0";
 
 export type TypstRenderOptions = {
@@ -39,12 +39,13 @@ function buildPreamble(options: DocumentOptions, rail: boolean): string {
     `#import "${TEMPLATE_PACKAGE}": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
-      `page-right, endnote-ref, endnotes, rule`,
+      `page-right, endnote-ref, endnotes, rule, md-table`,
   );
   // Palette tokens are needed by generated body content (e.g. the
-  // definition-list grid renders its hairline with `c-hairline`); the
-  // template module re-exports the ones it imports from palette.typ.
-  lines.push(`#import "${TEMPLATE_PACKAGE}": c-hairline`);
+  // definition-list grid renders its hairline with `c-hairline`, a
+  // `.muted` span its ink with `c-muted`); the template module re-exports
+  // the ones it imports from palette.typ.
+  lines.push(`#import "${TEMPLATE_PACKAGE}": c-hairline, c-muted`);
   // Right-margin dicts the generated body switches between around the
   // chapter opener; they depend on this document's margin and rail.
   const marginRight = cssLengthToTypst(options.margins.right);
@@ -185,6 +186,10 @@ function runTypst(
     // randomises per run.
     const epoch = process.env.SOURCE_DATE_EPOCH ?? "0";
     const inputArgs = Object.entries(inputs).flatMap(([k, v]) => ["--input", `${k}=${v}`]);
+    // Only the fonts in assets/fonts are visible, so the set that can
+    // appear in a PDF doesn't depend on the machine or the Typst build.
+    // Libertinus Serif and New Computer Modern Math, which Typst would
+    // otherwise supply from its embedded copies, are bundled there too.
     const child = spawn(
       "typst",
       [
@@ -193,6 +198,7 @@ function runTypst(
         "--package-path", PACKAGE_DIR,
         "--font-path", FONTS_DIR,
         "--ignore-system-fonts",
+        "--ignore-embedded-fonts",
         "--creation-timestamp", epoch,
         ...inputArgs,
         "-",

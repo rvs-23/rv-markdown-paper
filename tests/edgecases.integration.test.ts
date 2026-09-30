@@ -201,4 +201,31 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect(edge).toBeLessThanOrEqual(mm(210 - 50 - 26) + 1);
     expect(edge).toBeGreaterThan(mm(210 - 50 - 26) - 20);
   });
+
+  it("sizes table columns to their content", async () => {
+    // A one-character column next to a prose column: the fixed per-count
+    // weights gave "#" the widest share and squeezed the prose.
+    const prose = "a long explanation that needs most of the line to avoid wrapping";
+    const rows = Array.from({ length: 4 }, (_, i) => `| ${i} | Label ${i} | ${prose} |`).join("\n");
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-cols-"));
+    try {
+      await writeFile(join(dir, "doc.md"), `| # | Pattern | Rule |\n|---|---|---|\n${rows}\n`, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const html = spawnSync("pdftotext", ["-bbox", join(dir, "doc.pdf"), "-"], { encoding: "utf8" }).stdout;
+      const xMin = (word: string) => Number(new RegExp(`xMin="([\\d.]+)"[^>]*>${word}<`).exec(html)![1]);
+      const hash = xMin("#");
+      const pattern = xMin("Pattern");
+      const rule = xMin("Rule");
+      // "#" column narrower than "Pattern", which is narrower than the room left for "Rule".
+      expect(pattern - hash).toBeLessThan(rule - pattern);
+      expect(pattern - hash).toBeLessThan(40);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("renders reference-style links instead of dropping them", async () => {
+    const text = await render("Read [the spec][spec] and [spec] today.\n\n[spec]: https://example.com\n");
+    expect(text).toContain("Read the spec and spec today.");
+  });
 });

@@ -134,6 +134,9 @@ function liftHeadingAttrs(node: Heading): void {
   const t = last as Text;
   const match = t.value.match(/\s*\{([^{}]*)\}\s*$/);
   if (!match) return;
+  // `]{…}` is bracketed-span syntax (left literal when the `[` was escaped),
+  // never a heading attribute bundle.
+  if (match[0].startsWith("{") && t.value[match.index! - 1] === "]") return;
   const attrs = parseAttrString(match[1]!);
   if (!attrs) return;
   t.value = t.value.slice(0, match.index!).trimEnd();

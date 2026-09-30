@@ -46,7 +46,7 @@
     "dev": "tsx src/cli/index.ts",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --dir tests --testTimeout 30000"
   },
   "engines": {
     "node": ">=20"

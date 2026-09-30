@@ -22,6 +22,7 @@ import type {
 } from "mdast";
 import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
+import type { Span } from "../parser/spans.js";
 import { toString as mdastToString } from "mdast-util-to-string";
 import { tex2typst } from "tex2typst";
 
@@ -378,50 +379,55 @@ function renderBlockquote(node: Blockquote, ctx: Ctx): string {
   return `#quote(block: true)[\n${indent(renderBlocks(node.children, ctx), 2)}\n]`;
 }
 
+// Tables go through the template's `md-table`, which measures the cells
+// in their real fonts and sizes the columns to their content. The one
+// thing Typst can't do is split content into words, so each column's
+// longest word (header and body separately, as they're set in different
+// voices) is found here for the no-mid-word-break floor.
 function renderTable(node: Table, ctx: Ctx): string {
   const rows = node.children;
   if (rows.length === 0) return "";
   const columns = Math.max(...rows.map((r) => r.children.length));
   const alignArg = tableAlignArg(node.align, columns);
 
-  const header = rows[0]!;
-  const headerCells = renderTableRowCells(header, ctx);
-  const bodyRows = rows
-    .slice(1)
-    .map((row) => renderTableRowCells(row, ctx))
-    .flat();
+  const cellsOf = (row: TableRow) =>
+    Array.from({ length: columns }, (_, x) => row.children[x]);
+  const [header, ...body] = rows.map(cellsOf);
+  const render = (cell: TableCell | undefined) => (cell ? renderTableCell(cell, ctx) : "[]");
+  const words = Array.from({ length: columns }, (_, x) => {
+    const head = longestWord([header![x]]);
+    const rest = longestWord(body.map((row) => row[x]));
+    return `(${typstString(head)}, ${typstString(rest)})`;
+  });
 
-  // Emit weighted fractional columns so the table stretches edge-to-
-  // edge in the body column without short label cells wrapping.
-  // Layout heuristic, modelled on target.pdf's body-column tables:
-  //   1 col      → `1fr`
-  //   2 cols     → `1fr, 1.5fr`                 (label | description)
-  //   3 cols     → `2fr, 1fr, 2fr`              (label | value | description)
-  //   N ≥ 4 cols → `2.2fr, 1.6fr, 1fr…, 2fr`
-  //                 (label | named-data | numeric data… | description)
-  // The first two columns get extra weight because their headers are
-  // typically multi-word (e.g. "Workload", "Good default"); the last
-  // column gets double weight for descriptive prose; remaining middle
-  // columns share evenly.
-  let colSpecs: string;
-  if (columns === 1) {
-    colSpecs = "1fr";
-  } else if (columns === 2) {
-    colSpecs = "1fr, 1.5fr";
-  } else if (columns === 3) {
-    colSpecs = "2fr, 1fr, 2fr";
-  } else {
-    const middle = Array(columns - 3).fill("1fr");
-    colSpecs = ["2.2fr", "1.6fr", ...middle, "2fr"].join(", ");
-  }
-  const fracColumns = `(${colSpecs})`;
-  const parts = [
-    `columns: ${fracColumns}`,
-    ...(alignArg ? [`align: (${alignArg})`] : []),
-    `table.header(${headerCells.join(", ")})`,
+  const bodyRows = body.map((row) => `    (${row.map(render).join(", ")},),`);
+  return [
+    "#md-table(",
+    `  (${header!.map(render).join(", ")},),`,
+    "  (",
     ...bodyRows,
-  ];
-  return `#table(\n  ${parts.join(",\n  ")},\n)`;
+    "  ),",
+    `  (${words.join(", ")},),`,
+    ...(alignArg ? [`  align: (${alignArg}),`] : []),
+    ")",
+  ].join("\n");
+}
+
+// The longest whitespace-separated word across `cells`, in graphemes.
+function longestWord(cells: Array<TableCell | undefined>): string {
+  let best = "";
+  let bestLength = 0;
+  for (const cell of cells) {
+    if (!cell) continue;
+    for (const word of mdastToString(cell).split(/\s+/)) {
+      const length = [...graphemes.segment(word)].length;
+      if (length > bestLength) {
+        best = word;
+        bestLength = length;
+      }
+    }
+  }
+  return best;
 }
 
 function tableAlignArg(
@@ -430,10 +436,6 @@ function tableAlignArg(
 ): string | null {
   if (!aligns || aligns.length === 0) return null;
   return Array.from({ length: columns }, (_, i) => aligns[i] ?? "left").join(", ");
-}
-
-function renderTableRowCells(row: TableRow, ctx: Ctx): string[] {
-  return row.children.map((cell) => renderTableCell(cell, ctx));
 }
 
 function renderTableCell(cell: TableCell, ctx: Ctx): string {
@@ -660,7 +662,8 @@ function isPhrasingNode(n: RootContent): boolean {
     n.type === "image" ||
     n.type === "inlineCode" ||
     n.type === "break" ||
-    n.type === "html"
+    n.type === "html" ||
+    n.type === "span"
   );
 }
 
@@ -698,6 +701,8 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
       return "";
     case "inlineMath":
       return renderInlineMath(node as unknown as { value: string });
+    case "span":
+      return renderSpan(node, ctx);
     case "textDirective": {
       const dir = node as unknown as DirectiveNode;
       return renderInlines((dir.children ?? []) as PhrasingContent[], ctx);
@@ -731,6 +736,18 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
     default:
       return "";
   }
+}
+
+// Bracketed spans: `.muted` sets the palette's muted ink, `.underline`
+// draws the same rule the template puts under links. Other classes (the
+// unbundled `.smallcaps` included) render the text plainly, as unknown
+// `:::name` blocks do.
+function renderSpan(node: Span, ctx: Ctx): string {
+  const classes = node.data?.attrs?.classes ?? [];
+  let body = renderInlines(node.children, ctx);
+  if (classes.includes("underline")) body = `#underline(offset: 1.8pt, stroke: 0.5pt)[${body}];`;
+  if (classes.includes("muted")) body = `#text(fill: c-muted)[${body}];`;
+  return body;
 }
 
 // Scan a text node for Pandoc-crossref references (`@fig:x`, `[@eq:y]`).
@@ -869,7 +886,8 @@ function extractLeadingBoldLabel(children: RootContent[]): string | undefined {
 // return it alongside a copy of the children with that grapheme removed
 // from the paragraph's first text node. Used by the dropcap directive to
 // lift the initial letter out of the body flow. Graphemes, not UTF-16
-// units, so an accented letter or emoji isn't split in half.
+// units, so an accented letter or emoji isn't split in half; leading
+// opening punctuation is kept with the letter.
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
 function splitDropcap(
@@ -883,10 +901,15 @@ function splitDropcap(
   const firstInline = para.children[0]!;
   if (firstInline.type !== "text") return { letter: "", rest: children };
   const t = firstInline as Text;
+  // Opening punctuation (“ ‘ « ( and ASCII quotes) rides along with the
+  // first letter, as in book typography: the drop cap is “A, not “.
   const text = t.value.trimStart();
-  const lead = graphemes.segment(text)[Symbol.iterator]().next().value;
-  if (!lead) return { letter: "", rest: children };
-  const letter = lead.segment;
+  let letter = "";
+  for (const { segment } of graphemes.segment(text)) {
+    letter += segment;
+    if (!/^[\p{Ps}\p{Pi}"']$/u.test(segment)) break;
+  }
+  if (letter === "") return { letter: "", rest: children };
   const tail = text.slice(letter.length);
   const newText: Text = { type: "text", value: tail };
   const newParaChildren: PhrasingContent[] = [newText, ...para.children.slice(1)];
