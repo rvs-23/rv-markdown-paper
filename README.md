@@ -60,7 +60,7 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 | `--margin-right` | CSS length | Right (outer) margin; the template adds the marginalia rail or a reading-measure gutter inside it — see [Page width](#page-width) |
 | `--margin-bottom` | CSS length | Bottom margin |
 | `--margin-left` | CSS length | Left margin |
-| `--paper-bg` | `#RRGGBB` | Page background; surface, hairline, and danger-foreground derive from it automatically |
+| `--paper-bg` | `glacier` \| `platinum` \| `parchment` \| `#RRGGBB` | Page colour — see [Paper colours](#paper-colours); surface, hairline, and danger-foreground derive from it automatically |
 | `--no-header` | — | Hide the running header |
 | `--no-footer` | — | Hide the running footer |
 | `--no-cover` | — | Skip the dedicated cover page (title block goes inline) |
@@ -70,7 +70,11 @@ CSS length units accepted: `in`, `cm`, `mm`, `pt`, `px`.
 
 ## Library Usage
 
-The package also ships a small library API for embedding the converter in other Node tools — pipelines that fan out many documents, CMS export jobs, build scripts, etc. After `npm install rv-markdown-paper`, import `convertMarkdownToPdf`:
+The package also ships a small library API for embedding the converter in other Node tools — pipelines that fan out many documents, CMS export jobs, build scripts, etc. It isn't on the npm registry; install it from GitHub (npm builds it during install), then import `convertMarkdownToPdf`:
+
+```bash
+npm install github:rvs-23/rv-markdown-paper
+```
 
 ```ts
 import { convertMarkdownToPdf } from "rv-markdown-paper";
@@ -96,7 +100,7 @@ await convertMarkdownToPdf({
   cli: {
     title: "Thread pools",
     pageSize: "Letter",
-    paperBg: "#F4F4F4",
+    paperBg: "parchment",
     showCover: false,
     margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
   },
@@ -217,7 +221,7 @@ pageSize: "A4"
 showHeader: true
 showFooter: true
 showCover: true
-paperBg: "#F4F4F4"
+paperBg: "platinum"          # glacier | platinum | parchment, or any #RRGGBB
 ---
 ```
 
@@ -247,7 +251,7 @@ margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
 showCover: true
-paperBg: "#F4F4F4"
+paperBg: "parchment"         # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "endnotes"   # "page" (default) | "endnotes" — bottom-of-page vs chapter-end NOTES
 
 # dedicated cover (optional — when set, the cover replaces the editorial title block)
@@ -366,6 +370,18 @@ The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
 3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math converts to Typst math via `tex2typst`.
 4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) pipes the generated document into `typst compile -` with `--root <sourceDir>`, `--font-path assets/fonts` and `--ignore-system-fonts`. The design ships as a Typst local package, `@local/mdpaper` ([`template.typ`](typst/local/mdpaper/0.1.0/template.typ), [`palette.typ`](typst/local/mdpaper/0.1.0/palette.typ), [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme)), loaded with `--package-path typst`, so nothing is written next to your Markdown. `--paper-bg` reaches the palette as `--input paper-bg=…`.
 
+### Paper colours
+
+Three named page colours, all quiet enough that the single-ink design holds on each. Any `#RRGGBB` also works for a one-off.
+
+| Name | Hex | Feel |
+|---|---|---|
+| `glacier` | `#FAFBFC` | Clean white with the faintest cool tint |
+| `platinum` (default) | `#F4F4F4` | Neutral silver-grey |
+| `parchment` | `#F5EEDD` | Subtle warm gold |
+
+The code-panel greys, hairlines and callout fills are darkened from the page colour, so they stay in tune with whichever one you pick.
+
 ### Page width
 
 The right side of the page holds a **marginalia rail**, a 35mm column for `:::margin` notes and the large section numeral of `7.1`-style H2s. It is reserved only when the document uses one of those. Without them, the text column runs wider (a ~140mm reading measure on A4) instead of leaving an empty band.
@@ -417,7 +433,13 @@ The committed PDFs are the visual regression surface; they only have value when 
 
 ### Distribution
 
-The package builds to `dist/` and exposes both a CLI (`bin: { "mdpdf": ... }`) and a library entry (`exports`). After `npm install rv-markdown-paper` you get the `mdpdf` binary on your `PATH` and can `import { convertMarkdownToPdf } from "rv-markdown-paper"` — see [Library Usage](#library-usage) for the full API.
+The package is not published to the npm registry. Use it from a clone (see [Getting Started](#getting-started)), or install it into another project straight from GitHub:
+
+```bash
+npm install github:rvs-23/rv-markdown-paper
+```
+
+The `prepare` script builds `dist/` during that install. You then get the CLI as `npx mdpdf <input.md> <output.pdf>` and the library as `import { convertMarkdownToPdf } from "rv-markdown-paper"` — see [Library Usage](#library-usage) for the full API. Typst still has to be on `PATH`.
 
 ## AI stack used for development
 

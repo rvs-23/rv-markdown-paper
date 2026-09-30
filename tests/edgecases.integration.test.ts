@@ -115,28 +115,34 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     }
   });
 
-  it("paints the page with --paper-bg", async () => {
+  // Top-left pixel of page 1 at 10 dpi, as [r, g, b].
+  async function paperPixel(markdown: string, cli: DocumentOptionsLayer = {}): Promise<number[]> {
     const dir = await mkdtemp(join(tmpdir(), "mdpdf-bg-"));
     try {
-      await writeFile(join(dir, "doc.md"), "Hello.\n", "utf8");
-      await convertMarkdownToPdf({
-        inputPath: join(dir, "doc.md"),
-        outputPath: join(dir, "doc.pdf"),
-        cli: { paperBg: "#FFE0C0" },
-      });
-      // Rasterise at 10 dpi and read the top-left pixel of the binary PPM.
+      await writeFile(join(dir, "doc.md"), markdown, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf"), cli });
       const r = spawnSync("pdftoppm", ["-r", "10", "-singlefile", join(dir, "doc.pdf")], {
         maxBuffer: 1 << 24,
       });
+      // Binary PPM: four whitespace-terminated header fields, then pixels.
       const ppm = r.stdout as Buffer;
       let offset = 0;
       for (let fields = 0; fields < 4; offset++) {
         if (/\s/.test(String.fromCharCode(ppm[offset]!))) fields++;
       }
-      expect([...ppm.subarray(offset, offset + 3)]).toEqual([0xff, 0xe0, 0xc0]);
+      return [...ppm.subarray(offset, offset + 3)];
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  }
+
+  it("paints the page with --paper-bg", async () => {
+    expect(await paperPixel("Hello.\n", { paperBg: "#FFE0C0" })).toEqual([0xff, 0xe0, 0xc0]);
+  });
+
+  it("paints the page with a named paper preset from frontmatter", async () => {
+    expect(await paperPixel("---\npaperBg: Parchment\n---\nHello.\n")).toEqual([0xf5, 0xee, 0xdd]);
+    expect(await paperPixel("---\npaperBg: glacier\n---\nHello.\n")).toEqual([0xfa, 0xfb, 0xfc]);
   });
 
   it("renders bold and italic that start inside a word", async () => {

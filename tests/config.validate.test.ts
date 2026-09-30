@@ -63,3 +63,23 @@ describe("validateOptions unknown keys", () => {
     }
   });
 });
+
+describe("validateOptions paperBg", () => {
+  it("resolves preset names, in any case, to their hex", () => {
+    expect(validateOptions({ paperBg: "parchment" }, "fm").paperBg).toBe("#F5EEDD");
+    expect(validateOptions({ paperBg: "Glacier" }, "fm").paperBg).toBe("#FAFBFC");
+    expect(validateOptions({ paperBg: "platinum" }, "fm").paperBg).toBe("#F4F4F4");
+  });
+
+  it("still takes any #RRGGBB, upper-cased", () => {
+    expect(validateOptions({ paperBg: "#ffe0c0" }, "fm").paperBg).toBe("#FFE0C0");
+  });
+
+  it("rejects anything else, listing the choices", () => {
+    expect(() => validateOptions({ paperBg: "gold" }, "fm")).toThrow(
+      'fm.paperBg: expected glacier, platinum, parchment, or a #RRGGBB hex color, got "gold".',
+    );
+    // Object prototype names are not presets.
+    expect(() => validateOptions({ paperBg: "constructor" }, "fm")).toThrow(/expected glacier/);
+  });
+});
