@@ -10,7 +10,7 @@ The language is GitHub-flavoured Markdown plus a few Pandoc extensions: `{#id .c
 - **Images** must be local files, referenced by a relative path next to the Markdown file. URLs, `data:` URIs, absolute paths and `../` escapes are rejected.
 - **Math** is LaTeX. It may not contain a raw `#` or `"` (use `\#` for a hash).
 - **IDs** (`{#id}`) start with a letter, then letters, digits, `_`, `:` or `-`.
-- **Scripts:** Latin, Devanagari, Kannada and emoji render (emoji in monochrome). Other scripts (Chinese, Arabic, …) have no bundled font and render blank.
+- **Scripts:** Latin, Devanagari, Kannada and emoji render (emoji in monochrome). Greek, Cyrillic and Hebrew render in a serif fallback face. Any other script (Chinese, Arabic, …) has no bundled font, and the render fails naming the character and its line.
 - **Raw HTML** is dropped. An unknown `:::name` block renders its content as plain paragraphs.
 
 ## Document settings (frontmatter)
@@ -183,7 +183,15 @@ Code blocks use a mono face on a grey panel, with grayscale syntax highlighting.
 | HTTP calls | 8 – 32  | Remote capacity    |
 ```
 
-The first column is sans and the rest are mono. There's a rule under the header. Long tables split across pages and repeat the header row.
+The first column is sans and the rest are mono. Columns are sized to their content, so a short column stays narrow and prose columns get the room. There's a rule under the header. Long tables split across pages and repeat the header row.
+
+## Spans
+
+```markdown
+Some [quieter aside text]{.muted} and an [underlined phrase]{.underline}.
+```
+
+A span styles part of a line: `.muted` sets it in the lighter grey ink, and `.underline` underlines it like a link. Other classes render the text plainly. An `#id` on a span is an error.
 
 ## Horizontal rule
 

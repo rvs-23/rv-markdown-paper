@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Added — notes fixture, spans
+
+- `examples/kannada-notes/`: a real 17-page study document as a
+  regression fixture, and a check that no rendered example has a nearly
+  empty page (a heading stranded above a block that moved on).
+- Bracketed spans: `[text]{.muted}` and `[text]{.underline}`.
+
+### Changed — tables and fonts
+
+- Table columns are sized to their content, measured in the real fonts,
+  instead of fixed weights per column count.
+- Typst's embedded fallback fonts (Libertinus Serif, New Computer Modern
+  Math) now ship in `assets/fonts` and Typst runs with
+  `--ignore-embedded-fonts`, so every font in a PDF comes from the repo.
+  Requires Typst 0.14.
+- A character no bundled font covers now fails the render (with its code
+  point and line) instead of silently disappearing.
+- A drop cap keeps leading opening punctuation with its letter (`“A`).
+
 ### Added — scripts
 
 - Devanagari, Kannada and emoji render via bundled fallback fonts (Noto

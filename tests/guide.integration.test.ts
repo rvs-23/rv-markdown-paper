@@ -73,6 +73,7 @@ describe.skipIf(!hasTools)("MARKDOWN-GUIDE.md examples", () => {
         "poolscapmemory.1",               // footnote marker
         "1eachthreadreserves",            // footnote body
         "stacksize",                      // margin-note label
+        "somequieterasidetextandanunderlinedphrase.", // spans, brackets gone
         "01submitandcollect", "warm-up",  // exercise box number, title, tag
         "ch.7·introduction",              // eyebrow
         "7.4·sizingthepool",              // section eyebrow with numeral

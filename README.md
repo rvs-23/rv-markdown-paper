@@ -14,7 +14,7 @@ The intended use case is long-form editorial content — chapters of a book, ess
 
 ## Getting Started
 
-**Prerequisites:** Node.js ≥ 20 and the Typst CLI (≥ 0.12).
+**Prerequisites:** Node.js ≥ 20 and the Typst CLI (≥ 0.14, for `--ignore-embedded-fonts`).
 
 ```bash
 # macOS — both via Homebrew
@@ -294,7 +294,7 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Horizontal rule | `---` | Full-width hairline with generous space above and below |
 | Blockquote | `> ...` | Hairline left rule, sans body in muted ink |
 | Pull quote | `:::epigraph` … `:::` | 1.5pt ink left rule, 20pt italic-serif body, tracked uppercase cite |
-| Table | GFM pipe syntax | Label column in Archivo sans, data columns in JetBrains Mono Light; hairline header rule, no zebra striping |
+| Table | GFM pipe syntax | Label column in Archivo sans, data columns in JetBrains Mono Light; columns sized to their content; hairline header rule, no zebra striping |
 | Code block | ` ```lang ` fence | Surface-fill panel, mono body, syntax-highlighted in the grayscale theme |
 | Code block + filename | `` ```python {filename="x.py" lang-label="Python 3.12"} `` | Adds a header strip above the panel with filename L, lang-label R |
 | Figure | `![caption](path)` | Full-bleed image in a hairline-bordered panel + caption row with italic-serif `Fig. N.M` lead |
@@ -309,6 +309,7 @@ The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pand
 | Dropcap paragraph | `:::dropcap` … `:::` | First grapheme as a 64pt italic-serif lettrine; the paragraph wraps beside it |
 | Exercise box | `:::{.exbox number="01" tag="Warm-up"}` … `:::` | Hairline top; 32pt italic-serif numeral, title and tracked tag cluster left on a shared baseline |
 | Marginalia | `:::{.margin label="..."}` … `:::` | Right-rail note auto-aligned to its anchor paragraph |
+| Bracketed span | `[text]{.muted}` / `[text]{.underline}` | Muted ink / link-style underline; unknown classes render plain, `#id` is rejected |
 | Page-break opt-in | `## Section {.pagebreak}` | Forces the section onto a fresh page |
 | Chapter opener | `## Heading {#chapter-opener}` | Structural — page-isolates the dropcap intro and suppresses the running header on that page |
 
@@ -325,6 +326,7 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | [`examples/demos/05-admonitions.md`](examples/demos/05-admonitions.md) | All four callout flavours, stacked |
 | [`examples/demos/06-full-paper.md`](examples/demos/06-full-paper.md) | A small essay using callouts, figure, lists, code |
 | [`examples/demos/07-oversized-admonition.md`](examples/demos/07-oversized-admonition.md) | Regression fixture for `breakable: false` admonitions |
+| [`examples/kannada-notes/`](examples/kannada-notes/) | A real 17-page study document — Devanagari, Kannada, emoji, multi-column tables, cover TOC, exercises. `notes.md` source, `output.pdf` render |
 | [`examples/editorial-swiss/`](examples/editorial-swiss/) | Canonical chapter fixture — `paper.md` source, `output.pdf` (our render), `target.pdf` (the visual target to diff against), `figures/` assets |
 
 ## Technical Details
@@ -340,7 +342,7 @@ Every feature listed here is exercised by the canonical fixture at [`examples/ed
 | Markdown parse | [`unified`](https://unifiedjs.com/) + `remark-parse` + `remark-gfm` + `remark-directive` + `remark-math` + `remark-definition-list` |
 | Typesetting | [Typst](https://typst.app/) compiler (external binary on `PATH`) |
 | Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme) (grayscale only) |
-| Fonts | Archivo (sans), Instrument Serif (ornament italic), JetBrains Mono (code), plus fallbacks for characters those lack: Noto Sans Devanagari, Noto Sans Kannada, and monochrome Noto Emoji — all OFL-1.1, bundled in [`assets/fonts/`](assets/fonts/) and loaded with `--ignore-system-fonts` |
+| Fonts | Archivo (sans), Instrument Serif (ornament italic), JetBrains Mono (code), plus fallbacks for characters those lack: Noto Sans Devanagari, Noto Sans Kannada, monochrome Noto Emoji, Libertinus Serif (Greek, Cyrillic, Hebrew), and New Computer Modern Math for formulas. OFL-1.1, except New Computer Modern (GUST Font License); bundled in [`assets/fonts/`](assets/fonts/) and loaded with `--ignore-system-fonts --ignore-embedded-fonts`, so no font outside the repo is ever used |
 | Tests | [`vitest`](https://vitest.dev/) — unit tests, a Typst-body snapshot of the canonical fixture, and a render integration test that compiles the fixture and asserts page count + per-page text invariants |
 | Lint / Types | `eslint` (flat config), `tsc --noEmit` |
 | CI | GitHub Actions — typecheck + lint + test + build on every push and PR ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
@@ -379,8 +381,8 @@ The right side of the page holds a **marginalia rail**, a 35mm column for `:::ma
 2. **Single-ink ramp.** Body is `#11131A` near-ink on a `#F4F4F4` paper. Secondary text steps through ink-2 / ink-3 / muted / mute-2 — five levels of the same gray. The only color event in the whole system is the `:::danger` admonition, which inverts to paper-on-ink. Color inversion is reserved precisely because nothing else inverts.
 3. **Three fonts, one rule per font.** Archivo for body, UI, headings, captions, tables, admonitions. Instrument Serif **italic only**, ornament only — folio, dropcap, pull quotes, equation numbers, figcaption labels. JetBrains Mono for code and tabular numerics. Body italic stays in the Archivo family; the serif italic is too loud for prose. Devanagari, Kannada and emoji fall back to bundled Noto faces at the matching weight; emoji stay monochrome, keeping the single ink.
 4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`typst/local/mdpaper/0.1.0/template.typ`](typst/local/mdpaper/0.1.0/template.typ). To restyle the system you edit the template, not the converter.
-5. **Reproducible output.** Bundled fonts loaded with `--ignore-system-fonts` mean mismatched system fonts cannot silently substitute. PDF metadata is pinned via `--creation-timestamp` (honours `SOURCE_DATE_EPOCH`, defaults to `0`), so re-rendering the same source with the same Typst version produces a byte-identical PDF.
-6. **Fail loud.** Invalid attribute IDs throw at parse time. Remote image URLs are rejected before reaching the compiler. Missing fonts surface as a Typst error, not a silent substitution. The principle: errors with clear messages beat silent drift.
+5. **Reproducible output.** Bundled fonts loaded with `--ignore-system-fonts --ignore-embedded-fonts` mean neither system fonts nor the fonts compiled into Typst can silently substitute. PDF metadata is pinned via `--creation-timestamp` (honours `SOURCE_DATE_EPOCH`, defaults to `0`), so re-rendering the same source with the same Typst version produces a byte-identical PDF.
+6. **Fail loud.** Invalid attribute IDs throw at parse time. Remote image URLs are rejected before reaching the compiler. A character no bundled font covers (Chinese, Arabic, …) fails the render with its code point and line, instead of Typst silently leaving it out. The principle: errors with clear messages beat silent drift.
 7. **Page count is a contract.** The integration test renders the canonical fixture and asserts it compiles to exactly 6 pages. Page choreography regressions fail CI.
 
 ### Security posture
@@ -408,6 +410,7 @@ for md in examples/demos/*.md; do
   npm run mdpdf -- "$md" "${md%.md}.pdf"
 done
 npm run mdpdf -- examples/editorial-swiss/paper.md examples/editorial-swiss/output.pdf
+npm run mdpdf -- examples/kannada-notes/notes.md examples/kannada-notes/output.pdf
 ```
 
 The committed PDFs are the visual regression surface; they only have value when they all reflect the same pipeline state.
