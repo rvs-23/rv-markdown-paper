@@ -15,9 +15,13 @@
 #import "palette.typ": *
 
 // ---------- fonts ----------
-// All three families ship in `assets/fonts/` and are loaded with
-// `--ignore-system-fonts`. No fallbacks: a missing face must fail loud,
-// not silently substitute and drift from the reference.
+// All three families ship in `assets/fonts/`, and Typst runs with
+// `--ignore-system-fonts --ignore-embedded-fonts`, so only fonts in that
+// directory are ever used. A character the chosen family lacks falls
+// back automatically to another bundled font that has it: Noto Sans
+// Devanagari/Kannada, Noto Emoji, or Libertinus Serif (e.g. Greek `λ`,
+// which Archivo lacks). Math uses New Computer Modern Math. A character
+// no bundled font covers is silently dropped: Typst gives no warning.
 
 #let f-sans   = "Archivo"
 #let f-serif  = "Instrument Serif"

@@ -185,6 +185,10 @@ function runTypst(
     // randomises per run.
     const epoch = process.env.SOURCE_DATE_EPOCH ?? "0";
     const inputArgs = Object.entries(inputs).flatMap(([k, v]) => ["--input", `${k}=${v}`]);
+    // Only the fonts in assets/fonts are visible, so the set that can
+    // appear in a PDF doesn't depend on the machine or the Typst build.
+    // Libertinus Serif and New Computer Modern Math, which Typst would
+    // otherwise supply from its embedded copies, are bundled there too.
     const child = spawn(
       "typst",
       [
@@ -193,6 +197,7 @@ function runTypst(
         "--package-path", PACKAGE_DIR,
         "--font-path", FONTS_DIR,
         "--ignore-system-fonts",
+        "--ignore-embedded-fonts",
         "--creation-timestamp", epoch,
         ...inputArgs,
         "-",
