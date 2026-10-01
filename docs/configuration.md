@@ -52,7 +52,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 | Key | CLI flag | Default | Meaning |
 |---|---|---|---|
 | `pageSize` | `--page-size` | `A4` | `A4` or `Letter` |
-| `margins` | `--margin-top` etc. | 24 / 22 / 22 / 22 mm | `{ top, right, bottom, left }`, each a length in `mm`, `cm`, `in`, `pt` or `px` |
+| `margins` | `--margin-top`, `--margin-right`, `--margin-bottom`, `--margin-left` | 24 / 22 / 22 / 22 mm | `{ top, right, bottom, left }`, each a length in `mm`, `cm`, `in`, `pt` or `px` |
 | `paperBg` | `--paper-bg` | `platinum` | `glacier`, `platinum`, `parchment`, or any `#RRGGBB` |
 | `showHeader` | `--no-header` | `true` | Running header |
 | `showFooter` | `--no-footer` | `true` | Running footer |
