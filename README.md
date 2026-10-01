@@ -27,6 +27,16 @@ npm install
 npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf
 ```
 
+To use it from any folder, link it once. That gives you a global `mdpdf` command:
+
+```bash
+npm link
+cd ~/Documents/notes
+mdpdf chapter.md chapter.pdf
+```
+
+The global command runs the built code, so after pulling changes run `npm install` in the repo to rebuild.
+
 ## Everyday options
 
 ```bash
