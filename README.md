@@ -27,6 +27,16 @@ npm install
 npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf
 ```
 
+To use it from any folder, link it once. That gives you a global `mdpdf` command:
+
+```bash
+npm link
+cd ~/Documents/notes
+mdpdf chapter.md chapter.pdf
+```
+
+The global command runs the built code, so after pulling changes run `npm install` in the repo to rebuild.
+
 ## Everyday options
 
 ```bash
@@ -42,6 +52,7 @@ npm run mdpdf -- notes.md out/notes.pdf --no-author --page-size Letter --no-cove
 | `--paper-bg` | Page colour: `glacier` (white), `platinum` (grey, the default), `parchment` (gold), or any `#RRGGBB` |
 | `--author "Name"` | Signs the footer with the first name: `AUTHOR · NAME` |
 | `--no-author` | Leaves the signature out |
+| `--watermark "Draft"` | Sets faint text across every page |
 | `--page-size` | `A4` (default) or `Letter` |
 | `--no-cover` / `--no-header` / `--no-footer` | Turn off the cover page, running header or footer |
 

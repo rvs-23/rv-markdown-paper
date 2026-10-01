@@ -90,3 +90,18 @@ describe("validateOptions showAuthor", () => {
     expect(() => validateOptions({ showAuthor: "no" }, "fm")).toThrow("fm.showAuthor: expected true or false");
   });
 });
+
+describe("library entry", () => {
+  it("exports ConfigError so callers can check for it", async () => {
+    const lib = await import("../src/index.js");
+    expect(lib.ConfigError).toBe(ConfigError);
+    expect(() => validateOptions({ pageSize: "A5" }, "fm")).toThrow(lib.ConfigError);
+  });
+});
+
+describe("validateOptions watermark", () => {
+  it("accepts text and rejects anything else", () => {
+    expect(validateOptions({ watermark: "Draft" }, "fm").watermark).toBe("Draft");
+    expect(() => validateOptions({ watermark: true }, "fm")).toThrow("fm.watermark: expected a string");
+  });
+});

@@ -10,7 +10,7 @@ The language is GitHub-flavoured Markdown plus a few Pandoc extensions: `{#id .c
 - **Images** must be local files, referenced by a relative path next to the Markdown file. URLs, `data:` URIs, absolute paths and `../` escapes are rejected.
 - **Math** is LaTeX. It may not contain a raw `#` or `"` (use `\#` for a hash).
 - **IDs** (`{#id}`) start with a letter, then letters, digits, `_`, `:` or `-`.
-- **Scripts:** Latin, Devanagari, Kannada and emoji render (emoji in monochrome). Greek, Cyrillic and Hebrew render in a serif fallback face. Any other script (Chinese, Arabic, …) has no bundled font, and the render fails naming the character and its line.
+- **Scripts:** Latin, Devanagari, Kannada, Telugu and emoji render (emoji in monochrome). Greek, Cyrillic and Hebrew render in a serif fallback face. Any other script (Chinese, Arabic, …) has no bundled font, and the render fails naming the character and its line.
 - **Raw HTML** is dropped. An unknown `:::name` block renders its content as plain paragraphs.
 
 ## Document settings (frontmatter)
@@ -30,6 +30,7 @@ margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
 showAuthor: true              # false leaves the footer signature out
+watermark: "Draft"            # faint text across every page; leave out for none
 paperBg: "platinum"           # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "page"             # or "endnotes" for a NOTES block at the end
 ---

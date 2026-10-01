@@ -65,6 +65,8 @@ export type DocumentOptions = {
   // Sign the footer with the author's first name ("AUTHOR · RISHAV").
   // Only shows when `author` is set; --no-author turns it off.
   showAuthor: boolean;
+  // Faint text set across every page, e.g. "Draft". Off when unset.
+  watermark?: string;
 
   // Optional page colour, stored as a "#RRGGBB" hex string (a preset
   // name from PAPER_PRESETS resolves to its hex during validation). The

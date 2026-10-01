@@ -11,6 +11,7 @@ The look of every PDF comes from one Typst template. This doc describes what it 
 - [Colour](#colour)
 - [Page geometry](#page-geometry)
 - [Header and footer](#header-and-footer)
+- [Watermark](#watermark)
 - [Components](#components)
 - [Changing the design](#changing-the-design)
 
@@ -61,6 +62,7 @@ Typst can only use the fonts in `assets/fonts/`, because it runs with system and
 | JetBrains Mono | Code, table data | OFL 1.1 |
 | Noto Sans Devanagari | Hindi and other Devanagari text | OFL 1.1 |
 | Noto Sans Kannada | Kannada text | OFL 1.1 |
+| Noto Sans Telugu | Telugu text | OFL 1.1 |
 | Noto Emoji | Emoji, in monochrome to keep one ink | OFL 1.1 |
 | Libertinus Serif | Greek, Cyrillic and Hebrew fallback | OFL 1.1 |
 | New Computer Modern Math | Formulas | GUST Font License |
@@ -104,7 +106,7 @@ The chapter-opener page always uses the wider no-rail column.
 
 ## Header and footer
 
-**Header.** The running header shows one locator on the left: `Ch. 07 — Thread pools` when a chapter is set, otherwise `Part <part>`, otherwise the `section` text. It doesn't repeat the section number, which the rail numeral already shows. The header is hidden on the cover, the title page and the chapter opener.
+**Header.** The running header shows one locator on the left: `Ch. 07 — Thread pools` when a chapter is set, otherwise `Part <part>`, then the `section` text, then the title. It doesn't repeat the section number, which the rail numeral already shows. The header is hidden on the cover, the title page and the chapter opener.
 
 **Footer.** The left side shows the series and edition when they're set. The right side shows the author's signature, then the page number:
 
@@ -113,6 +115,10 @@ Python in Practice · Edition 2                    AUTHOR · RISHAV   086
 ```
 
 The signature uses the author's first name in the tracked label style; `--no-author` hides it. The page number is zero-padded to three digits and offset by `pageStart`. The footer is hidden on the cover.
+
+## Watermark
+
+With `watermark: "Draft"`, the text is set in uppercase across every page, cover included, behind the content. It is scaled to span the page width and drawn in `c-surface`, the same faint tone as the callout panels, so it stays quiet on every paper colour.
 
 ## Components
 

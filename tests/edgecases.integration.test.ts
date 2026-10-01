@@ -145,14 +145,15 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect(text).toContain("ootakke = for the meal; unbelievable.");
   });
 
-  it("renders Devanagari, Kannada and emoji through the bundled fallbacks", async () => {
+  it("renders Devanagari, Kannada, Telugu and emoji through the bundled fallbacks", async () => {
     const dir = await mkdtemp(join(tmpdir(), "mdpdf-scripts-"));
     try {
-      await writeFile(join(dir, "doc.md"), "Hindi नमस्ते, Kannada ಕನ್ನಡ, ok ✅\n", "utf8");
+      await writeFile(join(dir, "doc.md"), "Hindi नमस्ते, Kannada ಕನ್ನಡ, Telugu తెలుగు, ok ✅\n", "utf8");
       await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
       const fonts = spawnSync("pdffonts", [join(dir, "doc.pdf")], { encoding: "utf8" }).stdout;
       expect(fonts).toContain("NotoSansDevanagari");
       expect(fonts).toContain("NotoSansKannada");
+      expect(fonts).toContain("NotoSansTelugu");
       expect(fonts).toContain("NotoEmoji");
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -273,5 +274,52 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     await expect(render("Hello.\n", bad)).rejects.toThrow("cli.showHeader: expected true or false");
     const typo = { papperBg: "parchment" } as unknown as DocumentOptionsLayer;
     await expect(render("Hello.\n", typo)).rejects.toThrow('cli.papperBg: unknown option. Did you mean "paperBg"?');
+  });
+
+  it("adds no comma to a cover title that has none", async () => {
+    const cover = (title: string) => render(`---\ncover:\n  title: "${title}"\n---\nBody.\n`);
+    expect(await cover("Thread pools")).toMatch(/^Thread pools (?!,)/);
+    expect(await cover("Thread pools | made plain")).toContain("Thread pools made plain");
+    // With a comma, the head keeps it and the tail follows.
+    expect(await cover("Thread pools, or a bounded crew.")).toContain("Thread pools, or a bounded crew.");
+  });
+
+  it("falls back to the title in the running header", async () => {
+    // With no chapter, part or section, page 2's header used to be empty.
+    const md = `---\ntitle: "Thread pools"\n---\n${longBody}`;
+    expect((await chrome(md, 2)).header).toBe("Thread pools");
+    // A section still wins over the title.
+    const withSection = `---\ntitle: "Thread pools"\nsection: "Notes"\n---\n${longBody}`;
+    expect((await chrome(withSection, 2)).header).toBe("Notes");
+  });
+
+  // The watermark's letters, per page. pdftotext extracts the rotated,
+  // tracked letters one at a time and out of order, so pick out the tall
+  // boxes (far larger than any body text) and read them left to right.
+  async function watermarks(markdown: string, cli: DocumentOptionsLayer = {}): Promise<string[]> {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-wm-"));
+    try {
+      await writeFile(join(dir, "doc.md"), markdown, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf"), cli });
+      const pages = pdfText(join(dir, "doc.pdf"), ["-bbox"]).split("<page ").slice(1);
+      return pages.map((page) =>
+        [...page.matchAll(/xMin="([\d.]+)" yMin="([\d.]+)" xMax="[\d.]+" yMax="([\d.]+)">([^<]+)</g)]
+          .filter((m) => Number(m[3]) - Number(m[2]) > 60)
+          .sort((a, b) => Number(a[1]) - Number(b[1]))
+          .map((m) => m[4])
+          .join(""),
+      );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("sets a watermark on every page, and none by default", async () => {
+    const marked = await watermarks(longBody, { watermark: "Draft" });
+    expect(marked.length).toBeGreaterThan(1);
+    expect(new Set(marked)).toEqual(new Set(["DRAFT"]));
+    // Frontmatter works too; without the option nothing is added.
+    expect(await watermarks(`---\nwatermark: "Draft"\n---\nHello.\n`)).toEqual(["DRAFT"]);
+    expect(await watermarks("Hello.\n")).toEqual([""]);
   });
 });

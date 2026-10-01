@@ -31,7 +31,10 @@ npm test                         # every test
 npm run typecheck
 npm run lint
 npm run build                    # compile to dist/
+npm link                         # once: a global `mdpdf`, running dist/
 ```
+
+`npm run mdpdf` runs the TypeScript source directly. The global `mdpdf` from `npm link` runs `dist/`, so rebuild (`npm run build` or `npm install`) before relying on it after a change.
 
 ## Tests
 

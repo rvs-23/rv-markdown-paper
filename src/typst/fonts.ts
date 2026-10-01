@@ -204,6 +204,7 @@ export function collectOptionText(options: DocumentOptions): RenderedText[] {
     ["editionShort", options.editionShort],
     ["volume", options.volume],
     ["chapter", options.chapter],
+    ["watermark", options.watermark],
   ];
   const cover: Cover = options.cover ?? {};
   fields.push(["cover.kicker", cover.kicker], ["cover.title", cover.title], ["cover.subtitle", cover.subtitle]);
@@ -264,6 +265,6 @@ export function assertFontCoverage(
       `so Typst would silently leave ${entries.length === 1 ? "it" : "them"} out of the PDF:\n` +
       `${lines.join("\n")}\n` +
       `The bundled fonts cover Latin, plus Greek, Cyrillic and Hebrew via the ` +
-      `Libertinus Serif fallback, Devanagari, Kannada and monochrome emoji.`,
+      `Libertinus Serif fallback, Devanagari, Kannada, Telugu and monochrome emoji.`,
   );
 }

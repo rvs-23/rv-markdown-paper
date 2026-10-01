@@ -589,22 +589,23 @@
     // "a bounded crew."). Without a `|`, the tail flows naturally
     // within the box width.
     #if title != none {
+      // A title without a comma is all head: no comma is added, and no
+      // italic tail follows. `|` breaks lines in either part.
       let parts = title.split(",")
-      let head = parts.at(0) + ","
-      let tail = if parts.len() > 1 { parts.slice(1).join(",").trim() } else { "" }
-      let tail-segments = tail.split("|").map(s => s.trim())
+      let has-tail = parts.len() > 1
+      let head-segments = (parts.at(0) + if has-tail { "," } else { "" }).split("|").map(s => s.trim())
+      let tail-segments = if has-tail { parts.slice(1).join(",").split("|").map(s => s.trim()) } else { () }
+      let lines(segments) = for (i, seg) in segments.enumerate() {
+        if i > 0 { linebreak() }
+        seg
+      }
       box(width: 95mm)[
         // `justify: false` on the title — the document-level `set par`
         // turns justification on for body prose, which spreads "Thread"
         // and "pools," apart on short title lines. Display headings
         // should always be left-aligned, never justified.
         #par(leading: 0.32em, justify: false)[
-          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#{
-            for (i, seg) in tail-segments.enumerate() {
-              if i > 0 { linebreak() }
-              seg
-            }
-          }]
+          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#lines(head-segments)]#if has-tail [#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#lines(tail-segments)]]
         ]
       ]
     }
@@ -777,6 +778,7 @@
   show-footer: true,
   show-cover: true,
   show-author: true,
+  watermark: none,
   rail: true,
   theme-path: none,
   body,
@@ -829,7 +831,14 @@
     margin: (top: margin-top, right: effective-right, bottom: margin-bottom, left: margin-left),
     background: context {
       _marg-bottom.update(0pt)
-      []
+      // Watermark: one faint word across every page, behind the text.
+      // Sized so any text spans the page width, capped for short words,
+      // and drawn in the panel tone so it stays quiet on every paper.
+      if watermark != none and watermark.trim() != "" {
+        let mark(size) = text(font: f-sans, weight: 600, size: size, tracking: 0.08em, fill: c-surface, upper(watermark.trim()))
+        let size = calc.min(120pt, 100pt * (page.width * 0.95 / measure(mark(100pt)).width))
+        place(center + horizon, rotate(-35deg, mark(size)))
+      }
     },
   )
 
@@ -1128,18 +1137,18 @@
       if on-cover or on-title-page or on-opener { [] } else {
         // Header left: "Ch. NN — Title" per the mockup. Chapter is
         // zero-padded under 10 (matches the cover-foot). Title is the
-        // head of the comma-split cover.title when a cover is set
-        // (e.g. "Thread pools" from "Thread pools, or how to share a
-        // bounded crew."), otherwise the flat `title` field, otherwise
-        // omitted.
+        // head of the cover title, up to its first comma or `|` (e.g.
+        // "Thread pools" from "Thread pools, or how to share a bounded
+        // crew."), otherwise the flat `title` field. With no chapter,
+        // the locator falls back to the part, the section, then the
+        // title alone, so a titled document never has an empty header.
         let chapter-str = if chapter != none {
           let n = str(chapter)
           if n.len() == 1 { "Ch. 0" + n } else { "Ch. " + n }
         } else { none }
         let title-head = if cover != none and cover.at("title", default: none) != none {
           // Head of comma-split (same convention as the cover title).
-          let t = cover.title
-          if "," in t { t.split(",").at(0) } else { t }
+          cover.title.split(",").at(0).split("|").at(0).trim()
         } else if title != none { title } else { none }
         let left-cell = if chapter-str != none and title-head != none {
           chapter-str + " — " + title-head
@@ -1149,6 +1158,8 @@
           "Part " + part
         } else if section != none {
           section
+        } else if title-head != none {
+          title-head
         } else { "" }
         if left-cell == "" {
           []

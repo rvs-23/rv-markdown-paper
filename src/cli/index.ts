@@ -30,6 +30,7 @@ program
   .option("--section <section>", "Kicker above the title, e.g. LESSON 03")
   .option("--author <author>", "Document author; the footer signs with the first name")
   .option("--no-author", "Leave the author signature out of the footer")
+  .option("--watermark <text>", "Faint text across every page, e.g. Draft")
   .option("--date <date>", "Document date (overrides frontmatter)")
   .option("--reading-time <time>", "Reading time, e.g. '14 min'")
   .option("--page-size <size>", "Page size: Letter or A4", parsePageSize)
@@ -79,6 +80,7 @@ function cliOptionsToLayer(opts: OptionValues, cmd: Command): DocumentOptionsLay
   if (typeof opts.readingTime === "string") layer.readingTime = opts.readingTime;
   if (typeof opts.pageSize === "string") layer.pageSize = opts.pageSize as "Letter" | "A4";
   if (typeof opts.paperBg === "string") layer.paperBg = opts.paperBg;
+  if (typeof opts.watermark === "string") layer.watermark = opts.watermark;
 
   if (cmd.getOptionValueSource("header") === "cli") {
     layer.showHeader = Boolean(opts.header);

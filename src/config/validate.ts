@@ -22,7 +22,8 @@ const KNOWN_KEYS = [
   "title", "subtitle", "section", "author", "date", "readingTime", "chapter",
   "part", "series", "edition", "editionShort", "volume", "page-start",
   "page-end", "pageStart", "pageEnd", "cover", "pageSize", "margins",
-  "showHeader", "showFooter", "showCover", "showAuthor", "paperBg", "footnotes",
+  "showHeader", "showFooter", "showCover", "showAuthor", "watermark", "paperBg",
+  "footnotes",
 ];
 
 // `strictKeys` is for mdpdf.config.json, which holds nothing but options,
@@ -76,6 +77,7 @@ export function validateOptions(
   if ("showFooter" in r) out.showFooter = expectBool(r.showFooter, `${source}.showFooter`);
   if ("showCover" in r) out.showCover = expectBool(r.showCover, `${source}.showCover`);
   if ("showAuthor" in r) out.showAuthor = expectBool(r.showAuthor, `${source}.showAuthor`);
+  if ("watermark" in r) out.watermark = expectString(r.watermark, `${source}.watermark`);
   if ("paperBg" in r) out.paperBg = expectPaper(r.paperBg, `${source}.paperBg`);
   if ("footnotes" in r) out.footnotes = expectFootnoteMode(r.footnotes, `${source}.footnotes`);
 

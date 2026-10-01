@@ -29,7 +29,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 
 | Key | CLI flag | Meaning |
 |---|---|---|
-| `title` | `--title` | Document title |
+| `title` | `--title` | Document title. Also the header locator when no chapter, part or section is set. |
 | `subtitle` | `--subtitle` | Line under the title |
 | `section` | `--section` | Small label above the title, and the header locator when neither `chapter` nor `part` is set |
 | `author` | `--author` | Author. The footer is signed with the first name: `AUTHOR · RISHAV` |
@@ -58,6 +58,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 | `showFooter` | `--no-footer` | `true` | Running footer |
 | `showCover` | `--no-cover` | `true` | Dedicated cover page, when a `cover` block is set |
 | `showAuthor` | `--no-author` | `true` | Author signature in the footer |
+| `watermark` | `--watermark` | none | Faint text across every page, such as `Draft` |
 | `footnotes` | none | `page` | `page` for page-bottom footnotes, `endnotes` for a NOTES block at the end |
 | `cover` | none | none | The cover page; see below |
 
@@ -127,12 +128,25 @@ await convertMarkdownToPdf({
 
 - the input file can't be read, or the frontmatter isn't valid YAML
 - a config file is missing (when passed as `configPath`) or isn't valid JSON
-- an option fails validation (an error named `ConfigError`, naming the field)
+- an option fails validation (a `ConfigError`, naming the field)
 - the Markdown has a malformed id, an image outside its folder, or a character no font covers
 - the Markdown has math that can't be converted, or a footnote that references itself
 - Typst fails to compile (its error output becomes the message)
 
 **Batches.** Renders share no state, so they can run concurrently. Each one spawns a Typst process, so for large batches keep concurrency near your CPU count.
+
+`ConfigError` is exported, so you can tell a bad document from a failed compile:
+
+```ts
+import { ConfigError, convertMarkdownToPdf } from "rv-markdown-paper";
+
+try {
+  await convertMarkdownToPdf({ inputPath, outputPath });
+} catch (err) {
+  if (err instanceof ConfigError) console.error("Fix the document:", err.message);
+  else throw err;
+}
+```
 
 **Types.** `ConvertOptions`, `DocumentOptions`, `DocumentOptionsLayer`, `Cover`, `MetaPair`, `TocEntry` and `Margins` are exported for TypeScript users.
 
