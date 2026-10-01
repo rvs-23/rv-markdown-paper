@@ -1,6 +1,6 @@
 {
   "name": "rv-markdown-paper",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "description": "Markdown to print-quality PDF via Typst — fixed editorial design system, bundled fonts, deterministic output.",
   "keywords": [
     "markdown",

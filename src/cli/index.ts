@@ -5,8 +5,8 @@ import { convertMarkdownToPdf } from "../core/convert.js";
 import type { DocumentOptionsLayer, Margins } from "../config/options.js";
 import { CSS_LENGTH_RE, PAPER_CHOICES, paperHex } from "../config/validate.js";
 
-// Read the package version at runtime so it stays in sync with
-// package.json — previously hardcoded `0.1.0` and drifted to `0.2.0+`.
+// Read the package version at runtime, so it can't drift from
+// package.json.
 // createRequire works both in `tsx`-driven dev (../../package.json from
 // src/cli/index.ts) and in the compiled `dist/cli/index.js` build
 // (../../package.json from dist/cli/index.js — same depth).
