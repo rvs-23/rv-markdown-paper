@@ -31,7 +31,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 |---|---|---|
 | `title` | `--title` | Document title |
 | `subtitle` | `--subtitle` | Line under the title |
-| `section` | `--section` | Small label above the title, and the header locator when no chapter is set |
+| `section` | `--section` | Small label above the title, and the header locator when neither `chapter` nor `part` is set |
 | `author` | `--author` | Author. The footer is signed with the first name: `AUTHOR · RISHAV` |
 | `date` | `--date` | Date. YAML dates (`2026-04-20`) are accepted. |
 | `readingTime` | `--reading-time` | Shown on the cover. Estimated when left out. |
@@ -45,7 +45,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 | `series` | Book title, shown in the footer and on the cover |
 | `edition` / `editionShort` | `Edition 2 · 2026` / `Edition 2`, for the cover and footer |
 | `volume` | Shown on the cover |
-| `pageStart` / `pageEnd` | Page numbering to continue from. `page-start` and `page-end` are accepted too. |
+| `pageStart` / `pageEnd` | `pageStart` sets the first page's number, which the footer and cover TOC count from. With `pageEnd` too, the cover foot shows `pp. 085 – 098`. `page-start` and `page-end` are accepted too. |
 
 **Layout**
 
@@ -80,10 +80,10 @@ cover:
     - { id: "7.2", title: "What a pool is", ref: "sec-pool-is", page: "088" }
 ```
 
-- **`title`**: a `|` forces a line break.
+- **`title`**: text before the first comma is set upright and the rest in serif italic. A `|` in the italic part forces a line break.
 - **`subtitle`**: backticks set code.
 - **`meta`** is the row of small facts. It accepts a map, as above, or a list of `{ label, value }`.
-- **`toc`** entries link to the heading whose id is `ref`. Their page numbers fill in automatically. An explicit `page:` overrides that, for entries that point outside this document.
+- **`toc`** entries take their page number from the heading whose id is `ref`. An explicit `page:` overrides that, for entries that point outside this document.
 - **Runtime:** when the document has a reading time, it is added to `meta` as "Runtime" unless you wrote one.
 
 ## The config file
@@ -125,9 +125,11 @@ await convertMarkdownToPdf({
 
 **Errors.** The promise rejects when:
 
-- the input file can't be read
-- an option fails validation (`ConfigError`, naming the field)
+- the input file can't be read, or the frontmatter isn't valid YAML
+- a config file is missing (when passed as `configPath`) or isn't valid JSON
+- an option fails validation (an error named `ConfigError`, naming the field)
 - the Markdown has a malformed id, an image outside its folder, or a character no font covers
+- the Markdown has math that can't be converted, or a footnote that references itself
 - Typst fails to compile (its error output becomes the message)
 
 **Batches.** Renders share no state, so they can run concurrently. Each one spawns a Typst process, so for large batches keep concurrency near your CPU count.

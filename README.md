@@ -12,7 +12,7 @@ npm run mdpdf -- notes.md notes.pdf
 
 Markdown is pleasant to write, but turning it into a PDF usually gives you one of two things: a printed web page, or a LaTeX project. A printed web page has the wrong margins, no running headers, and footnotes that float away. LaTeX gets the typography right, but asks you to learn LaTeX.
 
-rv-markdown-paper takes the Markdown you already write and sets it in a fixed editorial design: a cover page, running headers, page numbers, margin notes, footnotes, callouts, figures, equations and tables. You choose a paper colour. Everything else is decided by the design, so every document comes out consistent.
+rv-markdown-paper takes the Markdown you already write and sets it in a fixed editorial design: a cover page, running headers, page numbers, margin notes, footnotes, callouts, figures, equations and tables. You choose a paper colour. Fonts, sizes, spacing and layout are fixed, so every document comes out consistent.
 
 ## Quick start
 
@@ -85,7 +85,7 @@ flowchart LR
     md["Markdown"] --> parse["Parse<br/>(remark)"] --> gen["Generate<br/>Typst source"] --> pdf["typst compile<br/>→ PDF"]
 ```
 
-The converter parses Markdown, checks it, and writes Typst source that calls a design template. Typst then sets the pages using only fonts bundled in this repo, so the same file gives the same PDF on any machine.
+The converter parses Markdown, checks it, and writes Typst source that calls a design template. Typst then sets the pages using only fonts bundled in this repo, so the same file gives the same PDF on any machine with the same Typst version.
 
 ## Documentation
 

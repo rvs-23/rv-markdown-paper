@@ -63,7 +63,7 @@ Every PDF that changed should be explained by your change. Open each one and loo
 
 ## Checking a test catches the bug
 
-A new test should fail on the code before your fix. Check that in a scratch worktree, so your working copy and the shared stash stay untouched:
+A new test should fail on the code before your fix. Check that in a separate worktree, so you don't have to stash or reset your working copy:
 
 ```bash
 git worktree add --detach ../old HEAD

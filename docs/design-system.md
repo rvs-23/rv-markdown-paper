@@ -31,20 +31,20 @@ typst/local/mdpaper/0.1.0/
   typst.toml      Package manifest (name mdpaper, version 0.1.0)
 ```
 
-The folder path is Typst's required layout for a local package: `<package-path>/<namespace>/<name>/<version>/`. The `0.1.0` is the package's own version and never needs to change, because only this tool loads the package.
+[architecture.md](architecture.md#why-it-is-built-this-way) explains the folder path and the `0.1.0`.
 
 ## Type
 
 Body text is Archivo Light at 10.5 pt, ragged right, with hyphenation off.
 
-The headings form a ladder rather than a set of sizes. Writers open a section with `##` (a small label) followed by `###` (the visible title):
+Writers open a section with `##` (a small label) followed by `###` (the visible title):
 
 | Markdown | Renders as |
 |---|---|
 | `#` | Document title, Archivo 28 pt. Only used when there's no cover. |
 | `##` | Section label: 9 pt tracked uppercase (`7.4 · SIZING THE POOL`) |
 | `###` | Display heading, Archivo 21 pt |
-| `####` | Sub-heading, 14 pt in muted ink |
+| `####` | Sub-heading, 14 pt; a leading number like `7.1.1` is muted |
 | `#####` | Small inline label, 10.5 pt |
 | `######` | Aside in Instrument Serif italic, 10 pt |
 
@@ -52,7 +52,7 @@ Instrument Serif italic is kept for ornament: page numbers, drop caps, pull quot
 
 ## Fonts
 
-Typst can only use the fonts in `assets/fonts/`, because it runs with system and built-in fonts disabled. When the design font lacks a character, Typst falls back to the first bundled font that has it.
+Typst can only use the fonts in `assets/fonts/`, because it runs with system and built-in fonts disabled. When the design font lacks a character, Typst falls back to another bundled font that has it.
 
 | Font | Used for | Licence |
 |---|---|---|
@@ -74,7 +74,7 @@ Any other script (Chinese, Arabic, …) has no font. The converter stops with th
 | Token | Value | Used for |
 |---|---|---|
 | `c-paper` | The paper colour | Page background |
-| `c-surface` | Paper darkened 7% | Code panels, note callouts |
+| `c-surface` | Paper darkened 7% | Code panels, note and tip callouts |
 | `c-surface-2` | Paper darkened 11% | Code headers, warning callouts |
 | `c-hairline` | Paper darkened 21% | Rules and table lines |
 | `c-ink` … `c-mute-2` | `#11131A` to `#8B8E97` | Text, from primary to faint |
@@ -104,7 +104,7 @@ The chapter-opener page always uses the wider no-rail column.
 
 ## Header and footer
 
-**Header.** The running header shows one locator on the left: `Ch. 07 — Thread pools` when a chapter is set, otherwise the part or the `section` text. It doesn't repeat the section number, which the rail numeral already shows. The header is hidden on the cover, the title page and the chapter opener.
+**Header.** The running header shows one locator on the left: `Ch. 07 — Thread pools` when a chapter is set, otherwise `Part <part>`, otherwise the `section` text. It doesn't repeat the section number, which the rail numeral already shows. The header is hidden on the cover, the title page and the chapter opener.
 
 **Footer.** The left side shows the series and edition when they're set. The right side shows the author's signature, then the page number:
 

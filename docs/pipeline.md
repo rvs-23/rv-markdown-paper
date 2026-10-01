@@ -32,7 +32,7 @@ Unknown keys are handled differently per layer. In `mdpdf.config.json` they are 
 
 [`parseMarkdown.ts`](../src/parser/parseMarkdown.ts) turns the body into an mdast tree with remark and four plugins: GitHub-flavoured Markdown, directives (`:::note`), math (`$…$`) and definition lists.
 
-The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so three passes run around the parse.
+The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so five passes run around the parse.
 
 **Before the parse:**
 
@@ -47,7 +47,7 @@ The source is written in a Pandoc-flavoured dialect that remark doesn't fully un
 
 ## 3. Checks before rendering
 
-Typst renders some problems silently, so the converter catches them first.
+The converter rejects these before Typst runs:
 
 | Check | Where | Why |
 |---|---|---|
@@ -60,7 +60,7 @@ Typst renders some problems silently, so the converter catches them first.
 
 [`generate.ts`](../src/typst/generate.ts) walks the tree and writes Typst markup. Most nodes map directly onto a template function, such as `:::tip` to `#tip[...]`. These parts take more work.
 
-**Headings and page layout.** Heading levels map to a ladder of styles rather than plain sizes: `##` is a small uppercase section label and `###` is the large visible title. An `##` that starts with a section number (`7.1 · Threads`, `K.2 · …`) also sets the large numeral in the right margin. `{#chapter-opener}` starts a full-width opening page, and the next `##` returns to the normal layout on a fresh page. `{.pagebreak}` starts any section on a new page.
+**Headings and page layout.** `##` is a small uppercase section label and `###` is the large visible title. An `##` that starts with a section number (`7.1 · Threads`, `K.2 · …`) also sets the large numeral in the right margin. `{#chapter-opener}` starts an opening page in the wider no-rail column, and the next `##` returns to the normal layout on a fresh page. `{.pagebreak}` starts any section on a new page.
 
 **The margin rail.** `usesRail` checks whether anything will be drawn in the right margin: a `:::margin` note or a numbered `##`. If nothing will, the text column widens instead of leaving an empty band. [design-system.md](design-system.md#page-geometry) has the numbers.
 
