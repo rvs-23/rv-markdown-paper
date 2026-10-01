@@ -29,7 +29,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 
 | Key | CLI flag | Meaning |
 |---|---|---|
-| `title` | `--title` | Document title |
+| `title` | `--title` | Document title. Also the header locator when no chapter, part or section is set. |
 | `subtitle` | `--subtitle` | Line under the title |
 | `section` | `--section` | Small label above the title, and the header locator when neither `chapter` nor `part` is set |
 | `author` | `--author` | Author. The footer is signed with the first name: `AUTHOR · RISHAV` |

@@ -1129,18 +1129,18 @@
       if on-cover or on-title-page or on-opener { [] } else {
         // Header left: "Ch. NN — Title" per the mockup. Chapter is
         // zero-padded under 10 (matches the cover-foot). Title is the
-        // head of the comma-split cover.title when a cover is set
-        // (e.g. "Thread pools" from "Thread pools, or how to share a
-        // bounded crew."), otherwise the flat `title` field, otherwise
-        // omitted.
+        // head of the cover title, up to its first comma or `|` (e.g.
+        // "Thread pools" from "Thread pools, or how to share a bounded
+        // crew."), otherwise the flat `title` field. With no chapter,
+        // the locator falls back to the part, the section, then the
+        // title alone, so a titled document never has an empty header.
         let chapter-str = if chapter != none {
           let n = str(chapter)
           if n.len() == 1 { "Ch. 0" + n } else { "Ch. " + n }
         } else { none }
         let title-head = if cover != none and cover.at("title", default: none) != none {
           // Head of comma-split (same convention as the cover title).
-          let t = cover.title
-          if "," in t { t.split(",").at(0) } else { t }
+          cover.title.split(",").at(0).split("|").at(0).trim()
         } else if title != none { title } else { none }
         let left-cell = if chapter-str != none and title-head != none {
           chapter-str + " — " + title-head
@@ -1150,6 +1150,8 @@
           "Part " + part
         } else if section != none {
           section
+        } else if title-head != none {
+          title-head
         } else { "" }
         if left-cell == "" {
           []

@@ -282,4 +282,13 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     // With a comma, the head keeps it and the tail follows.
     expect(await cover("Thread pools, or a bounded crew.")).toContain("Thread pools, or a bounded crew.");
   });
+
+  it("falls back to the title in the running header", async () => {
+    // With no chapter, part or section, page 2's header used to be empty.
+    const md = `---\ntitle: "Thread pools"\n---\n${longBody}`;
+    expect((await chrome(md, 2)).header).toBe("Thread pools");
+    // A section still wins over the title.
+    const withSection = `---\ntitle: "Thread pools"\nsection: "Notes"\n---\n${longBody}`;
+    expect((await chrome(withSection, 2)).header).toBe("Notes");
+  });
 });

@@ -104,7 +104,7 @@ The chapter-opener page always uses the wider no-rail column.
 
 ## Header and footer
 
-**Header.** The running header shows one locator on the left: `Ch. 07 — Thread pools` when a chapter is set, otherwise `Part <part>`, otherwise the `section` text. It doesn't repeat the section number, which the rail numeral already shows. The header is hidden on the cover, the title page and the chapter opener.
+**Header.** The running header shows one locator on the left: `Ch. 07 — Thread pools` when a chapter is set, otherwise `Part <part>`, then the `section` text, then the title. It doesn't repeat the section number, which the rail numeral already shows. The header is hidden on the cover, the title page and the chapter opener.
 
 **Footer.** The left side shows the series and edition when they're set. The right side shows the author's signature, then the page number:
 
