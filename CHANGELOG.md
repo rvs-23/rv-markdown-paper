@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Bengali text renders, via bundled Noto Sans Bengali (weights 300–700).
+
 ### Added — Telugu and a watermark
 
 - Telugu text renders, via bundled Noto Sans Telugu (weights 300–700).
