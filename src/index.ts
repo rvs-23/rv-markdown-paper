@@ -4,6 +4,9 @@
 
 export { convertMarkdownToPdf } from "./core/convert.js";
 export type { ConvertOptions } from "./core/convert.js";
+// Thrown for an invalid option or attribute, so callers can tell a bad
+// document from a failed compile with `err instanceof ConfigError`.
+export { ConfigError } from "./config/validate.js";
 export type {
   DocumentOptions,
   DocumentOptionsLayer,

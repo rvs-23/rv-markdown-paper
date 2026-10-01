@@ -90,3 +90,11 @@ describe("validateOptions showAuthor", () => {
     expect(() => validateOptions({ showAuthor: "no" }, "fm")).toThrow("fm.showAuthor: expected true or false");
   });
 });
+
+describe("library entry", () => {
+  it("exports ConfigError so callers can check for it", async () => {
+    const lib = await import("../src/index.js");
+    expect(lib.ConfigError).toBe(ConfigError);
+    expect(() => validateOptions({ pageSize: "A5" }, "fm")).toThrow(lib.ConfigError);
+  });
+});
