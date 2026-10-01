@@ -3,7 +3,7 @@
 Turn a Markdown file into a PDF that looks like a page from a well-made book.
 
 ```bash
-npm run mdpdf -- notes.md notes.pdf
+mdpdf notes.md notes.pdf
 ```
 
 ![Three rendered pages: a cover with a table of contents, a chapter page with margin notes, and a page with callouts and a table](docs/images/preview.png)
@@ -23,28 +23,37 @@ brew install node typst
 git clone https://github.com/rvs-23/rv-markdown-paper.git
 cd rv-markdown-paper
 npm install
-
-npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf
+npm link        # once: makes `mdpdf` available in every folder
 ```
 
-To use it from any folder, link it once. That gives you a global `mdpdf` command:
+Then, from any folder:
 
 ```bash
-npm link
-cd ~/Documents/notes
-mdpdf chapter.md chapter.pdf
+mdpdf notes.md notes.pdf
 ```
 
-The global command runs the built code, so after pulling changes run `npm install` in the repo to rebuild.
+To try it on a document that ships with the repo:
+
+```bash
+mdpdf examples/kannada-notes/notes.md out/notes.pdf
+```
+
+`mdpdf` runs the built code, so after pulling changes run `npm install` in the repo to rebuild it.
+
+Without `npm link`, run it through npm from inside the repo. npm always runs from the repo's root, so paths are relative to the repo, wherever you are standing:
+
+```bash
+npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf
+```
 
 ## Everyday options
 
 ```bash
 # Warm gold paper, footer signed "AUTHOR · RV"
-npm run mdpdf -- notes.md out/notes.pdf --paper-bg parchment --author "Rv"
+mdpdf notes.md notes.pdf --paper-bg parchment --author "Rv"
 
 # No author signature, US Letter, no cover page
-npm run mdpdf -- notes.md out/notes.pdf --no-author --page-size Letter --no-cover
+mdpdf notes.md notes.pdf --no-author --page-size Letter --no-cover
 ```
 
 | Flag | What it does |
@@ -56,7 +65,7 @@ npm run mdpdf -- notes.md out/notes.pdf --no-author --page-size Letter --no-cove
 | `--page-size` | `A4` (default) or `Letter` |
 | `--no-cover` / `--no-header` / `--no-footer` | Turn off the cover page, running header or footer |
 
-The same settings can sit at the top of the Markdown file, so a plain `npm run mdpdf -- notes.md notes.pdf` picks them up:
+The same settings can sit at the top of the Markdown file, so a plain `mdpdf notes.md notes.pdf` picks them up:
 
 ```yaml
 ---
