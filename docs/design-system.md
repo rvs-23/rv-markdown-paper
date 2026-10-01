@@ -11,6 +11,7 @@ The look of every PDF comes from one Typst template. This doc describes what it 
 - [Colour](#colour)
 - [Page geometry](#page-geometry)
 - [Header and footer](#header-and-footer)
+- [Watermark](#watermark)
 - [Components](#components)
 - [Changing the design](#changing-the-design)
 
@@ -114,6 +115,10 @@ Python in Practice · Edition 2                    AUTHOR · RISHAV   086
 ```
 
 The signature uses the author's first name in the tracked label style; `--no-author` hides it. The page number is zero-padded to three digits and offset by `pageStart`. The footer is hidden on the cover.
+
+## Watermark
+
+With `watermark: "Draft"`, the text is set in uppercase across every page, cover included, behind the content. It is scaled to span the page width and drawn in `c-surface`, the same faint tone as the callout panels, so it stays quiet on every paper colour.
 
 ## Components
 

@@ -42,6 +42,7 @@ npm run mdpdf -- notes.md out/notes.pdf --no-author --page-size Letter --no-cove
 | `--paper-bg` | Page colour: `glacier` (white), `platinum` (grey, the default), `parchment` (gold), or any `#RRGGBB` |
 | `--author "Name"` | Signs the footer with the first name: `AUTHOR · NAME` |
 | `--no-author` | Leaves the signature out |
+| `--watermark "Draft"` | Sets faint text across every page |
 | `--page-size` | `A4` (default) or `Letter` |
 | `--no-cover` / `--no-header` / `--no-footer` | Turn off the cover page, running header or footer |
 

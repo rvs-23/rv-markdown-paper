@@ -2,9 +2,11 @@
 
 ## Unreleased
 
-### Added — Telugu, watermark
+### Added — Telugu and a watermark
 
 - Telugu text renders, via bundled Noto Sans Telugu (weights 300–700).
+- `--watermark "Draft"` / `watermark:` sets faint text across every
+  page, scaled to the page width.
 
 ### Fixed
 

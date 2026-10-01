@@ -58,6 +58,7 @@ Frontmatter keys and config-file keys are the same. Only some options have a CLI
 | `showFooter` | `--no-footer` | `true` | Running footer |
 | `showCover` | `--no-cover` | `true` | Dedicated cover page, when a `cover` block is set |
 | `showAuthor` | `--no-author` | `true` | Author signature in the footer |
+| `watermark` | `--watermark` | none | Faint text across every page, such as `Draft` |
 | `footnotes` | none | `page` | `page` for page-bottom footnotes, `endnotes` for a NOTES block at the end |
 | `cover` | none | none | The cover page; see below |
 

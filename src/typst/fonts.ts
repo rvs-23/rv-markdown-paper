@@ -204,6 +204,7 @@ export function collectOptionText(options: DocumentOptions): RenderedText[] {
     ["editionShort", options.editionShort],
     ["volume", options.volume],
     ["chapter", options.chapter],
+    ["watermark", options.watermark],
   ];
   const cover: Cover = options.cover ?? {};
   fields.push(["cover.kicker", cover.kicker], ["cover.title", cover.title], ["cover.subtitle", cover.subtitle]);

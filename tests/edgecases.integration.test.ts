@@ -292,4 +292,34 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     const withSection = `---\ntitle: "Thread pools"\nsection: "Notes"\n---\n${longBody}`;
     expect((await chrome(withSection, 2)).header).toBe("Notes");
   });
+
+  // The watermark's letters, per page. pdftotext extracts the rotated,
+  // tracked letters one at a time and out of order, so pick out the tall
+  // boxes (far larger than any body text) and read them left to right.
+  async function watermarks(markdown: string, cli: DocumentOptionsLayer = {}): Promise<string[]> {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-wm-"));
+    try {
+      await writeFile(join(dir, "doc.md"), markdown, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf"), cli });
+      const pages = pdfText(join(dir, "doc.pdf"), ["-bbox"]).split("<page ").slice(1);
+      return pages.map((page) =>
+        [...page.matchAll(/xMin="([\d.]+)" yMin="([\d.]+)" xMax="[\d.]+" yMax="([\d.]+)">([^<]+)</g)]
+          .filter((m) => Number(m[3]) - Number(m[2]) > 60)
+          .sort((a, b) => Number(a[1]) - Number(b[1]))
+          .map((m) => m[4])
+          .join(""),
+      );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("sets a watermark on every page, and none by default", async () => {
+    const marked = await watermarks(longBody, { watermark: "Draft" });
+    expect(marked.length).toBeGreaterThan(1);
+    expect(new Set(marked)).toEqual(new Set(["DRAFT"]));
+    // Frontmatter works too; without the option nothing is added.
+    expect(await watermarks(`---\nwatermark: "Draft"\n---\nHello.\n`)).toEqual(["DRAFT"]);
+    expect(await watermarks("Hello.\n")).toEqual([""]);
+  });
 });

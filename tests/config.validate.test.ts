@@ -98,3 +98,10 @@ describe("library entry", () => {
     expect(() => validateOptions({ pageSize: "A5" }, "fm")).toThrow(lib.ConfigError);
   });
 });
+
+describe("validateOptions watermark", () => {
+  it("accepts text and rejects anything else", () => {
+    expect(validateOptions({ watermark: "Draft" }, "fm").watermark).toBe("Draft");
+    expect(() => validateOptions({ watermark: true }, "fm")).toThrow("fm.watermark: expected a string");
+  });
+});

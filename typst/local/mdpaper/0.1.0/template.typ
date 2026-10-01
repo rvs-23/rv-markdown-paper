@@ -778,6 +778,7 @@
   show-footer: true,
   show-cover: true,
   show-author: true,
+  watermark: none,
   rail: true,
   theme-path: none,
   body,
@@ -830,7 +831,14 @@
     margin: (top: margin-top, right: effective-right, bottom: margin-bottom, left: margin-left),
     background: context {
       _marg-bottom.update(0pt)
-      []
+      // Watermark: one faint word across every page, behind the text.
+      // Sized so any text spans the page width, capped for short words,
+      // and drawn in the panel tone so it stays quiet on every paper.
+      if watermark != none and watermark.trim() != "" {
+        let mark(size) = text(font: f-sans, weight: 600, size: size, tracking: 0.08em, fill: c-surface, upper(watermark.trim()))
+        let size = calc.min(120pt, 100pt * (page.width * 0.95 / measure(mark(100pt)).width))
+        place(center + horizon, rotate(-35deg, mark(size)))
+      }
     },
   )
 

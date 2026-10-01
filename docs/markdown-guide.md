@@ -30,6 +30,7 @@ margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
 showAuthor: true              # false leaves the footer signature out
+watermark: "Draft"            # faint text across every page; leave out for none
 paperBg: "platinum"           # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "page"             # or "endnotes" for a NOTES block at the end
 ---
