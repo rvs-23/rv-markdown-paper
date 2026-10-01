@@ -61,6 +61,7 @@ Typst can only use the fonts in `assets/fonts/`, because it runs with system and
 | JetBrains Mono | Code, table data | OFL 1.1 |
 | Noto Sans Devanagari | Hindi and other Devanagari text | OFL 1.1 |
 | Noto Sans Kannada | Kannada text | OFL 1.1 |
+| Noto Sans Telugu | Telugu text | OFL 1.1 |
 | Noto Emoji | Emoji, in monochrome to keep one ink | OFL 1.1 |
 | Libertinus Serif | Greek, Cyrillic and Hebrew fallback | OFL 1.1 |
 | New Computer Modern Math | Formulas | GUST Font License |

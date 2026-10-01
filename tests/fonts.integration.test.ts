@@ -43,8 +43,8 @@ describe.skipIf(!hasTypst)("font coverage", () => {
     expect(error?.message).toMatch(/U\+0645 +frontmatter \(title\)/);
   });
 
-  it("renders Latin, Greek, Devanagari, Kannada and emoji", async () => {
-    const { error, written } = await render("Hello λ नमस्ते ಕನ್ನಡ ✅ and <!-- 你 --> in an HTML comment.\n");
+  it("renders Latin, Greek, Devanagari, Kannada, Telugu and emoji", async () => {
+    const { error, written } = await render("Hello λ नमस्ते ಕನ್ನಡ తెలుగు ✅ and <!-- 你 --> in an HTML comment.\n");
     expect(error).toBeUndefined();
     expect(written).toBe(true);
   });

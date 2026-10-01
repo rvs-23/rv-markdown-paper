@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added — Telugu, watermark
+
+- Telugu text renders, via bundled Noto Sans Telugu (weights 300–700).
+
+### Fixed
+
+- A cover title with no comma no longer gets a trailing comma.
+- The running header falls back to the document title when no chapter,
+  part or section is set, instead of staying empty.
+- `ConfigError` is exported from the library entry.
+
 ### Changed — documentation
 
 - The README is now a short introduction. Technical documentation moved
