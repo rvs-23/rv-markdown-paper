@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Changed — documentation
+
+- The README is now a short introduction. Technical documentation moved
+  to `docs/`: architecture, pipeline, design system, configuration and
+  development, with Mermaid diagrams. `MARKDOWN-GUIDE.md` moved to
+  `docs/markdown-guide.md`.
+
+### Fixed
+
+- Library callers' `cli` overrides are validated like every other
+  option layer. `paperBg: "parchment"` failed inside Typst, and a
+  non-boolean such as `showHeader: "yes"` reached the Typst preamble as
+  raw code.
+
 ### Added — author signature
 
 - The footer is signed with the author's first name before the folio

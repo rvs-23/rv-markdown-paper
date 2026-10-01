@@ -1,482 +1,100 @@
 # rv-markdown-paper
 
-## Overview
-
-`rv-markdown-paper` turns a Markdown file into a print-quality PDF that follows a fixed editorial design system — neutral-gray paper, single-ink type ramp, three-font system (Archivo body / Instrument Serif italic ornament / JetBrains Mono code), no user-pickable accent colors. The pipeline is:
-
-```
-input.md  →  mdast (remark)  →  Typst source  →  PDF (typst compile)
-```
-
-The design language is non-negotiable on purpose. Authors write content; the template does the rest. The same Markdown produces the same PDF on every machine because fonts are bundled and Typst runs with `--ignore-system-fonts`.
-
-The intended use case is long-form editorial content — chapters of a book, essay collections, technical documentation that wants to feel like a printed page rather than a website.
-
-## Getting Started
-
-**Prerequisites:** Node.js ≥ 20 and the Typst CLI (≥ 0.14, for `--ignore-embedded-fonts`).
+Turn a Markdown file into a PDF that looks like a page from a well-made book.
 
 ```bash
-# macOS — both via Homebrew
+npm run mdpdf -- notes.md notes.pdf
+```
+
+![Three rendered pages: a cover with a table of contents, a chapter page with margin notes, and a page with callouts and a table](docs/images/preview.png)
+
+## Why
+
+Markdown is pleasant to write, but turning it into a PDF usually gives you one of two things: a printed web page, or a LaTeX project. A printed web page has the wrong margins, no running headers, and footnotes that float away. LaTeX gets the typography right, but asks you to learn LaTeX.
+
+rv-markdown-paper takes the Markdown you already write and sets it in a fixed editorial design: a cover page, running headers, page numbers, margin notes, footnotes, callouts, figures, equations and tables. You choose a paper colour. Everything else is decided by the design, so every document comes out consistent.
+
+## Quick start
+
+You need [Node.js](https://nodejs.org) 20+ and [Typst](https://typst.app) 0.14+.
+
+```bash
 brew install node typst
-
-# verify
-node --version
-typst --version
-```
-
-**Install and run:**
-
-```bash
 git clone https://github.com/rvs-23/rv-markdown-paper.git
 cd rv-markdown-paper
 npm install
 
-# render one of the bundled demos
-npm run mdpdf -- examples/demos/01-hello.md output/01-hello.pdf
-
-# render the canonical fixture
-npm run mdpdf -- examples/editorial-swiss/paper.md examples/editorial-swiss/output.pdf
+npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf
 ```
 
-The canonical fixture (`examples/editorial-swiss/paper.md`) exercises every supported feature; compare its `output.pdf` against `target.pdf` (the designer-iterated visual target) to see what the system is aiming for.
-
-## CLI Usage
+## Everyday options
 
 ```bash
-npm run mdpdf -- <input.md> <output.pdf> [flags]
+# Warm gold paper, footer signed "AUTHOR · RV"
+npm run mdpdf -- notes.md out/notes.pdf --paper-bg parchment --author "Rv"
+
+# No author signature, US Letter, no cover page
+npm run mdpdf -- notes.md out/notes.pdf --no-author --page-size Letter --no-cover
 ```
 
-| Flag | Argument | Effect |
-|---|---|---|
-| `--title` | text | Document title (overrides frontmatter) |
-| `--subtitle` | text | Subtitle / deck under the title |
-| `--section` | text | Kicker above the title, e.g. `LESSON 03` |
-| `--author` | text | Document author; the footer is signed with the first name, `AUTHOR · RISHAV` |
-| `--date` | text | Document date |
-| `--reading-time` | text | Reading time, e.g. `"14 min"` (auto-estimated if omitted) |
-| `--page-size` | `Letter` \| `A4` | Page size — default `A4` |
-| `--margin-top` | CSS length | Top margin (`24mm`, `0.85in`, `72pt`) |
-| `--margin-right` | CSS length | Right (outer) margin; the template adds the marginalia rail or a reading-measure gutter inside it — see [Page width](#page-width) |
-| `--margin-bottom` | CSS length | Bottom margin |
-| `--margin-left` | CSS length | Left margin |
-| `--paper-bg` | `glacier` \| `platinum` \| `parchment` \| `#RRGGBB` | Page colour — see [Paper colours](#paper-colours); surface, hairline, and danger-foreground derive from it automatically |
-| `--no-header` | — | Hide the running header |
-| `--no-footer` | — | Hide the running footer |
-| `--no-cover` | — | Skip the dedicated cover page (title block goes inline) |
-| `--no-author` | — | Leave the author signature out of the footer |
-| `--config` | path | Explicit `mdpdf.config.json` path (skips upward search) |
-
-CSS length units accepted: `in`, `cm`, `mm`, `pt`, `px`.
-
-**Examples:**
-
-```bash
-# Parchment paper, footer signed "AUTHOR · RV"
-npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf --paper-bg parchment --author "Rv"
-
-# Same document, no author signature in the footer
-npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf --no-author
-
-# Glacier white, US Letter, no cover page
-npm run mdpdf -- examples/demos/06-full-paper.md out/essay.pdf --paper-bg glacier --page-size Letter --no-cover
-
-# Any page colour as a hex value
-npm run mdpdf -- examples/demos/01-hello.md out/hello.pdf --paper-bg "#EEF2F7"
-```
-
-The same settings can live in the document's frontmatter instead, so a plain `npm run mdpdf -- notes.md out/notes.pdf` picks them up:
-
-```yaml
----
-author: "Rishav Sharma"   # footer: AUTHOR · RISHAV
-paperBg: parchment        # glacier | platinum | parchment, or any #RRGGBB
-showAuthor: true          # false leaves the signature out
----
-```
-
-## Library Usage
-
-The package also ships a small library API for embedding the converter in other Node tools — pipelines that fan out many documents, CMS export jobs, build scripts, etc. It isn't on the npm registry; install it from GitHub (npm builds it during install), then import `convertMarkdownToPdf`:
-
-```bash
-npm install github:rvs-23/rv-markdown-paper
-```
-
-```ts
-import { convertMarkdownToPdf } from "rv-markdown-paper";
-
-await convertMarkdownToPdf({
-  inputPath:  "docs/chapter-07.md",
-  outputPath: "out/chapter-07.pdf",
-});
-```
-
-That's the minimum viable call: read a Markdown file, write a PDF. Everything else (frontmatter, project config, defaults) is resolved automatically using the same precedence chain as the CLI.
-
-### Override options programmatically
-
-The `cli` field on `ConvertOptions` accepts any partial of the document option layer — same shape as frontmatter. CLI-equivalent values land here, so anything from the [CLI Usage](#cli-usage) table is settable in code:
-
-```ts
-import { convertMarkdownToPdf } from "rv-markdown-paper";
-
-await convertMarkdownToPdf({
-  inputPath:  "docs/chapter-07.md",
-  outputPath: "out/chapter-07.pdf",
-  cli: {
-    title: "Thread pools",
-    pageSize: "Letter",
-    paperBg: "parchment",
-    showCover: false,
-    margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
-  },
-});
-```
-
-These programmatic values override frontmatter and project config, matching CLI precedence (CLI > frontmatter > project > defaults).
-
-### Use an explicit config file
-
-By default the loader walks up from the input file's directory looking for an `mdpdf.config.json`. To bypass the search and load a specific file:
-
-```ts
-await convertMarkdownToPdf({
-  inputPath:  "docs/chapter-07.md",
-  outputPath: "out/chapter-07.pdf",
-  configPath: "./build/print.config.json",
-});
-```
-
-A missing file at the given path throws — explicit paths are user errors, unlike the upward search which silently returns null when nothing is found.
-
-### Batch render
-
-Nothing about the converter is stateful between calls, so concurrent renders are safe:
-
-```ts
-import { convertMarkdownToPdf } from "rv-markdown-paper";
-import { readdir } from "node:fs/promises";
-import { join } from "node:path";
-
-const files = (await readdir("docs")).filter((f) => f.endsWith(".md"));
-
-await Promise.all(
-  files.map((f) =>
-    convertMarkdownToPdf({
-      inputPath:  join("docs", f),
-      outputPath: join("out", f.replace(/\.md$/, ".pdf")),
-    }),
-  ),
-);
-```
-
-Typst is the bottleneck — each render spawns a `typst compile` subprocess that takes ~100 ms per page. For very large batches, throttle concurrency to your CPU count.
-
-### TypeScript types
-
-All public types are exported:
-
-```ts
-import type {
-  ConvertOptions,
-  DocumentOptions,
-  DocumentOptionsLayer,
-  Cover,
-  MetaPair,
-  TocEntry,
-  Margins,
-} from "rv-markdown-paper";
-```
-
-| Type | Shape |
+| Flag | What it does |
 |---|---|
-| `ConvertOptions` | `{ inputPath, outputPath, cli?, configPath? }` |
-| `DocumentOptionsLayer` | Partial of all resolvable fields — same as YAML frontmatter |
-| `Cover` | `{ kicker?, title?, subtitle?, meta?, toc? }` |
-| `MetaPair` | `{ label, value }` — one cell of the cover meta row |
-| `TocEntry` | `{ id, title, ref?, page? }` — one row of the cover TOC |
-| `Margins` | `{ top, right, bottom, left }` — CSS length strings |
+| `--paper-bg` | Page colour: `glacier` (white), `platinum` (grey, the default), `parchment` (gold), or any `#RRGGBB` |
+| `--author "Name"` | Signs the footer with the first name: `AUTHOR · NAME` |
+| `--no-author` | Leaves the signature out |
+| `--page-size` | `A4` (default) or `Letter` |
+| `--no-cover` / `--no-header` / `--no-footer` | Turn off the cover page, running header or footer |
 
-### Errors
-
-`convertMarkdownToPdf` rejects (never throws synchronously) on:
-
-- Input file missing or unreadable
-- Frontmatter / config validation failures (`ConfigError` — message names the offending field)
-- Invalid attribute IDs in the Markdown source (e.g. `{#bad>id}` — fail-fast at parse time)
-- Image paths escaping the source directory, or remote/data URIs
-- Typst compile errors (the binary's stderr is bubbled up, tail-buffered to 64 KB)
-
-Catch them with normal `try/await`:
-
-```ts
-try {
-  await convertMarkdownToPdf({ inputPath, outputPath });
-} catch (err) {
-  console.error("render failed:", err);
-  process.exit(1);
-}
-```
-
-### Runtime prerequisites
-
-The library shells out to `typst compile`, so the consuming process needs the Typst binary on `PATH` at run time (same requirement as the CLI). Bundled fonts ship inside the published package; nothing else needs to be installed.
-
-## Configuration Precedence
-
-Options resolve in this order — first match wins:
-
-1. **CLI flags**
-2. **Frontmatter** (YAML at the top of the Markdown file)
-3. **`mdpdf.config.json`** (searched upward from the input file's directory; or pass `--config <path>`)
-4. **Built-in defaults**
-
-This lets you set a baseline in `mdpdf.config.json`, override per-document in frontmatter, and override per-render on the command line.
-
-An unknown key in `mdpdf.config.json` is an error. Frontmatter may carry keys for other tools (`tags`, `aliases`, …), so there an unknown key is ignored, unless it looks like a typo of a real option (`showheader`, `titel`), which prints a "did you mean" warning.
-
-**Minimal frontmatter:**
+The same settings can sit at the top of the Markdown file, so a plain `npm run mdpdf -- notes.md notes.pdf` picks them up:
 
 ```yaml
 ---
-title: "Thread Pools"
-subtitle: "Or how to share a bounded crew."
+title: "Kannada, through Hindi"
 author: "Rishav Sharma"
-date: "2026-04-20"
-pageSize: "A4"
-showHeader: true
-showFooter: true
-showCover: true
-showAuthor: true             # false leaves the footer signature out
-paperBg: "platinum"          # glacier | platinum | parchment, or any #RRGGBB
+paperBg: parchment
 ---
 ```
 
-**Full frontmatter** (every supported field):
+[docs/configuration.md](docs/configuration.md) lists every option.
 
-```yaml
----
-# document chrome
-title: "Thread Pools"
-subtitle: "Or how to share a bounded crew."
-section: "Chapter 07"
-author: "Rishav Sharma"
-date: "2026-04-20"
-readingTime: "75 min read"
+## Writing a document
 
-# editorial-book fields
-chapter: 7
-part: "Two"
-edition: "Edition 2 · 2026"
-volume: "Volume I"
-pageStart: 85          # `page-start` / `page-end` are accepted too
-pageEnd: 98
+Write ordinary Markdown. A few additions give you the rest of the design:
 
-# layout
-pageSize: "A4"
-margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
-showHeader: true
-showFooter: true
-showCover: true
-showAuthor: true
-paperBg: "parchment"         # glacier | platinum | parchment, or any #RRGGBB
-footnotes: "endnotes"   # "page" (default) | "endnotes" — bottom-of-page vs chapter-end NOTES
+```markdown
+## 7.1 · Threads
+### Why a pool helps
 
-# dedicated cover (optional — when set, the cover replaces the editorial title block)
-cover:
-  kicker: "Part Two · Chapter 07"
-  title: "Thread pools, or how to share a bounded crew."
-  subtitle: "From `threading.Thread` to `concurrent.futures` — when a pool helps."
-  meta:
-    - { label: "Topic",    value: "Thread pools & futures" }
-    - { label: "Language", value: "Python 3.12" }
-    - { label: "Runtime",  value: "75 min read" }
-  toc:
-    - { id: "7.1", title: "Threads & the GIL",       ref: "sec-threads-gil", page: "086" }
-    - { id: "7.2", title: "What a pool actually is", ref: "sec-pool-is",     page: "088" }
----
+:::tip
+A tinted callout.
+:::
+
+:::margin
+**Aside.** A note in the right margin.
+:::
 ```
 
-Two details of the `cover` block:
+`##` sets a small section label, and its number (`7.1`) appears large in the margin. `###` is the heading readers see. The `:::` blocks become callouts and margin notes.
 
-- **TOC page numbers** — an explicit `page:` on an entry wins over automatic resolution. Use it for editorial folio fictions or for entries that point outside the rendered document (an appendix in a sibling file). Entries without `page:` resolve via the Typst page counter at the entry's `ref` label, offset by `pageStart`.
-- **`meta` accepts two shapes** — the documented list form (`- { label: "Topic", value: "…" }`) or a plain map (`Topic: "…"`), which the canonical fixture uses; map keys become labels in insertion order.
+[docs/markdown-guide.md](docs/markdown-guide.md) shows every feature: the Markdown to write and what it becomes. It's written to be handed to a person or an AI agent drafting a document for this tool.
 
-## Feature Support
+## How it works
 
-**Writing a document?** [`MARKDOWN-GUIDE.md`](MARKDOWN-GUIDE.md) is the plain syntax reference: every feature as the Markdown to write plus what it renders as. Hand it to anyone (or any agent) authoring for `mdpdf`. A test renders every example in it, so it stays accurate.
-
-The parser accepts GitHub-flavored Markdown plus a small, deliberate set of Pandoc-dialect extensions: `{#id .class key=value}` attribute bundles, `:::name`-style fenced divs, math, and definition lists.
-
-### Quick reference
-
-| Feature | Markdown syntax | Renders as |
-|---|---|---|
-| Heading + label | `## Section {#sec-intro}` | Tracked uppercase eyebrow, no rule (H2 maps to section marker, H3 is the display heading at 21pt) |
-| Bold | `**text**` | Archivo 500 |
-| Italic | `*text*` | Archivo Italic (body italic stays sans — Instrument Serif italic is reserved for ornament) |
-| Strikethrough | `~~text~~` | Muted ink + strike |
-| Inline code | `` `code` `` | JetBrains Mono on a surface-fill chip |
-| Link | `[text](url)` | Underlined hairline |
-| Footnote | `text[^1]` + `[^1]: body` | Page-bottom footnote by default; set `footnotes: endnotes` in frontmatter to collect every body into a chapter-end "NOTES" block with inline superscript numerals (definitions that are never referenced still appear, after the referenced ones) |
-| Unordered list | `- item` | En-dash marker at every nesting level |
-| Ordered list | `1. item` | Italic-serif numeral (ornament voice); a list starting at `5.` keeps its numbering |
-| Task list | `- [x] done` / `- [ ] todo` | Ink-bordered checkbox; checked is ink-filled with paper-colored tick + muted body |
-| Definition list | `Term`\n`:   definition` | 2-col grid with hairline-bordered rows |
-| Horizontal rule | `---` | Full-width hairline with generous space above and below |
-| Blockquote | `> ...` | Hairline left rule, sans body in muted ink |
-| Pull quote | `:::epigraph` … `:::` | 1.5pt ink left rule, 20pt italic-serif body, tracked uppercase cite |
-| Table | GFM pipe syntax | Label column in Archivo sans, data columns in JetBrains Mono Light; columns sized to their content; hairline header rule, no zebra striping |
-| Code block | ` ```lang ` fence | Surface-fill panel, mono body, syntax-highlighted in the grayscale theme |
-| Code block + filename | `` ```python {filename="x.py" lang-label="Python 3.12"} `` | Adds a header strip above the panel with filename L, lang-label R |
-| Figure | `![caption](path)` | Full-bleed image in a hairline-bordered panel + caption row with italic-serif `Fig. N.M` lead |
-| Figure cross-ref | `![cap](p){#fig:x}` + `[@fig:x]` | Resolves to "Fig. N.M" inline |
-| Inline math | `$x^2$` | LaTeX, converted to Typst math with [`tex2typst`](https://github.com/qwinsi/tex2typst); unknown commands fail the render |
-| Display math | `$$ N = \lambda \cdot W $$ {#eq:y}` | Centered with hairline frame, italic-serif `(N.M)` number top-right; `[@eq:y]` resolves to the same styled `(N.M)` |
-| Note callout | `:::note` … `:::` | Surface fill, ink-3 left rule, tracked label |
-| Tip callout | `:::tip` … `:::` | Surface fill, full-ink 2pt left rule |
-| Warning callout | `:::warning` … `:::` | Warmer surface, ink-2 left rule, hairline top + bottom |
-| Danger callout | `:::danger` … `:::` | Ink-fill block, paper-colored text — the only inversion in the system |
-| Eyebrow label | `:::eyebrow` … `:::` | 8pt tracked uppercase + short ink kicker rule |
-| Dropcap paragraph | `:::dropcap` … `:::` | First grapheme as a 64pt italic-serif lettrine; the paragraph wraps beside it |
-| Exercise box | `:::{.exbox number="01" tag="Warm-up"}` … `:::` | Hairline top; 32pt italic-serif numeral, title and tracked tag cluster left on a shared baseline |
-| Marginalia | `:::{.margin label="..."}` … `:::` | Right-rail note auto-aligned to its anchor paragraph |
-| Bracketed span | `[text]{.muted}` / `[text]{.underline}` | Muted ink / link-style underline; unknown classes render plain, `#id` is rejected |
-| Page-break opt-in | `## Section {.pagebreak}` | Forces the section onto a fresh page |
-| Chapter opener | `## Heading {#chapter-opener}` | Structural — page-isolates the dropcap intro and suppresses the running header on that page |
-
-Every feature listed here is exercised by the canonical fixture at [`examples/editorial-swiss/paper.md`](examples/editorial-swiss/paper.md). Open it side-by-side with the [`output.pdf`](examples/editorial-swiss/output.pdf) (or the design target [`target.pdf`](examples/editorial-swiss/target.pdf)) to see each in context.
-
-### Examples
-
-| Path | Demonstrates |
-|---|---|
-| [`examples/demos/01-hello.md`](examples/demos/01-hello.md) | Minimum viable page — just the type system |
-| [`examples/demos/02-typography.md`](examples/demos/02-typography.md) | Headings, emphasis, blockquote, links, rule |
-| [`examples/demos/03-structured.md`](examples/demos/03-structured.md) | Ordered/nested/task lists + table |
-| [`examples/demos/04-code.md`](examples/demos/04-code.md) | Grayscale syntax across TypeScript / Python / Bash |
-| [`examples/demos/05-admonitions.md`](examples/demos/05-admonitions.md) | All four callout flavours, stacked |
-| [`examples/demos/06-full-paper.md`](examples/demos/06-full-paper.md) | A small essay using callouts, figure, lists, code |
-| [`examples/demos/07-oversized-admonition.md`](examples/demos/07-oversized-admonition.md) | Regression fixture for `breakable: false` admonitions |
-| [`examples/kannada-notes/`](examples/kannada-notes/) | A real 17-page study document — Devanagari, Kannada, emoji, multi-column tables, cover TOC, exercises. `notes.md` source, `output.pdf` render |
-| [`examples/editorial-swiss/`](examples/editorial-swiss/) | Canonical chapter fixture — `paper.md` source, `output.pdf` (our render), `target.pdf` (the visual target to diff against), `figures/` assets |
-
-## Technical Details
-
-### Stack used
-
-| Layer | Choice |
-|---|---|
-| Runtime | Node.js ≥ 20, TypeScript with strict typing |
-| CLI | [`commander`](https://github.com/tj/commander.js) |
-| YAML | [`gray-matter`](https://github.com/jonschlinkert/gray-matter) |
-| Math | [`tex2typst`](https://github.com/qwinsi/tex2typst) — LaTeX → Typst math, strict mode |
-| Markdown parse | [`unified`](https://unifiedjs.com/) + `remark-parse` + `remark-gfm` + `remark-directive` + `remark-math` + `remark-definition-list` |
-| Typesetting | [Typst](https://typst.app/) compiler (external binary on `PATH`) |
-| Code highlighting | Typst's built-in syntect highlighter, driven by the bundled [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme) (grayscale only) |
-| Fonts | Archivo (sans), Instrument Serif (ornament italic), JetBrains Mono (code), plus fallbacks for characters those lack: Noto Sans Devanagari, Noto Sans Kannada, monochrome Noto Emoji, Libertinus Serif (Greek, Cyrillic, Hebrew), and New Computer Modern Math for formulas. OFL-1.1, except New Computer Modern (GUST Font License); bundled in [`assets/fonts/`](assets/fonts/) and loaded with `--ignore-system-fonts --ignore-embedded-fonts`, so no font outside the repo is ever used |
-| Tests | [`vitest`](https://vitest.dev/) — unit tests, a Typst-body snapshot of the canonical fixture, and a render integration test that compiles the fixture and asserts page count + per-page text invariants |
-| Lint / Types | `eslint` (flat config), `tsc --noEmit` |
-| CI | GitHub Actions — typecheck + lint + test + build on every push and PR ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) |
-
-### Pipeline
-
-```
-src/
-  cli/         Commander entry, flag validation
-  config/      Options types, precedence resolver, validator
-  core/        Pipeline orchestrator + reading-time estimator
-  parser/      Frontmatter split, Markdown → mdast, Pandoc-attribute lift
-  typst/       mdast → Typst generator, typst-compile subprocess runner
-typst/         The design as a Typst local package: template, palette, theme
+```mermaid
+flowchart LR
+    md["Markdown"] --> parse["Parse<br/>(remark)"] --> gen["Generate<br/>Typst source"] --> pdf["typst compile<br/>→ PDF"]
 ```
 
-The four pipeline stages live in [`src/core/convert.ts`](src/core/convert.ts):
+The converter parses Markdown, checks it, and writes Typst source that calls a design template. Typst then sets the pages using only fonts bundled in this repo, so the same file gives the same PDF on any machine.
 
-1. **Frontmatter** — `gray-matter` splits YAML off the top.
-2. **Parse** — Markdown → mdast via the remark plugin chain. A pre-parse pass normalises Pandoc-dialect surface forms (`::: name`, `:::{.class}`, attribute colons) so the canonical fixture parses without invoking Pandoc.
-3. **Generate** — [`src/typst/generate.ts`](src/typst/generate.ts) walks the mdast and emits Typst directly. Footnotes are pre-collected and inlined at reference sites; cross-references degrade to plain text when unresolved; LaTeX math converts to Typst math via `tex2typst`.
-4. **Compile** — [`src/typst/render.ts`](src/typst/render.ts) pipes the generated document into `typst compile -` with `--root <sourceDir>`, `--font-path assets/fonts` and `--ignore-system-fonts`. The design ships as a Typst local package, `@local/mdpaper` ([`template.typ`](typst/local/mdpaper/0.1.0/template.typ), [`palette.typ`](typst/local/mdpaper/0.1.0/palette.typ), [`theme.tmTheme`](typst/local/mdpaper/0.1.0/theme.tmTheme)), loaded with `--package-path typst`, so nothing is written next to your Markdown. `--paper-bg` reaches the palette as `--input paper-bg=…`.
+## Documentation
 
-### Paper colours
-
-Three named page colours, all quiet enough that the single-ink design holds on each. Any `#RRGGBB` also works for a one-off.
-
-| Name | Hex | Feel |
-|---|---|---|
-| `glacier` | `#FAFBFC` | Clean white with the faintest cool tint |
-| `platinum` (default) | `#F4F4F4` | Neutral silver-grey |
-| `parchment` | `#F5EEDD` | Subtle warm gold |
-
-The code-panel greys, hairlines and callout fills are darkened from the page colour, so they stay in tune with whichever one you pick.
-
-### Page width
-
-The right side of the page holds a **marginalia rail**, a 35mm column for `:::margin` notes and the large section numeral of `7.1`-style H2s. It is reserved only when the document uses one of those. Without them, the text column runs wider (a ~140mm reading measure on A4) instead of leaving an empty band.
-
-| Document | Right margin (defaults) |
-|---|---|
-| Uses the rail | `margin-right` + 5mm gap + 35mm rail = 62mm |
-| No rail | `margin-right` + 26mm measure gutter = 48mm |
-
-### Design principles
-
-1. **One design language, no themes.** The output looks the same on every machine and from every author. There is no theme registry, no accent palette, no light/dark toggle.
-2. **Single-ink ramp.** Body is `#11131A` near-ink on a `#F4F4F4` paper. Secondary text steps through ink-2 / ink-3 / muted / mute-2 — five levels of the same gray. The only color event in the whole system is the `:::danger` admonition, which inverts to paper-on-ink. Color inversion is reserved precisely because nothing else inverts.
-3. **Three fonts, one rule per font.** Archivo for body, UI, headings, captions, tables, admonitions. Instrument Serif **italic only**, ornament only — folio, dropcap, pull quotes, equation numbers, figcaption labels. JetBrains Mono for code and tabular numerics. Body italic stays in the Archivo family; the serif italic is too loud for prose. Devanagari, Kannada and emoji fall back to bundled Noto faces at the matching weight; emoji stay monochrome, keeping the single ink.
-4. **The template is the design.** The TypeScript pipeline only emits semantic markup; every visual decision lives in [`typst/local/mdpaper/0.1.0/template.typ`](typst/local/mdpaper/0.1.0/template.typ). To restyle the system you edit the template, not the converter.
-5. **Reproducible output.** Bundled fonts loaded with `--ignore-system-fonts --ignore-embedded-fonts` mean neither system fonts nor the fonts compiled into Typst can silently substitute. PDF metadata is pinned via `--creation-timestamp` (honours `SOURCE_DATE_EPOCH`, defaults to `0`), so re-rendering the same source with the same Typst version produces a byte-identical PDF.
-6. **Fail loud.** Invalid attribute IDs throw at parse time. Remote image URLs are rejected before reaching the compiler. A character no bundled font covers (Chinese, Arabic, …) fails the render with its code point and line, instead of Typst silently leaving it out. The principle: errors with clear messages beat silent drift.
-7. **Page count is a contract.** The integration test renders the canonical fixture and asserts it compiles to exactly 6 pages. Page choreography regressions fail CI.
-
-### Security posture
-
-- Image paths must resolve inside the source markdown's directory tree; remote URLs, `data:` URIs, absolute paths, and `..`-escapes are rejected at generate time.
-- Typst runs with `--root <sourceDir>` so the compiler cannot read files outside the document tree.
-- Math may not contain a raw `#` or `"`: either could run Typst code inside `$…$`. `\#` stays allowed.
-- Attribute IDs validate against `^[A-Za-z][A-Za-z0-9_:-]*$`; anything outside the grammar throws `ConfigError` before any Typst is generated, closing a label-injection path.
-- Typst stderr is tail-buffered to 64 KB so a runaway compile can't exhaust memory.
-
-### Development
-
-```bash
-npm run mdpdf    # render via tsx (no build step)
-npm run test     # vitest — unit + render integration
-npm run typecheck
-npm run lint
-npm run build    # tsc + asset copy → dist/
-```
-
-When you change the rendering path (template, generator, render.ts, fonts, palette), re-render every committed PDF in the same commit:
-
-```bash
-for md in examples/demos/*.md; do
-  npm run mdpdf -- "$md" "${md%.md}.pdf"
-done
-npm run mdpdf -- examples/editorial-swiss/paper.md examples/editorial-swiss/output.pdf
-npm run mdpdf -- examples/kannada-notes/notes.md examples/kannada-notes/output.pdf
-```
-
-The committed PDFs are the visual regression surface; they only have value when they all reflect the same pipeline state.
-
-### Distribution
-
-The package is not published to the npm registry. Use it from a clone (see [Getting Started](#getting-started)), or install it into another project straight from GitHub:
-
-```bash
-npm install github:rvs-23/rv-markdown-paper
-```
-
-The `prepare` script builds `dist/` during that install. You then get the CLI as `npx mdpdf <input.md> <output.pdf>` and the library as `import { convertMarkdownToPdf } from "rv-markdown-paper"` — see [Library Usage](#library-usage) for the full API. Typst still has to be on `PATH`.
-
-## AI stack used for development
-
-This project was built and is maintained as a collaboration with Claude Code — primarily Claude Opus 4.7 (1M-context) running in the terminal CLI. The AI was used end-to-end: design discussion, implementation, refactors, debugging, test authoring, and writing this README.
-
-External quality control: independent code reviews by Claude (Opus 4.7) and the OpenAI Codex agent. Both reviews live in the author's notes and drove a multi-commit cleanup pass — captured in commit history under `Visual cleanup pass`, `Harden …`, `Add render-integration test`, and `Package as installable CLI + library`.
-
-Human review of every commit before push. No code lands without the author reading the diff. AI is the operator, not the decider.
+- [Architecture](docs/architecture.md): how the pieces fit, and where to change what
+- [Pipeline](docs/pipeline.md): each step from Markdown to PDF
+- [Design system](docs/design-system.md): type, fonts, colours, page layout, components
+- [Configuration](docs/configuration.md): every option, the config file, and the library API
+- [Development](docs/development.md): setup, tests, and how to change rendering safely
+- [Markdown guide](docs/markdown-guide.md): the syntax reference for writers
 
 ## License
 
