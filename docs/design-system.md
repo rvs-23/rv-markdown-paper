@@ -61,6 +61,7 @@ Typst can only use the fonts in `assets/fonts/`, because it runs with system and
 | Instrument Serif | Italic ornament | OFL 1.1 |
 | JetBrains Mono | Code, table data | OFL 1.1 |
 | Noto Sans Devanagari | Hindi and other Devanagari text | OFL 1.1 |
+| Noto Sans Bengali | Bengali text | OFL 1.1 |
 | Noto Sans Kannada | Kannada text | OFL 1.1 |
 | Noto Sans Telugu | Telugu text | OFL 1.1 |
 | Noto Emoji | Emoji, in monochrome to keep one ink | OFL 1.1 |
@@ -135,6 +136,7 @@ Each Markdown construct maps onto one template function. [markdown-guide.md](mar
 | Code fence with `filename=` | `code-block` | Panel with a filename and language strip |
 | Table | `md-table` | Columns sized to their content; header rule, no stripes |
 | Task list | `task-list` | Ink checkboxes; done items muted |
+| `==highlight==` | `mark` | Grey marker behind the text |
 | `---` | `rule` | Full-width hairline |
 
 ## Changing the design

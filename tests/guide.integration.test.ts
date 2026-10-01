@@ -66,6 +66,9 @@ describe.skipIf(!hasTools)("markdown guide examples", () => {
         "1eachthreadreserves",            // footnote body
         "stacksize",                      // margin-note label
         "thetypstdocsandremarkboth",      // reference-style links
+        "tiprememberanobsidiancallout",   // Obsidian callout
+        "seedesignnotesortaylor.",        // wikilinks as text
+        "somehighlightedwordsinasentence.", // highlight; comment removed
         "somequieterasidetextandanunderlinedphrase.", // spans, brackets gone
         "01submitandcollect", "warm-up",  // exercise box number, title, tag
         "ch.7·introduction",              // eyebrow

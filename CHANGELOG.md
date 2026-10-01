@@ -1,174 +1,81 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 (2026-10-01)
 
-### Added — Telugu and a watermark
+Needs Typst 0.14 or newer.
 
-- Telugu text renders, via bundled Noto Sans Telugu (weights 300–700).
-- `--watermark "Draft"` / `watermark:` sets faint text across every
-  page, scaled to the page width.
+### Added
 
-### Fixed
-
-- A cover title with no comma no longer gets a trailing comma.
-- The running header falls back to the document title when no chapter,
-  part or section is set, instead of staying empty.
-- `ConfigError` is exported from the library entry.
-
-### Changed — documentation
-
-- The README is now a short introduction. Technical documentation moved
-  to `docs/`: architecture, pipeline, design system, configuration and
-  development, with Mermaid diagrams. `MARKDOWN-GUIDE.md` moved to
-  `docs/markdown-guide.md`.
-
-### Fixed
-
-- Library callers' `cli` overrides are validated like every other
-  option layer. `paperBg: "parchment"` failed inside Typst, and a
-  non-boolean such as `showHeader: "yes"` reached the Typst preamble as
-  raw code.
-
-### Added — author signature
-
-- The footer is signed with the author's first name before the folio
-  (`AUTHOR · RISHAV`), in the tracked eyebrow voice. `author` was
-  accepted before but never rendered anywhere. `--no-author` /
+- **Obsidian notes render as written:** `> [!tip]` callouts,
+  `[[wikilinks]]` (as their text), `![[image.png]]` embeds (found by
+  name in or below the note's folder), `==highlights==`, with
+  `%%comments%%` and `^block-ids` removed.
+- **Scripts:** Devanagari, Bengali, Kannada, Telugu and emoji render,
+  via bundled Noto fonts (weights 300–700) and monochrome Noto Emoji.
+- **Paper colours:** `--paper-bg` / `paperBg` take `glacier` (#FAFBFC),
+  `platinum` (#F4F4F4, the default) and `parchment` (#F5EEDD), or any
+  #RRGGBB.
+- **Author signature:** the footer is signed with the author's first
+  name before the folio (`AUTHOR · RISHAV`). `--no-author` /
   `showAuthor: false` leave it out.
+- **Watermark:** `--watermark "Draft"` / `watermark:` sets faint text
+  across every page, scaled to the page width.
+- **Bracketed spans:** `[text]{.muted}` and `[text]{.underline}`.
+- **Reference-style links and images** (`[text][ref]`, `[ref]`,
+  `![alt][ref]` with a `[ref]: url` definition).
+- `---` renders as a hairline rule.
+- `ConfigError` is exported from the library entry.
+- `examples/kannada-notes/`, a real study document, as a regression
+  fixture.
+- Documentation in `docs/`: architecture, pipeline, design system,
+  configuration, development and a Markdown guide. The README is a
+  short introduction.
 
-### Changed — running header
+### Changed
 
-- The running header no longer repeats the section number (`7.1`,
-  `7.1 – 7.2`); the big rail numeral already shows it.
-
-### Added — paper colours
-
-- `--paper-bg` / `paperBg` take three named presets: `glacier`
-  (#FAFBFC), `platinum` (#F4F4F4, the default) and `parchment`
-  (#F5EEDD). Any #RRGGBB still works.
-
-### Added — notes fixture, spans
-
-- `examples/kannada-notes/`: a real 17-page study document as a
-  regression fixture, and a check that no rendered example has a nearly
-  empty page (a heading stranded above a block that moved on).
-- Bracketed spans: `[text]{.muted}` and `[text]{.underline}`.
-
-### Changed — tables and fonts
-
-- Table columns are sized to their content, measured in the real fonts,
-  instead of fixed weights per column count.
-- Typst's embedded fallback fonts (Libertinus Serif, New Computer Modern
-  Math) now ship in `assets/fonts` and Typst runs with
-  `--ignore-embedded-fonts`, so every font in a PDF comes from the repo.
-  Requires Typst 0.14.
-- A character no bundled font covers now fails the render (with its code
-  point and line) instead of silently disappearing.
+- **Tables:** columns are sized to their content, measured in the real
+  fonts, and tables break across pages with the header row repeated.
+- **Page width:** the right-hand margin rail is reserved only when a
+  document has `:::margin` notes or `7.1`-style section numbers. Other
+  documents get a ~140mm text column.
+- **Fonts:** every font a PDF can use ships in `assets/fonts`, including
+  the fallbacks Typst used to supply itself (Libertinus Serif, New
+  Computer Modern Math). Typst runs with `--ignore-embedded-fonts`.
+- **Unsupported characters fail the render**, with their code point and
+  line, instead of silently disappearing.
+- **Math** is LaTeX converted by `tex2typst`. Unknown commands fail with
+  the formula named, and a raw `#` or `"` is rejected, since either
+  could run Typst code.
+- **Rendering writes nothing beside the source:** the template loads as
+  a Typst local package (`typst/`) and the document compiles from stdin,
+  so read-only folders work.
+- **Running header:** no longer repeats the section number, and falls
+  back to the document title when no chapter, part or section is set.
+- **Config:** unknown keys in `mdpdf.config.json` are errors; frontmatter
+  typos of real options warn with a suggestion. Library callers'
+  overrides are validated like every other layer.
+- Links take the colour of the text around them.
 - A drop cap keeps leading opening punctuation with its letter (`“A`).
-- Reference-style links and images (`[text][ref]`, `[ref]`, `![alt][ref]`
-  with a `[ref]: url` definition) rendered as nothing; they now render
-  like their inline forms.
-
-### Added — scripts
-
-- Devanagari, Kannada and emoji render via bundled fallback fonts (Noto
-  Sans Devanagari / Kannada, weights 300–700, and monochrome Noto Emoji).
-  Before, they rendered as blanks because only the three design fonts
-  were loaded.
-
-### Changed — page width
-
-- The right-hand marginalia rail is reserved only when a document has
-  `:::margin` notes or `7.1`-style H2 numerals. Other documents get a
-  ~140mm text column instead of an empty 40mm band. Documents that use
-  the rail render unchanged.
+- Install is from GitHub (`npm install github:rvs-23/rv-markdown-paper`);
+  the package is not on the npm registry.
+- Design parity with `target.pdf`: ragged-right body, en-dash list
+  markers, a two-column drop cap, a wider chapter opener, the cover's
+  rules and spacing, mono table data, grayscale figures.
 
 ### Fixed
 
-- Tables break across pages. A table taller than the space left on a
-  page used to jump whole to the next page, leaving its heading on a
-  near-empty page; the header row now repeats on the continuation.
-- `--margin-right` / `margins.right` was ignored (the right margin was
-  hardwired to the rail); it now sets the outer margin.
-- Bold or italic starting inside a word (`oota**kke**`) no longer fails
-  to compile.
-
-### Fixed — review pass (Markdown outside the canonical fixture)
-
-- LaTeX math now converts through `tex2typst`: `$ab$` no longer fails
-  with "unknown variable", `\frac{a}{b}` no longer prints as "frac {a}{b}",
-  and unknown commands fail with the formula named.
-- Math rejects a raw `#` or `"`, which could run Typst code (including
-  network package imports) from inside `$…$`.
-- Links whose URL contains `@host:port` or `{k:v}` parse again.
-- Inline code containing backticks compiles; text glued to an inline call
-  (`~~x~~(y)`, `[^1].Next`) no longer extends it.
-- A cover subtitle containing `//` compiles; an escaped `1\. text`
-  paragraph stays prose instead of becoming a numbered list.
+- Bold or italic starting inside a word (`oota**kke**`) compiles.
+- Links whose URL contains `@host:port` or `{k:v}` parse.
+- Inline code containing backticks compiles, and text glued to an inline
+  call (`~~x~~(y)`, `[^1].Next`) no longer extends it.
+- `~` and `//` in text, `//` in a cover subtitle, and an escaped
+  `1\. text` paragraph render as typed.
+- `--margin-right` / `margins.right` take effect.
 - `--no-cover` with a frontmatter cover keeps the H1 title.
-- `---` renders as a hairline rule; ordered lists keep a start number
-  other than 1.
+- A cover title with no comma no longer gets a trailing comma.
+- Ordered lists keep a start number other than 1.
 - A self-referencing footnote reports the cycle instead of overflowing
-  the stack.
-- Unknown keys in `mdpdf.config.json` are errors; frontmatter typos of
-  real options warn with a suggestion.
-
-### Changed — rendering
-
-- The template ships as a Typst local package (`typst/`) and the document
-  compiles from stdin: nothing is written beside the source Markdown, so
-  read-only source dirs work. The palette derives from `--input paper-bg`
-  in Typst. Committed PDFs are byte-identical.
-
-### Target-parity pass
-
-Target-parity pass: the canonical fixture's render
-(`examples/editorial-swiss/output.pdf`) now tracks `target.pdf` closely.
-Verified by page-by-page raster diff at matched DPI.
-
-### Fixed
-
-- `~` in body text was silently swallowed as a Typst non-breaking space
-  ("~100 μs" rendered as " 100 μs"); `/` could open a `//` line comment.
-  Both now escape in markup context.
-- Endnotes mode dropped footnote definitions that were never referenced;
-  they now append to the NOTES block after the referenced ones, in
-  definition order.
-- The cover TOC's first row inherited table-header styling (bold) from
-  the document-level `table.cell` rule; the TOC is now a grid.
-
-### Changed — design parity with target.pdf
-
-- Body prose is ragged-right (justification off), including marginalia.
-- Unordered lists mark with en-dashes at every level; ordered-list
-  numerals are Instrument Serif italic.
-- Dropcap is a true two-column lettrine (64pt cap, paragraph wraps
-  beside it); the chapter opener widens to a ~140mm measure and opens
-  with a deep band of air.
-- Section eyebrows (H2) lose their rule; the `:::eyebrow` directive
-  closes with a short ink dash instead of a full-width hairline.
-- Cover: kicker middots render as spaced bullets, the subtitle shares
-  the title's 95mm measure, the meta row closes with a hairline
-  (double-rule stack above the TOC), masthead/foot margins match
-  target, and an explicit `page:` on a TOC entry now wins over
-  counter-resolved folios.
-- Tables set data columns in JetBrains Mono Light (label column stays
-  sans). Equation numbers and cross-refs render in the ornament voice
-  (10pt italic serif, top-right of the panel).
-- Exercise-box header clusters numeral/title/tag left on a shared
-  baseline; admonitions, task lists, definition lists, and cover TOC
-  rows all gain air per the target's rhythm.
-- Syntax theme drops bold from keyword/function/tag/property scopes.
-- Figures render full-bleed inside the hairline panel; the fixture's
-  `pool-queue.svg` is redrawn grayscale on a grid-paper background.
-
-### Tests
-
-- 80 tests (up from 49): escape table, endnote ordering/orphans,
-  attribute grammar and lifting, palette derivation, reading time,
-  generator surface (tables, lists, directives, cross-refs, math,
-  inline-code fencing), and a file snapshot of the fixture's generated
-  Typst body.
+  the stack. Endnotes keep definitions that are never referenced.
 
 ## 0.2.0
 

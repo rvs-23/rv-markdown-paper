@@ -144,7 +144,9 @@ export function collectRenderedText(
   findRefs(tree as unknown as Node);
 
   const out: RenderedText[] = [];
-  const walk = (node: Node, isTopLevel: boolean): void => {
+  // Nodes that later passes create (span and highlight pieces) carry no
+  // position, so a node without one reports its nearest parent's line.
+  const walk = (node: Node, isTopLevel: boolean, parentLine?: number): void => {
     if (node.type === "html" || node.type === "math" || node.type === "inlineMath") return;
     if (
       node.type === "footnoteDefinition" &&
@@ -152,7 +154,7 @@ export function collectRenderedText(
     ) {
       return;
     }
-    const line = node.position?.start.line;
+    const line = node.position?.start.line ?? parentLine;
     const where = line === undefined ? "unknown line" : `line ${line + lineOffset}`;
     const attrs = node.data?.attrs as Attributes | undefined;
     const strings = [
@@ -163,7 +165,7 @@ export function collectRenderedText(
     ];
     for (const s of strings) if (typeof s === "string" && s !== "") out.push({ text: s, where });
     if (Array.isArray(node.children)) {
-      for (const child of node.children) walk(child, node.type === "root");
+      for (const child of node.children) walk(child, node.type === "root", line);
     }
   };
   walk(tree as unknown as Node, false);
@@ -265,6 +267,6 @@ export function assertFontCoverage(
       `so Typst would silently leave ${entries.length === 1 ? "it" : "them"} out of the PDF:\n` +
       `${lines.join("\n")}\n` +
       `The bundled fonts cover Latin, plus Greek, Cyrillic and Hebrew via the ` +
-      `Libertinus Serif fallback, Devanagari, Kannada, Telugu and monochrome emoji.`,
+      `Libertinus Serif fallback, Devanagari, Bengali, Kannada, Telugu and monochrome emoji.`,
   );
 }

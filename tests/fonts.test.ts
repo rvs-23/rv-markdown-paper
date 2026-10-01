@@ -124,3 +124,14 @@ describe("assertFontCoverage", () => {
     expect(message.match(/U\+4F60/g)).toHaveLength(1);
   });
 });
+
+describe("collectRenderedText line numbers", () => {
+  it("reports the paragraph's line for text a later pass rewrote", () => {
+    // The span and wikilink passes replace text nodes with ones that
+    // have no position of their own.
+    const tree = parseMarkdownToMdast("First.\n\nSee [[Note|你好]] and [muted 好]{.muted}.\n");
+    const runs = collectRenderedText(tree, "page");
+    expect(runs.find((r) => r.text.includes("你"))?.where).toBe("line 3");
+    expect(runs.find((r) => r.text.includes("muted 好"))?.where).toBe("line 3");
+  });
+});

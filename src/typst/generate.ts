@@ -1,4 +1,5 @@
-import { resolve as resolvePath, isAbsolute, relative as relativePath } from "node:path";
+import { existsSync, readdirSync } from "node:fs";
+import { basename, join, resolve as resolvePath, isAbsolute, relative as relativePath } from "node:path";
 import type {
   Root,
   RootContent,
@@ -443,7 +444,7 @@ function renderTableCell(cell: TableCell, ctx: Ctx): string {
 }
 
 function renderFigure(image: Image, ctx: Ctx): string {
-  const abs = resolveImagePath(image.url, ctx);
+  const abs = resolveImagePath(imageUrl(image, ctx), ctx);
   const caption = (image.alt ?? "").trim();
   // Full column width: the figure panel renders the image edge-to-edge
   // (target.pdf's grid-paper figure bleeds to the panel's hairline).
@@ -663,7 +664,8 @@ function isPhrasingNode(n: RootContent): boolean {
     n.type === "inlineCode" ||
     n.type === "break" ||
     n.type === "html" ||
-    n.type === "span"
+    n.type === "span" ||
+    n.type === "highlight"
   );
 }
 
@@ -703,6 +705,8 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
       return renderInlineMath(node as unknown as { value: string });
     case "span":
       return renderSpan(node, ctx);
+    case "highlight":
+      return `#mark[${renderInlines(node.children, ctx)}];`;
     case "textDirective": {
       const dir = node as unknown as DirectiveNode;
       return renderInlines((dir.children ?? []) as PhrasingContent[], ctx);
@@ -799,7 +803,7 @@ function renderLink(node: Link, ctx: Ctx): string {
 }
 
 function renderInlineImage(image: Image, ctx: Ctx): string {
-  const abs = resolveImagePath(image.url, ctx);
+  const abs = resolveImagePath(imageUrl(image, ctx), ctx);
   return `#image("${escapeString(abs)}");`;
 }
 
@@ -812,6 +816,40 @@ function renderInlineImage(image: Image, ctx: Ctx): string {
 // string is a Typst project-root-relative path (with leading `/`) so the
 // compiler resolves it against `--root <sourceDir>` rather than the host
 // filesystem root.
+// An Obsidian embed (`![[figure.png]]`) names a file, not a path:
+// Obsidian finds it anywhere in the vault. When the file isn't beside the
+// note, look for that name in the note's folder and below, which is as
+// far as the compiler is allowed to read.
+function imageUrl(image: Image, ctx: Ctx): string {
+  const isEmbed = (image.data as { obsidianEmbed?: boolean } | undefined)?.obsidianEmbed;
+  if (!isEmbed || existsSync(resolvePath(ctx.sourceDir, image.url))) return image.url;
+  const found = findByName(ctx.sourceDir, basename(image.url), 4);
+  if (!found) {
+    throw new Error(
+      `Embedded image not found: ![[${image.url}]]\n` +
+        `It must be in the note's folder or a folder below it (${ctx.sourceDir}).`,
+    );
+  }
+  return relativePath(ctx.sourceDir, found);
+}
+
+function findByName(dir: string, name: string, depth: number): string | undefined {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return undefined;
+  }
+  if (entries.some((e) => e.isFile() && e.name === name)) return join(dir, name);
+  if (depth === 0) return undefined;
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules") continue;
+    const found = findByName(join(dir, entry.name), name, depth - 1);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 function resolveImagePath(url: string, ctx: Ctx): string {
   if (/^(https?|ftp|file|data):/i.test(url)) {
     throw new Error(

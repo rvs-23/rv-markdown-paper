@@ -32,7 +32,7 @@ Unknown keys are handled differently per layer. In `mdpdf.config.json` they are 
 
 [`parseMarkdown.ts`](../src/parser/parseMarkdown.ts) turns the body into an mdast tree with remark and four plugins: GitHub-flavoured Markdown, directives (`:::note`), math (`$…$`) and definition lists.
 
-The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so five passes run around the parse.
+The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so six passes run around the parse.
 
 **Before the parse:**
 
@@ -42,6 +42,7 @@ The source is written in a Pandoc-flavoured dialect that remark doesn't fully un
 **After the parse:**
 
 - [`spans.ts`](../src/parser/spans.ts) turns `[text]{.muted}` into span nodes. It works on text nodes only, so code and math are untouched, and it checks the original source so an escaped `\[` never opens a span.
+- [`obsidian.ts`](../src/parser/obsidian.ts) rewrites Obsidian's own syntax into nodes the generator already handles: `> [!tip]` callouts become callouts, `[[wikilinks]]` become their text, `![[image.png]]` becomes an image, `==highlights==` become highlight nodes, and `%%comments%%` are removed.
 - Reference links (`[text][ref]` with `[ref]: url` elsewhere) are rewritten into ordinary links and images, and the definitions are dropped.
 - [`attributes.ts`](../src/parser/attributes.ts) moves `{#id .class key=value}` bundles off the end of headings, images, display math and code-fence info strings onto the node. Ids must match `^[A-Za-z][A-Za-z0-9_:-]*$`; anything else is an error, because an id becomes a Typst label.
 

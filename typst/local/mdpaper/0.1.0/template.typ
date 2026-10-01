@@ -465,6 +465,9 @@
   table(..args, table.header(..header), ..rows.flatten())
 })
 
+// `==highlight==`: a grey marker rather than yellow, to keep one ink.
+#let mark(body) = highlight(fill: c-surface-2, extent: 1.5pt, radius: 1.5pt, body)
+
 // Markdown `---` thematic break: a full-width hairline, the same stroke
 // the cover uses for its rules.
 #let rule() = block(above: 1.6em, below: 1.6em, line(length: 100%, stroke: 0.4pt + c-hairline))
@@ -923,7 +926,9 @@
   show enum: it => block(above: 1em, below: 0.8em, it)
 
   // --------- Inline ---------
-  show link: it => underline(offset: 1.8pt, stroke: 0.5pt, text(fill: c-ink, it))
+  // Links take the colour of the text around them: ink in body prose,
+  // muted inside a muted span, quote or margin note.
+  show link: it => underline(offset: 1.8pt, stroke: 0.5pt, it)
   // Strong weight 500 (Medium) — paired with body ExtraLight (200), the
   // jump from 200 → 500 is three steps which reads as bold but stays
   // proportional. The previous 600 against 200-weight body looked
