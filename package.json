@@ -43,8 +43,7 @@
     "build": "tsc",
     "prepare": "npm run build",
     "mdpdf": "tsx src/cli/index.ts",
-    "dev": "tsx src/cli/index.ts",
-    "lint": "eslint src",
+    "lint": "eslint src tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --dir tests --testTimeout 30000"
   },

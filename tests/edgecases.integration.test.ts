@@ -5,15 +5,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
 import type { DocumentOptionsLayer } from "../src/config/options.js";
+import { hasTools, pdfText } from "./helpers.js";
 
 // Markdown the canonical fixture doesn't exercise. Each case renders a
 // small document end-to-end and asserts on the extracted PDF text, so a
 // case fails both when Typst refuses to compile and when it compiles but
 // renders the wrong thing.
-
-const hasTools =
-  spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0 &&
-  [0, 99].includes(spawnSync("pdftotext", ["-v"], { stdio: "ignore" }).status ?? -1);
 
 async function render(
   markdown: string,
@@ -26,11 +23,9 @@ async function render(
     const output = join(dir, "doc.pdf");
     await writeFile(input, markdown, "utf8");
     await convertMarkdownToPdf({ inputPath: input, outputPath: output, cli });
-    const args = layout ? ["-layout", output, "-"] : [output, "-"];
-    const r = spawnSync("pdftotext", args, { encoding: "utf8" });
     // Collapse whitespace so assertions don't depend on line wrapping,
     // unless the case needs to see indentation.
-    return layout ? r.stdout : r.stdout.replace(/\s+/g, " ");
+    return layout ? pdfText(output, ["-layout"]) : pdfText(output).replace(/\s+/g, " ");
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -180,9 +175,7 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     try {
       await writeFile(join(dir, "doc.md"), markdown, "utf8");
       await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf"), cli });
-      const html = spawnSync("pdftotext", ["-bbox", "-f", "1", "-l", "1", join(dir, "doc.pdf"), "-"], {
-        encoding: "utf8",
-      }).stdout;
+      const html = pdfText(join(dir, "doc.pdf"), ["-bbox", "-f", "1", "-l", "1"]);
       return Math.max(...[...html.matchAll(/xMax="([\d.]+)"/g)].map((m) => Number(m[1])));
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -217,7 +210,7 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     try {
       await writeFile(join(dir, "doc.md"), `| # | Pattern | Rule |\n|---|---|---|\n${rows}\n`, "utf8");
       await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
-      const html = spawnSync("pdftotext", ["-bbox", join(dir, "doc.pdf"), "-"], { encoding: "utf8" }).stdout;
+      const html = pdfText(join(dir, "doc.pdf"), ["-bbox"]);
       const xMin = (word: string) => Number(new RegExp(`xMin="([\\d.]+)"[^>]*>${word}<`).exec(html)![1]);
       const hash = xMin("#");
       const pattern = xMin("Pattern");
@@ -251,9 +244,7 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       const md = `---\nsection: "Notes"\n---\n## 7.1 · Threads {#sec-a}\n\n${longBody}`;
       await writeFile(join(dir, "doc.md"), md, "utf8");
       await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
-      const html = spawnSync("pdftotext", ["-bbox", "-f", "2", "-l", "2", join(dir, "doc.pdf"), "-"], {
-        encoding: "utf8",
-      }).stdout;
+      const html = pdfText(join(dir, "doc.pdf"), ["-bbox", "-f", "2", "-l", "2"]);
       expect(html.match(/>7\.1</g)).toHaveLength(1);
       expect(html).toContain(">Notes<");
     } finally {
@@ -272,5 +263,15 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect((await chrome(md, 1, { showAuthor: false })).footer).toBe("001");
     expect((await chrome(`---\nauthor: "Rishav"\nshowAuthor: false\n---\n${longBody}`, 1)).footer).toBe("001");
     expect((await chrome(longBody, 1)).footer).toBe("001");
+  });
+
+  it("validates library overrides like frontmatter", async () => {
+    // Preset names resolve for library callers too, not only on the CLI.
+    expect(await paperPixel("Hello.\n", { paperBg: "parchment" })).toEqual([0xf5, 0xee, 0xdd]);
+    // A bad value is a ConfigError naming the field, not raw Typst code.
+    const bad = { showHeader: "yes" } as unknown as DocumentOptionsLayer;
+    await expect(render("Hello.\n", bad)).rejects.toThrow("cli.showHeader: expected true or false");
+    const typo = { papperBg: "parchment" } as unknown as DocumentOptionsLayer;
+    await expect(render("Hello.\n", typo)).rejects.toThrow('cli.papperBg: unknown option. Did you mean "paperBg"?');
   });
 });

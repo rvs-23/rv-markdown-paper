@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
+import { hasTools, pdfText } from "./helpers.js";
 
 // Every committed example, rendered fresh: no page may be nearly empty.
 // A heading stranded above a block that jumped to the next page leaves a
@@ -14,10 +14,6 @@ import { convertMarkdownToPdf } from "../src/core/convert.js";
 
 const ROOT = resolve(__dirname, "..");
 const MIN_CHARS = 150;
-
-const hasTools =
-  spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0 &&
-  [0, 99].includes(spawnSync("pdftotext", ["-v"], { stdio: "ignore" }).status ?? -1);
 
 async function examples(): Promise<string[]> {
   const demos = (await readdir(join(ROOT, "examples/demos")))
@@ -31,8 +27,7 @@ async function examples(): Promise<string[]> {
 }
 
 function pageTexts(pdf: string): string[] {
-  const text = spawnSync("pdftotext", [pdf, "-"], { encoding: "utf8" }).stdout;
-  return text.split("\f").slice(0, -1);
+  return pdfText(pdf).split("\f").slice(0, -1);
 }
 
 describe.skipIf(!hasTools)("committed examples", () => {

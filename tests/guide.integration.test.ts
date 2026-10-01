@@ -1,28 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
+import { hasTools, pdfText } from "./helpers.js";
 
-// MARKDOWN-GUIDE.md is handed to people and agents as the syntax
+// docs/markdown-guide.md is handed to people and agents as the syntax
 // reference, so every ```markdown example in it must actually render,
 // and render as the feature it documents.
 // Frontmatter examples render as their own documents; the rest are
 // joined into one body.
 
 const ROOT = resolve(__dirname, "..");
-const hasTools =
-  spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0 &&
-  [0, 99].includes(spawnSync("pdftotext", ["-v"], { stdio: "ignore" }).status ?? -1);
-
 function markdownExamples(guide: string): string[] {
   // Outer fence of 3+ backticks tagged `markdown`, closed by the same run.
   return [...guide.matchAll(/^(`{3,})markdown\n([\s\S]*?)^\1$/gm)].map((m) => m[2]!);
-}
-
-function pdfText(pdf: string): string {
-  return spawnSync("pdftotext", [pdf, "-"], { encoding: "utf8" }).stdout;
 }
 
 function squash(text: string): string {
@@ -34,9 +26,9 @@ async function renderIn(dir: string, name: string, markdown: string): Promise<vo
   await convertMarkdownToPdf({ inputPath: join(dir, `${name}.md`), outputPath: join(dir, `${name}.pdf`) });
 }
 
-describe.skipIf(!hasTools)("MARKDOWN-GUIDE.md examples", () => {
+describe.skipIf(!hasTools)("markdown guide examples", () => {
   it("all render", async () => {
-    const guide = await readFile(join(ROOT, "MARKDOWN-GUIDE.md"), "utf8");
+    const guide = await readFile(join(ROOT, "docs/markdown-guide.md"), "utf8");
     const examples = markdownExamples(guide);
     expect(examples.length).toBeGreaterThan(15);
 

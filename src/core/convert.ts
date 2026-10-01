@@ -6,6 +6,7 @@ import { parseMarkdownToMdast } from "../parser/parseMarkdown.js";
 import { extractFrontmatter } from "../parser/frontmatter.js";
 import { loadConfigFromPath, loadProjectConfig, resolveOptions } from "../config/resolve.js";
 import type { Cover, DocumentOptions, DocumentOptionsLayer } from "../config/options.js";
+import { validateOptions } from "../config/validate.js";
 import { estimateReadingTime } from "./readingTime.js";
 import { generateTypst, usesRail } from "../typst/generate.js";
 import { renderTypstToPdf } from "../typst/render.js";
@@ -34,8 +35,11 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     ? loadConfigFromPath(resolvePath(options.configPath))
     : loadProjectConfig(inputDir);
 
+  // Library callers pass overrides as plain values, so they get the same
+  // checks as frontmatter: a preset name becomes its hex, and a bad value
+  // fails here instead of reaching the Typst preamble as raw code.
   const resolved = resolveOptions({
-    cli: options.cli ?? {},
+    cli: validateOptions(options.cli ?? {}, "cli", { strictKeys: true }),
     frontmatter,
     project,
   });
