@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added — author signature
+
+- The footer is signed with the author's first name before the folio
+  (`AUTHOR · RISHAV`), in the tracked eyebrow voice. `author` was
+  accepted before but never rendered anywhere. `--no-author` /
+  `showAuthor: false` leave it out.
+
+### Changed — running header
+
+- The running header no longer repeats the section number (`7.1`,
+  `7.1 – 7.2`); the big rail numeral already shows it.
+
 ### Added — paper colours
 
 - `--paper-bg` / `paperBg` take three named presets: `glacier`

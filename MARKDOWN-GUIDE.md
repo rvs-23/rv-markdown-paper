@@ -22,13 +22,14 @@ Optional YAML at the very top. Every key is optional.
 title: "Thread Pools"
 subtitle: "Or how to share a bounded crew."
 section: "Lesson 03"          # small label above the title
-author: "Rishav Sharma"
+author: "Rishav Sharma"       # signs the footer: AUTHOR · RISHAV
 date: "2026-04-20"
 readingTime: "14 min"         # estimated automatically if omitted
 pageSize: "A4"                # or "Letter"
 margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
+showAuthor: true              # false leaves the footer signature out
 paperBg: "platinum"           # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "page"             # or "endnotes" for a NOTES block at the end
 ---

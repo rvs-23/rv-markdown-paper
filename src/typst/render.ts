@@ -76,6 +76,7 @@ function buildPreamble(options: DocumentOptions, rail: boolean): string {
   lines.push(`  show-header: ${options.showHeader},`);
   lines.push(`  show-footer: ${options.showFooter},`);
   lines.push(`  show-cover: ${options.showCover},`);
+  lines.push(`  show-author: ${options.showAuthor},`);
   lines.push(`  rail: ${rail},`);
   lines.push(`  theme-path: "theme.tmTheme",`);
   // footnote-mode is consumed at generation time (it controls whether

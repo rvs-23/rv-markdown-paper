@@ -776,6 +776,7 @@
   show-header: true,
   show-footer: true,
   show-cover: true,
+  show-author: true,
   rail: true,
   theme-path: none,
   body,
@@ -1149,47 +1150,24 @@
         } else if section != none {
           section
         } else { "" }
-        // Header right: section range for the current page. The
-        // generator pushes (page, sig) tuples into _sig-history at
-        // each H2; here we filter to entries whose page matches the
-        // current page. One entry → single sig ("7.3"). Two or more →
-        // range ("7.1 – 7.2"). Zero (no H2 starts on this page) →
-        // fall back to the currently-active sig from _sig-numeral,
-        // which carries the section the body continues from.
-        let history = _sig-history.final()
-        let on-page = history.filter(h => h.page == p)
-        let right-cell = if on-page.len() == 0 {
-          let sig = _sig-numeral.get()
-          if sig != "" { sig } else { "" }
-        } else if on-page.len() == 1 {
-          on-page.at(0).sig
-        } else {
-          on-page.at(0).sig + " – " + on-page.at(-1).sig
-        }
-        if left-cell == "" and right-cell == "" {
+        if left-cell == "" {
           []
         } else {
-          // Mixed-case sans, no tracking, no underline rule. Target.pdf
-          // sets the running header in a quiet locator voice — "Ch. 07
-          // — Thread pools" L, "7.4" R — so it reads as page-furniture
-          // and leaves the column-rule eyebrow ("7.4 · SIZING THE POOL")
-          // to do the section-marker work.
-          set text(font: f-sans, size: 9pt, weight: 400, fill: c-muted)
-          grid(
-            columns: (1fr, auto),
-            column-gutter: 1.5em,
-            align: (left + horizon, right + horizon),
-            left-cell,
-            right-cell,
-          )
+          // Mixed-case sans, no tracking, no underline rule: a quiet
+          // locator voice ("Ch. 07 — Thread pools") that reads as page
+          // furniture. The section number isn't repeated here; the big
+          // rail numeral already carries it.
+          text(font: f-sans, size: 9pt, weight: 400, fill: c-muted, left-cell)
         }
       }
     }
   } else { none }
 
-  // Footer: `series · edition-short` left in sans muted, zero-padded
-  // folio right in italic serif. Mirrors the cover-foot's left composition
-  // so a reader flipping pages sees the same book locator throughout.
+  // Footer: `series · edition-short` left in sans muted; right, the
+  // author signature ("AUTHOR · RISHAV", first name only, in the tracked
+  // eyebrow voice) then the zero-padded folio in italic serif. The left
+  // side mirrors the cover-foot's composition so a reader flipping pages
+  // sees the same book locator throughout.
   let footer-left-text = if series != none and edition-short != none {
     series + " · " + edition-short
   } else if series != none and edition != none {
@@ -1201,6 +1179,10 @@
   } else if edition != none {
     edition
   } else { "" }
+  let first-name = if author != none { author.trim().split(regex("\\s+")).first() } else { "" }
+  let author-mark = if show-author and first-name != "" {
+    text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-muted, upper("Author · " + first-name))
+  } else { none }
   let footer-fn = if show-footer {
     context {
       let p = counter(page).get().first()
@@ -1220,7 +1202,10 @@
           columns: (1fr, auto),
           align: (left + horizon, right + horizon),
           text(font: f-sans, size: 8.5pt, fill: c-muted)[#footer-left-text],
-          text(font: f-serif, style: "italic", size: 9pt, fill: c-ink)[#display-num],
+          stack(dir: ltr, spacing: 10pt,
+            ..if author-mark != none { (author-mark,) },
+            text(font: f-serif, style: "italic", size: 9pt, fill: c-ink)[#display-num],
+          ),
         )
       }
     }

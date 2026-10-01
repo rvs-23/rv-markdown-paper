@@ -234,4 +234,43 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     const text = await render("Read [the spec][spec] and [spec] today.\n\n[spec]: https://example.com\n");
     expect(text).toContain("Read the spec and spec today.");
   });
+
+  // Header line and footer line of a page, from pdftotext -layout.
+  async function chrome(markdown: string, page: number, cli: DocumentOptionsLayer = {}) {
+    const text = (await render(markdown, cli, true)).split("\f")[page - 1]!;
+    const lines = text.split("\n").filter((l) => l.trim() !== "");
+    return { header: lines[0]!.trim(), footer: lines.at(-1)!.replace(/\s+/g, " ").trim() };
+  }
+  const longBody = `${"Plenty of prose to fill the page and run onto the next one. ".repeat(120)}\n`;
+
+  it("keeps the section number out of the running header", async () => {
+    // The big rail numeral already shows 7.1; the header used to repeat
+    // it, so the page carried two "7.1" words. Now only the rail's.
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-header-"));
+    try {
+      const md = `---\nsection: "Notes"\n---\n## 7.1 · Threads {#sec-a}\n\n${longBody}`;
+      await writeFile(join(dir, "doc.md"), md, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const html = spawnSync("pdftotext", ["-bbox", "-f", "2", "-l", "2", join(dir, "doc.pdf"), "-"], {
+        encoding: "utf8",
+      }).stdout;
+      expect(html.match(/>7\.1</g)).toHaveLength(1);
+      expect(html).toContain(">Notes<");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("signs the footer with the author's first name", async () => {
+    const md = `---\nauthor: "Rishav Sharma"\n---\n${longBody}`;
+    expect((await chrome(md, 1)).footer).toBe("AUTHOR · RISHAV 001");
+    expect((await chrome(md, 1, { author: "Rv" })).footer).toBe("AUTHOR · RV 001");
+  });
+
+  it("leaves the signature out with --no-author, showAuthor: false, or no author", async () => {
+    const md = `---\nauthor: "Rishav Sharma"\n---\n${longBody}`;
+    expect((await chrome(md, 1, { showAuthor: false })).footer).toBe("001");
+    expect((await chrome(`---\nauthor: "Rishav"\nshowAuthor: false\n---\n${longBody}`, 1)).footer).toBe("001");
+    expect((await chrome(longBody, 1)).footer).toBe("001");
+  });
 });

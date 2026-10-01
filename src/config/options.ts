@@ -62,6 +62,9 @@ export type DocumentOptions = {
   showHeader: boolean;
   showFooter: boolean;
   showCover: boolean;
+  // Sign the footer with the author's first name ("AUTHOR · RISHAV").
+  // Only shows when `author` is set; --no-author turns it off.
+  showAuthor: boolean;
 
   // Optional page colour, stored as a "#RRGGBB" hex string (a preset
   // name from PAPER_PRESETS resolves to its hex during validation). The
@@ -99,5 +102,6 @@ export const DEFAULTS: DocumentOptions = {
   showHeader: true,
   showFooter: true,
   showCover: true,
+  showAuthor: true,
   footnotes: "page",
 };

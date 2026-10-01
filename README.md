@@ -52,7 +52,7 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 | `--title` | text | Document title (overrides frontmatter) |
 | `--subtitle` | text | Subtitle / deck under the title |
 | `--section` | text | Kicker above the title, e.g. `LESSON 03` |
-| `--author` | text | Document author |
+| `--author` | text | Document author; the footer is signed with the first name, `AUTHOR · RISHAV` |
 | `--date` | text | Document date |
 | `--reading-time` | text | Reading time, e.g. `"14 min"` (auto-estimated if omitted) |
 | `--page-size` | `Letter` \| `A4` | Page size — default `A4` |
@@ -64,9 +64,36 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 | `--no-header` | — | Hide the running header |
 | `--no-footer` | — | Hide the running footer |
 | `--no-cover` | — | Skip the dedicated cover page (title block goes inline) |
+| `--no-author` | — | Leave the author signature out of the footer |
 | `--config` | path | Explicit `mdpdf.config.json` path (skips upward search) |
 
 CSS length units accepted: `in`, `cm`, `mm`, `pt`, `px`.
+
+**Examples:**
+
+```bash
+# Parchment paper, footer signed "AUTHOR · RV"
+npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf --paper-bg parchment --author "Rv"
+
+# Same document, no author signature in the footer
+npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf --no-author
+
+# Glacier white, US Letter, no cover page
+npm run mdpdf -- examples/demos/06-full-paper.md out/essay.pdf --paper-bg glacier --page-size Letter --no-cover
+
+# Any page colour as a hex value
+npm run mdpdf -- examples/demos/01-hello.md out/hello.pdf --paper-bg "#EEF2F7"
+```
+
+The same settings can live in the document's frontmatter instead, so a plain `npm run mdpdf -- notes.md out/notes.pdf` picks them up:
+
+```yaml
+---
+author: "Rishav Sharma"   # footer: AUTHOR · RISHAV
+paperBg: parchment        # glacier | platinum | parchment, or any #RRGGBB
+showAuthor: true          # false leaves the signature out
+---
+```
 
 ## Library Usage
 
@@ -221,6 +248,7 @@ pageSize: "A4"
 showHeader: true
 showFooter: true
 showCover: true
+showAuthor: true             # false leaves the footer signature out
 paperBg: "platinum"          # glacier | platinum | parchment, or any #RRGGBB
 ---
 ```
@@ -251,6 +279,7 @@ margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
 showCover: true
+showAuthor: true
 paperBg: "parchment"         # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "endnotes"   # "page" (default) | "endnotes" — bottom-of-page vs chapter-end NOTES
 

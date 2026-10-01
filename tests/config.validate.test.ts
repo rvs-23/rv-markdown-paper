@@ -83,3 +83,10 @@ describe("validateOptions paperBg", () => {
     expect(() => validateOptions({ paperBg: "constructor" }, "fm")).toThrow(/expected glacier/);
   });
 });
+
+describe("validateOptions showAuthor", () => {
+  it("accepts a boolean and rejects anything else", () => {
+    expect(validateOptions({ showAuthor: false }, "fm").showAuthor).toBe(false);
+    expect(() => validateOptions({ showAuthor: "no" }, "fm")).toThrow("fm.showAuthor: expected true or false");
+  });
+});

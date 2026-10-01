@@ -28,7 +28,8 @@ program
   .option("--title <title>", "Document title (overrides frontmatter)")
   .option("--subtitle <subtitle>", "Subtitle / deck under the title")
   .option("--section <section>", "Kicker above the title, e.g. LESSON 03")
-  .option("--author <author>", "Document author (overrides frontmatter)")
+  .option("--author <author>", "Document author; the footer signs with the first name")
+  .option("--no-author", "Leave the author signature out of the footer")
   .option("--date <date>", "Document date (overrides frontmatter)")
   .option("--reading-time <time>", "Reading time, e.g. '14 min'")
   .option("--page-size <size>", "Page size: Letter or A4", parsePageSize)
@@ -85,6 +86,8 @@ function cliOptionsToLayer(opts: OptionValues, cmd: Command): DocumentOptionsLay
   if (cmd.getOptionValueSource("footer") === "cli") {
     layer.showFooter = Boolean(opts.footer);
   }
+  // --author <name> and --no-author share one value: a string, or false.
+  if (opts.author === false) layer.showAuthor = false;
   if (cmd.getOptionValueSource("cover") === "cli") {
     layer.showCover = Boolean(opts.cover);
   }
