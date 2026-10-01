@@ -98,6 +98,8 @@ A tinted callout.
 
 [docs/markdown-guide.md](docs/markdown-guide.md) shows every feature: the Markdown to write and what it becomes. It's written to be handed to a person or an AI agent drafting a document for this tool.
 
+Notes written in Obsidian render as they are: callouts (`> [!tip]`), `[[wikilinks]]`, `![[image.png]]` embeds and `==highlights==` are all understood.
+
 ## How it works
 
 ```mermaid

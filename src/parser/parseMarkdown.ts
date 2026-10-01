@@ -7,6 +7,7 @@ import remarkDefinitionList from "remark-definition-list";
 import type { Definition, Image, Link, Nodes, Root as MdastRoot } from "mdast";
 import { extractAttributes } from "./attributes.js";
 import { liftBracketedSpans } from "./spans.js";
+import { liftObsidianSyntax } from "./obsidian.js";
 
 const parser = unified()
   .use(remarkParse)
@@ -42,6 +43,8 @@ export function parseMarkdownToMdast(markdown: string): MdastRoot {
   // than handing `{.muted}` to the heading. Positions index the normalized
   // source; the colon placeholder is a same-length swap, so offsets agree.
   liftBracketedSpans(tree, normalized);
+  // After spans, which need the parser's source positions on text nodes.
+  liftObsidianSyntax(tree);
   resolveReferences(tree);
   extractAttributes(tree);
   return tree;

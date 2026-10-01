@@ -59,6 +59,7 @@ src/
     parseMarkdown.ts    remark setup, Pandoc pre-pass, reference links
     attributes.ts       {#id .class key=value} on headings, images, code, math
     spans.ts            [text]{.muted} bracketed spans
+    obsidian.ts         Obsidian callouts, wikilinks, embeds, highlights
   typst/
     generate.ts         mdast → Typst markup
     escape.ts           Escaping for Typst markup and strings

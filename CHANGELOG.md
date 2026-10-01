@@ -4,6 +4,10 @@
 
 ### Added
 
+- Obsidian notes render as written: `> [!tip]` callouts, `[[wikilinks]]`
+  (as their text), `![[image.png]]` embeds (found by name in or below
+  the note's folder), `==highlights==`, with `%%comments%%` and
+  `^block-ids` removed.
 - Bengali text renders, via bundled Noto Sans Bengali (weights 300–700).
 
 ### Added — Telugu and a watermark

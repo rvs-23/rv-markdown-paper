@@ -465,6 +465,9 @@
   table(..args, table.header(..header), ..rows.flatten())
 })
 
+// `==highlight==`: a grey marker rather than yellow, to keep one ink.
+#let mark(body) = highlight(fill: c-surface-2, extent: 1.5pt, radius: 1.5pt, body)
+
 // Markdown `---` thematic break: a full-width hairline, the same stroke
 // the cover uses for its rules.
 #let rule() = block(above: 1.6em, below: 1.6em, line(length: 100%, stroke: 0.4pt + c-hairline))

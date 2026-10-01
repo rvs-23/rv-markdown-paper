@@ -206,6 +206,27 @@ Some [quieter aside text]{.muted} and an [underlined phrase]{.underline}.
 
 A span styles part of a line: `.muted` sets it in the lighter grey ink, and `.underline` underlines it like a link. Other classes render the text plainly. An `#id` on a span is an error.
 
+## Obsidian notes
+
+A note written in Obsidian renders as it is. These forms are understood:
+
+```markdown
+> [!tip] Remember
+> An Obsidian callout, with an optional title.
+
+See [[Design Notes]] or [[People/Taylor|Taylor]].
+
+Some ==highlighted words== in a sentence. %%A comment that stays hidden.%%
+```
+
+- **Callouts** use the four callout styles. Obsidian's other types fold onto them: `info` and `abstract` become notes, `success` and `hint` become tips, `question` and `caution` become warnings, `bug` and `error` become danger.
+- **Wikilinks** become their text: the alias if there is one, otherwise the note's name. A PDF has nowhere to link them.
+- **`![[figure.png]]`** embeds an image. It is found by name in the note's folder or any folder below it. An embed of another note becomes that note's name.
+- **`==highlights==`** get a grey marker.
+- **`%%comments%%`** and trailing `^block-ids` are removed.
+
+One thing to know: in this design `##` is a small section label and `###` is the large heading, so a note that uses `##` for its main headings will look quieter than it does in Obsidian.
+
 ## Horizontal rule
 
 ```markdown
