@@ -589,22 +589,23 @@
     // "a bounded crew."). Without a `|`, the tail flows naturally
     // within the box width.
     #if title != none {
+      // A title without a comma is all head: no comma is added, and no
+      // italic tail follows. `|` breaks lines in either part.
       let parts = title.split(",")
-      let head = parts.at(0) + ","
-      let tail = if parts.len() > 1 { parts.slice(1).join(",").trim() } else { "" }
-      let tail-segments = tail.split("|").map(s => s.trim())
+      let has-tail = parts.len() > 1
+      let head-segments = (parts.at(0) + if has-tail { "," } else { "" }).split("|").map(s => s.trim())
+      let tail-segments = if has-tail { parts.slice(1).join(",").split("|").map(s => s.trim()) } else { () }
+      let lines(segments) = for (i, seg) in segments.enumerate() {
+        if i > 0 { linebreak() }
+        seg
+      }
       box(width: 95mm)[
         // `justify: false` on the title — the document-level `set par`
         // turns justification on for body prose, which spreads "Thread"
         // and "pools," apart on short title lines. Display headings
         // should always be left-aligned, never justified.
         #par(leading: 0.32em, justify: false)[
-          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#head]#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#{
-            for (i, seg) in tail-segments.enumerate() {
-              if i > 0 { linebreak() }
-              seg
-            }
-          }]
+          #text(font: f-sans, size: 44pt, weight: 500, fill: c-ink, tracking: -0.5pt)[#lines(head-segments)]#if has-tail [#linebreak()#text(font: f-serif, style: "italic", size: 44pt, weight: 400, fill: c-ink, tracking: -0.5pt)[#lines(tail-segments)]]
         ]
       ]
     }

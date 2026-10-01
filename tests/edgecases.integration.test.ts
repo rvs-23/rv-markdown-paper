@@ -274,4 +274,12 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     const typo = { papperBg: "parchment" } as unknown as DocumentOptionsLayer;
     await expect(render("Hello.\n", typo)).rejects.toThrow('cli.papperBg: unknown option. Did you mean "paperBg"?');
   });
+
+  it("adds no comma to a cover title that has none", async () => {
+    const cover = (title: string) => render(`---\ncover:\n  title: "${title}"\n---\nBody.\n`);
+    expect(await cover("Thread pools")).toMatch(/^Thread pools (?!,)/);
+    expect(await cover("Thread pools | made plain")).toContain("Thread pools made plain");
+    // With a comma, the head keeps it and the tail follows.
+    expect(await cover("Thread pools, or a bounded crew.")).toContain("Thread pools, or a bounded crew.");
+  });
 });
