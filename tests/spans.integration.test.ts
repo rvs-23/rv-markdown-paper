@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
+import { hasTools, pdfText } from "./helpers.js";
 
 // Bracketed spans end to end: each case compiles a small document (so the
 // emitted `c-muted` / `#underline` calls must resolve) and checks the
 // extracted text shows the span content without its `[…]{…}` syntax.
-
-const hasTools =
-  spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0 &&
-  [0, 99].includes(spawnSync("pdftotext", ["-v"], { stdio: "ignore" }).status ?? -1);
 
 async function render(markdown: string): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), "mdpdf-spans-"));
@@ -20,8 +16,7 @@ async function render(markdown: string): Promise<string> {
     const output = join(dir, "doc.pdf");
     await writeFile(input, markdown, "utf8");
     await convertMarkdownToPdf({ inputPath: input, outputPath: output, cli: {} });
-    const r = spawnSync("pdftotext", [output, "-"], { encoding: "utf8" });
-    return r.stdout.replace(/\s+/g, " ");
+    return pdfText(output).replace(/\s+/g, " ");
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

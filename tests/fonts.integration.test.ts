@@ -1,16 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { convertMarkdownToPdf } from "../src/core/convert.js";
+import { hasTypst } from "./helpers.js";
 
 // Typst renders a character no font covers as nothing and exits 0, so
 // these check the converter refuses such documents before Typst runs,
 // and still renders the scripts the bundled fonts do cover.
-
-const hasTypst = spawnSync("typst", ["--version"], { stdio: "ignore" }).status === 0;
 
 // Renders a document and reports the error (if any) and whether a PDF
 // was written, so a rejection can be checked to leave no output behind.
