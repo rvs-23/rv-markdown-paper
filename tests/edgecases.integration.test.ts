@@ -264,4 +264,14 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect((await chrome(`---\nauthor: "Rishav"\nshowAuthor: false\n---\n${longBody}`, 1)).footer).toBe("001");
     expect((await chrome(longBody, 1)).footer).toBe("001");
   });
+
+  it("validates library overrides like frontmatter", async () => {
+    // Preset names resolve for library callers too, not only on the CLI.
+    expect(await paperPixel("Hello.\n", { paperBg: "parchment" })).toEqual([0xf5, 0xee, 0xdd]);
+    // A bad value is a ConfigError naming the field, not raw Typst code.
+    const bad = { showHeader: "yes" } as unknown as DocumentOptionsLayer;
+    await expect(render("Hello.\n", bad)).rejects.toThrow("cli.showHeader: expected true or false");
+    const typo = { papperBg: "parchment" } as unknown as DocumentOptionsLayer;
+    await expect(render("Hello.\n", typo)).rejects.toThrow('cli.papperBg: unknown option. Did you mean "paperBg"?');
+  });
 });
