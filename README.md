@@ -52,7 +52,7 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 | `--title` | text | Document title (overrides frontmatter) |
 | `--subtitle` | text | Subtitle / deck under the title |
 | `--section` | text | Kicker above the title, e.g. `LESSON 03` |
-| `--author` | text | Document author |
+| `--author` | text | Document author; the footer is signed with the first name, `AUTHOR · RISHAV` |
 | `--date` | text | Document date |
 | `--reading-time` | text | Reading time, e.g. `"14 min"` (auto-estimated if omitted) |
 | `--page-size` | `Letter` \| `A4` | Page size — default `A4` |
@@ -64,6 +64,7 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 | `--no-header` | — | Hide the running header |
 | `--no-footer` | — | Hide the running footer |
 | `--no-cover` | — | Skip the dedicated cover page (title block goes inline) |
+| `--no-author` | — | Leave the author signature out of the footer |
 | `--config` | path | Explicit `mdpdf.config.json` path (skips upward search) |
 
 CSS length units accepted: `in`, `cm`, `mm`, `pt`, `px`.
@@ -221,6 +222,7 @@ pageSize: "A4"
 showHeader: true
 showFooter: true
 showCover: true
+showAuthor: true             # false leaves the footer signature out
 paperBg: "platinum"          # glacier | platinum | parchment, or any #RRGGBB
 ---
 ```
@@ -251,6 +253,7 @@ margins: { top: "24mm", right: "22mm", bottom: "22mm", left: "22mm" }
 showHeader: true
 showFooter: true
 showCover: true
+showAuthor: true
 paperBg: "parchment"         # glacier | platinum | parchment, or any #RRGGBB
 footnotes: "endnotes"   # "page" (default) | "endnotes" — bottom-of-page vs chapter-end NOTES
 

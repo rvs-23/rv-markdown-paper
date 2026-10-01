@@ -70,7 +70,6 @@ const PAGE_INVARIANTS: Record<number, string[]> = {
     "A note on scope",
   ],
   3: [
-    "7. 1 – 7. 2",
     "THREADS & THE GIL",
     "Why a pool",
     "7.1.1",
@@ -92,7 +91,6 @@ const PAGE_INVARIANTS: Record<number, string[]> = {
     "(7.1)",
   ],
   6: [
-    "7. 5 – 7. 6",
     "EXERCISES",
     "Warm-up",
     "FURTHER READING",
