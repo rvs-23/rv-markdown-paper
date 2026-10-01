@@ -69,6 +69,32 @@ npm run mdpdf -- <input.md> <output.pdf> [flags]
 
 CSS length units accepted: `in`, `cm`, `mm`, `pt`, `px`.
 
+**Examples:**
+
+```bash
+# Parchment paper, footer signed "AUTHOR · RV"
+npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf --paper-bg parchment --author "Rv"
+
+# Same document, no author signature in the footer
+npm run mdpdf -- examples/kannada-notes/notes.md out/notes.pdf --no-author
+
+# Glacier white, US Letter, no cover page
+npm run mdpdf -- examples/demos/06-full-paper.md out/essay.pdf --paper-bg glacier --page-size Letter --no-cover
+
+# Any page colour as a hex value
+npm run mdpdf -- examples/demos/01-hello.md out/hello.pdf --paper-bg "#EEF2F7"
+```
+
+The same settings can live in the document's frontmatter instead, so a plain `npm run mdpdf -- notes.md out/notes.pdf` picks them up:
+
+```yaml
+---
+author: "Rishav Sharma"   # footer: AUTHOR · RISHAV
+paperBg: parchment        # glacier | platinum | parchment, or any #RRGGBB
+showAuthor: true          # false leaves the signature out
+---
+```
+
 ## Library Usage
 
 The package also ships a small library API for embedding the converter in other Node tools — pipelines that fan out many documents, CMS export jobs, build scripts, etc. It isn't on the npm registry; install it from GitHub (npm builds it during install), then import `convertMarkdownToPdf`:
