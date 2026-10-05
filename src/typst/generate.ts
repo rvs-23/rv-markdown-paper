@@ -841,7 +841,8 @@ function imageLength(value: string, url: string): string {
 
 function renderInlineImage(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(imageUrl(image, ctx), ctx);
-  return `#image("${escapeString(abs)}"${imageSize(image)});`;
+  // A bare image ends the line in Typst; a box keeps it in the sentence.
+  return `#box(image("${escapeString(abs)}"${imageSize(image)}));`;
 }
 
 // ---- helpers ----
