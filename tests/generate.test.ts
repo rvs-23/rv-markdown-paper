@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { parseMarkdownToMdast } from "../src/parser/parseMarkdown.js";
 import { generateTypst, usesRail } from "../src/typst/generate.js";
 
@@ -257,5 +260,38 @@ describe("usesRail", () => {
 
   it("is true for a dotted H2 section numeral", () => {
     expect(rail("## 7.1 · Threads\n")).toBe(true);
+  });
+});
+
+describe("image sizes", () => {
+  it("fills the column by default", () => {
+    expect(gen("![Cap](a.png)\n")).toContain('a.png", width: 100%)');
+  });
+
+  it("takes width and height from attributes", () => {
+    expect(gen("![Cap](a.png){width=50%}\n")).toContain('a.png", width: 50%)');
+    expect(gen("![Cap](a.png){height=8cm}\n")).toContain('a.png", height: 8cm)');
+    expect(gen("![Cap](a.png){width=60mm height=4cm}\n")).toContain(
+      'a.png", width: 60mm, height: 4cm, fit: "contain")',
+    );
+    // A bare number is CSS pixels, as in Pandoc and Obsidian.
+    expect(gen("Inline ![](a.png){height=40}\n")).toContain('a.png", height: 30pt);');
+  });
+
+  it("takes an Obsidian embed's size", () => {
+    const dir = mkdtempSync(join(tmpdir(), "mdpdf-size-"));
+    try {
+      writeFileSync(join(dir, "photo.jpg"), "");
+      const embed = (md: string) => generateTypst(parseMarkdownToMdast(md), { sourceDir: dir });
+      expect(embed("![[photo.jpg|300]]\n")).toContain('photo.jpg", width: 225pt)');
+      expect(embed("![[photo.jpg|300x200]]\n")).toContain('photo.jpg", width: 225pt, height: 150pt, fit: "contain")');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a size that isn't a length", () => {
+    expect(() => gen("![Cap](a.png){width=big}\n")).toThrow('Image size "big" for a.png');
+    expect(() => gen("![Cap](a.png){height=50%}\n")).toThrow("can't be a percentage");
   });
 });
