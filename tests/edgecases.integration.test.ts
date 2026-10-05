@@ -330,4 +330,19 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect(text).toContain("8:00");
   });
 
+  it("leaves a paragraph's worth of space below a list", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-list-"));
+    try {
+      const md = "Alpha one.\n\nBravo two.\n\n- Charlie\n- Delta\n\nEcho three.\n";
+      await writeFile(join(dir, "doc.md"), md, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const html = pdfText(join(dir, "doc.pdf"), ["-bbox"]);
+      const yMin = (word: string) => Number(new RegExp(`yMin="([\\d.]+)"[^>]*>${word}<`).exec(html)![1]);
+      // A tight list's gap once collapsed to plain line spacing.
+      const paragraphGap = yMin("Bravo") - yMin("Alpha");
+      expect(yMin("Echo") - yMin("Delta")).toBeGreaterThanOrEqual(paragraphGap - 0.5);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
