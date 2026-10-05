@@ -165,9 +165,6 @@ function renderBlock(node: RootContent, ctx: Ctx): string {
       return renderContainerDirective(node as unknown as DirectiveNode, ctx);
     case "leafDirective":
       return renderLeafDirective(node as unknown as DirectiveNode, ctx);
-    case "textDirective":
-      // Text directives at block level are unusual; treat as paragraph.
-      return renderInlines([node as unknown as PhrasingContent], ctx);
     case "defList":
       return renderDefList(node as unknown as DefListNode, ctx);
     case "footnoteDefinition":
@@ -460,7 +457,7 @@ function renderFigure(image: Image, ctx: Ctx): string {
 // ---- directive nodes (remark-directive) ----
 
 type DirectiveNode = {
-  type: "containerDirective" | "leafDirective" | "textDirective";
+  type: "containerDirective" | "leafDirective";
   name: string;
   children?: PhrasingContent[] | RootContent[];
   data?: { attrs?: Attributes } & Record<string, unknown>;
@@ -707,10 +704,6 @@ function renderInline(node: PhrasingContent, ctx: Ctx): string {
       return renderSpan(node, ctx);
     case "highlight":
       return `#mark[${renderInlines(node.children, ctx)}];`;
-    case "textDirective": {
-      const dir = node as unknown as DirectiveNode;
-      return renderInlines((dir.children ?? []) as PhrasingContent[], ctx);
-    }
     case "footnoteReference": {
       const ref = (node as unknown as { identifier: string }).identifier;
       const def = ctx.footnotes.get(ref);

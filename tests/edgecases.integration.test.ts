@@ -323,4 +323,11 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
     expect(await watermarks(`---\nwatermark: "Draft"\n---\nHello.\n`)).toEqual(["DRAFT"]);
     expect(await watermarks("Hello.\n")).toEqual([""]);
   });
+
+  it("keeps the text after a colon in prose and tables", async () => {
+    const text = await render("Lunch 5:45–6:15, then 8:15 onward.\n\n| When | What |\n|---|---|\n| 8:00 | Arrive |\n");
+    expect(text).toContain("Lunch 5:45–6:15, then 8:15 onward.");
+    expect(text).toContain("8:00");
+  });
+
 });

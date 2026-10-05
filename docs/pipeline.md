@@ -32,12 +32,14 @@ Unknown keys are handled differently per layer. In `mdpdf.config.json` they are 
 
 [`parseMarkdown.ts`](../src/parser/parseMarkdown.ts) turns the body into an mdast tree with remark and four plugins: GitHub-flavoured Markdown, directives (`:::note`), math (`$…$`) and definition lists.
 
+Only the block forms of directives are on. The inline form, `:name`, is switched off: it read ordinary text such as `5:45` or `key:value` as a directive, and the text after the colon disappeared.
+
 The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so six passes run around the parse.
 
 **Before the parse:**
 
-- `::: name` and `:::{.name key="v"}` are rewritten into remark-directive's form, `:::name{key="v"}`.
 - Colons inside Pandoc attribute groups (`{#fig:queue}`) and cross-references (`@fig:queue`) are swapped for a placeholder. Otherwise remark-directive reads `:queue` as a directive. The placeholder is swapped back after the parse.
+- `::: name` and `:::{.name key="v"}` are rewritten into remark-directive's form, `:::name{key="v"}`.
 
 **After the parse:**
 

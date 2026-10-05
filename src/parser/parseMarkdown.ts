@@ -1,4 +1,4 @@
-import { unified } from "unified";
+import { unified, type Processor } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -13,8 +13,23 @@ const parser = unified()
   .use(remarkParse)
   .use(remarkGfm)
   .use(remarkDirective)
+  .use(withoutInlineDirectives)
   .use(remarkMath)
   .use(remarkDefinitionList);
+
+// remark-directive also parses an inline form, `:name[label]{attrs}`. Nothing
+// here uses it, and it eats ordinary text: `5:45` parses as a directive
+// named "45", so the time printed as `5`. Only the `:::` and `::` block
+// forms stay.
+const COLON = 58;
+type Constructs = Record<number, unknown>;
+
+function withoutInlineDirectives(this: Processor): void {
+  const extensions = (this.data("micromarkExtensions") ?? []) as { flow?: Constructs; text?: Constructs }[];
+  for (const extension of extensions) {
+    if (extension.flow?.[COLON] && extension.text?.[COLON]) delete extension.text[COLON];
+  }
+}
 
 // Pandoc attribute IDs frequently contain colons (`{#fig:x}`, `{#eq:y}`).
 // remark-directive also uses colons to introduce text directives (`:name`),

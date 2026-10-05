@@ -95,8 +95,7 @@ function visitBlock(node: RootContent): void {
       liftCodeAttrs(node);
       break;
     case "containerDirective":
-    case "leafDirective":
-    case "textDirective": {
+    case "leafDirective": {
       // remark-directive already parses attributes into node.attributes.
       // Normalize into our `attrs` shape for uniform downstream access.
       const anyNode = node as unknown as {
