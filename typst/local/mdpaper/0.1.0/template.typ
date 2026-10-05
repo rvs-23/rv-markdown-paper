@@ -71,8 +71,14 @@
 // following note's anchor sits above that, we push it down by `gap`.
 //
 // The state is reset on every page-break via `#set page(background: ...)`.
+//
+// A note placed out of flow stays put when its anchor moves to the next
+// page, and a tall one runs off the bottom. So a note that doesn't fit
+// below its position breaks the page first, and the note and its anchor
+// start the next page together.
 
 #let _marg-bottom = state("marg-bottom", 0pt)
+#let _marg-id = counter("marg-id")
 
 // Current section sig-numeral ("7.1", "7.3", etc.). The generator updates
 // this state immediately before each H2 whose body starts with a dotted
@@ -94,29 +100,33 @@
 // hasn't run yet (e.g. fixtures that call marg directly).
 #let _marg-geom = state(
   "marg-geom",
-  (left: 22mm, right: 62mm, gap: 5mm, width: 35mm),
+  (top: 24mm, left: 22mm, right: 62mm, bottom: 22mm, gap: 5mm, width: 35mm),
 )
 
-#let marg(label: none, body) = context {
+#let _marg-note(label, body, width) = block(width: width, above: 0pt, below: 0pt)[
+  #line(length: 100%, stroke: 0.4pt + c-hairline)
+  #v(4pt)
+  #if label != none {
+    text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-ink-2)[
+      #upper(label)
+    ]
+    v(3pt)
+  }
+  #set par(leading: 0.45em)
+  #text(font: f-sans, size: 8.5pt, fill: c-muted)[#body]
+]
+
+#let _marg-place(label, body) = {
   let geom = _marg-geom.get()
-  let note-content = block(width: geom.width, above: 0pt, below: 0pt)[
-    #line(length: 100%, stroke: 0.4pt + c-hairline)
-    #v(4pt)
-    #if label != none {
-      text(font: f-sans, size: 7.5pt, weight: 500, tracking: 0.14em, fill: c-ink-2)[
-        #upper(label)
-      ]
-      v(3pt)
-    }
-    #set par(leading: 0.45em)
-    #text(font: f-sans, size: 8.5pt, fill: c-muted)[#body]
-  ]
+  let note-content = _marg-note(label, body, geom.width)
   let here-y = here().position().y
   let last-bottom = _marg-bottom.get()
   let gap = 8pt
-  let actual-y = calc.max(here-y, last-bottom + gap)
-  let shift = actual-y - here-y
   let h = measure(note-content).height
+  // Where `marg` couldn't break the page (inside a callout, which never
+  // splits), lift the note to end at the bottom margin rather than run off.
+  let actual-y = calc.min(calc.max(here-y, last-bottom + gap), page.height - geom.bottom - h)
+  let shift = actual-y - here-y
   // dx is relative to the content column's left edge (the surrounding
   // flow container). The rail sits to its right with `rail-gap` between,
   // so dx = content-column-width + rail-gap = (page.width - margin-left
@@ -125,6 +135,26 @@
   let content-width = page.width - geom.left - geom.right
   place(dx: content-width + geom.gap, dy: shift, note-content)
   _marg-bottom.update(actual-y + h)
+}
+
+#let marg(label: none, body) = {
+  _marg-id.step()
+  // Break the page when the note won't fit below its position. The
+  // decision is remembered, because once the page breaks the note sits
+  // at the top of the next page, where it fits, and without the memory
+  // the layout would flip back and forth.
+  context {
+    let geom = _marg-geom.get()
+    let moved = state("marg-moved-" + str(_marg-id.get().first()), false)
+    let y = calc.max(here().position().y, _marg-bottom.get() + 8pt)
+    let h = measure(_marg-note(label, body, geom.width)).height
+    let at-top = here().position().y <= geom.top + 2pt
+    if (y + h > page.height - geom.bottom and not at-top) or (moved.final() and at-top) {
+      colbreak(weak: true)
+      moved.update(true)
+    }
+  }
+  context _marg-place(label, body)
 }
 
 // ---------- ornamental helpers ----------
@@ -823,8 +853,10 @@
   // actual page width / margins instead of hardcoding A4.
   let effective-right = page-right(margin-right, rail)
   _marg-geom.update((
+    top: margin-top,
     left: margin-left,
     right: effective-right,
+    bottom: margin-bottom,
     gap: rail-gap,
     width: rail-width,
   ))

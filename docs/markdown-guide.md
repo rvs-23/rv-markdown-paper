@@ -287,7 +287,7 @@ A link to `#id` points at a heading or figure with that ID. If the ID doesn't ex
 The paragraph this note sits beside.
 ```
 
-A margin note goes in the right-hand margin, aligned with the paragraph after it. A leading bold phrase becomes the note's label (or use `:::{.margin label="Stack size"}`).
+A margin note goes in the right-hand margin, aligned with the block after it, which can be a paragraph, table or anything else. If the note doesn't fit between there and the foot of the page, the note and that block start on the next page together. A leading bold phrase becomes the note's label (or use `:::{.margin label="Stack size"}`).
 
 The right margin column is only reserved when the document has margin notes or `7.1`-style `##` headings. Otherwise the text runs wider.
 

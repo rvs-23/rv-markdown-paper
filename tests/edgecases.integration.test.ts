@@ -345,4 +345,24 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("moves a tall margin note to the next page with its anchor", async () => {
+    // The note used to stay behind beside the page foot and run off it,
+    // while the table it belongs to moved on.
+    const para = "The fabric should drape cleanly from the waist without pulling at the seams. ".repeat(3);
+    const note = Array.from({ length: 30 }, (_, i) => `Noteline${i}`).join("\n\n");
+    const rows = Array.from({ length: 6 }, (_, i) => `| Row${i} | Specification ${i} |`).join("\n");
+    const md = `${Array(9).fill(para).join("\n\n")}\n\n:::margin\n${note}\n:::\n\n| Element | Spec |\n|---|---|\n${rows}\n`;
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-marg-"));
+    try {
+      await writeFile(join(dir, "doc.md"), md, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const pages = pdfText(join(dir, "doc.pdf")).split("\f");
+      const pageOf = (word: string) => pages.findIndex((p) => p.includes(word));
+      expect(pageOf("Noteline0")).toBe(pageOf("Row0"));
+      expect(pageOf("Noteline29")).toBe(pageOf("Row0"));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
