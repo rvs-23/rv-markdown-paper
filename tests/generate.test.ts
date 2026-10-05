@@ -275,7 +275,7 @@ describe("image sizes", () => {
       'a.png", width: 60mm, height: 4cm, fit: "contain")',
     );
     // A bare number is CSS pixels, as in Pandoc and Obsidian.
-    expect(gen("Inline ![](a.png){height=40}\n")).toContain('a.png", height: 30pt);');
+    expect(gen("Inline ![](a.png){height=40}\n")).toContain('a.png", height: 30pt));');
   });
 
   it("takes an Obsidian embed's size", () => {

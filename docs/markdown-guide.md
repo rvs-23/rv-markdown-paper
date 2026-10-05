@@ -247,6 +247,8 @@ An image alone in its paragraph becomes a full-width figure, and its alt text be
 
 To make an image smaller, give it a width or a height: `{width=50%}`, `{height=8cm}`, or both, as in `{#fig:pool-queue width=60%}`. A width can be a percentage of the column; otherwise use `mm`, `cm`, `in`, `pt` or `px`. A bare number is pixels. With both set, the image fits inside that box without stretching. A tall portrait photo fills a whole page at full width, so give it a height.
 
+An image inside a sentence stays in the line, at its own size. `{height=1em}` makes it the height of the text, which suits icons and badges.
+
 ## Math
 
 ```markdown

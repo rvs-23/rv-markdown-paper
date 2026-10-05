@@ -365,4 +365,21 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("keeps an image inside a sentence on its line", async () => {
+    // A bare Typst image ended the line, so "after" wrapped below it.
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-inline-"));
+    try {
+      // A 1x1 PNG.
+      const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      await writeFile(join(dir, "dot.png"), Buffer.from(png, "base64"));
+      await writeFile(join(dir, "doc.md"), "Before ![](dot.png){height=8pt} after.\n", "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const html = pdfText(join(dir, "doc.pdf"), ["-bbox"]);
+      const yMin = (word: string) => Number(new RegExp(`yMin="([\\d.]+)"[^>]*>${word}<`).exec(html)![1]);
+      expect(yMin("after.")).toBeCloseTo(yMin("Before"), 0);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
