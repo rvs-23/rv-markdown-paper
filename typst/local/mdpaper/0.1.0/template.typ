@@ -921,9 +921,11 @@
   // followed by `- bullet` shows the first item ~5pt under the heading
   // baseline — visibly too tight. 1em above gives a "tab-equivalent"
   // breathing room after H3/H4 without making list-after-paragraph
-  // double-spaced.
-  show list: it => block(above: 1em, below: 0.8em, it)
-  show enum: it => block(above: 1em, below: 0.8em, it)
+  // double-spaced. Below matches paragraph spacing: Typst sets a paragraph
+  // after a tight list at line spacing (0.85em), which outweighs anything
+  // smaller and leaves the paragraph cramped under the last item.
+  show list: it => block(above: 1em, below: 1.2em, it)
+  show enum: it => block(above: 1em, below: 1.2em, it)
 
   // --------- Inline ---------
   // Links take the colour of the text around them: ink in body prose,

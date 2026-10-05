@@ -69,8 +69,30 @@ $$ a + b = c $$ {#eq:little}
   });
 });
 
-describe("colon protection leaves link destinations intact", () => {
-  it("does not rewrite `@host:port` or `{k:v}` inside URLs", () => {
+describe("colons in text", () => {
+  const textOf = (md: string) =>
+    (parseMarkdownToMdast(md).children[0] as { children: Array<{ type: string; value?: string }> }).children
+      .map((c) => c.value ?? `<${c.type}>`)
+      .join("");
+
+  it("keeps times, ratios and key:value pairs whole", () => {
+    // `:45` once parsed as an inline directive named "45" and vanished.
+    expect(textOf("5:45–6:15, around 8:00? 16:9, 3:2:1, key:value")).toBe(
+      "5:45–6:15, around 8:00? 16:9, 3:2:1, key:value",
+    );
+  });
+
+  it("leaves a footnote after a ratio as a footnote", () => {
+    expect(textOf("Shot at 16:9[^1].\n\n[^1]: Widescreen.")).toBe("Shot at 16:9<footnoteReference>.");
+  });
+
+  it("still reads ids with colons on headings and blocks", () => {
+    const tree = parseMarkdownToMdast("## Head {#sec:x}\n\n:::note{#note:y}\nHi.\n:::\n");
+    const ids = tree.children.map((c) => (c.data as { attrs?: { id?: string } } | undefined)?.attrs?.id);
+    expect(ids).toEqual(["sec:x", "note:y"]);
+  });
+
+  it("leaves link destinations intact", () => {
     const tree = parseMarkdownToMdast(
       "[a](https://user@host:8080/p) [b](http://x.com/{k:v})",
     );

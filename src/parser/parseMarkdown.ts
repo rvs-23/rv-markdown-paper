@@ -1,4 +1,4 @@
-import { unified } from "unified";
+import { unified, type Processor } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -13,35 +13,30 @@ const parser = unified()
   .use(remarkParse)
   .use(remarkGfm)
   .use(remarkDirective)
+  .use(withoutInlineDirectives)
   .use(remarkMath)
   .use(remarkDefinitionList);
 
-// Pandoc attribute IDs frequently contain colons (`{#fig:x}`, `{#eq:y}`).
-// remark-directive also uses colons to introduce text directives (`:name`),
-// so a bare `{#eq:little}` trips the directive tokenizer. We protect the
-// brace-enclosed attribute payload by swapping `:` for a unique placeholder
-// before parse, then swapping it back on the extracted attribute strings.
-//
-// Only brace groups that open like a Pandoc attribute bundle (`{#id`,
-// `{.class`, `{key=`) are touched, and a crossref's `@` must follow
-// whitespace, `[` or `(`. Anything looser also rewrites colons inside
-// link destinations (`https://user@host:8080`, `/{k:v}`), where the
-// placeholder is an illegal control character and the link stops parsing.
-const COLON_PLACEHOLDER = "\u0001";
-const ATTR_BLOCK_RE = /\{\s*(?:[#.]|[A-Za-z_][\w-]*=)[^{}\n]*\}/g;
-// Pandoc-crossref `@fig:label` / `@eq:label` references. The colon again
-// collides with remark-directive's `:name` text-directive trigger, so we
-// protect the same way.
-const CROSSREF_RE = /(^|[\s[(])@([A-Za-z][\w-]*):([\w-]+)/gm;
+// remark-directive also parses an inline form, `:name[label]{attrs}`. Nothing
+// here uses it, and it eats ordinary text: `5:45` parses as a directive
+// named "45", so the time printed as `5`. Only the `:::` and `::` block
+// forms stay.
+const COLON = 58;
+type Constructs = Record<number, unknown>;
+
+function withoutInlineDirectives(this: Processor): void {
+  const extensions = (this.data("micromarkExtensions") ?? []) as { flow?: Constructs; text?: Constructs }[];
+  for (const extension of extensions) {
+    if (extension.flow?.[COLON] && extension.text?.[COLON]) delete extension.text[COLON];
+  }
+}
 
 export function parseMarkdownToMdast(markdown: string): MdastRoot {
   const normalized = normalizeDirectiveOpeners(markdown);
-  const protectedSource = protectAttrColons(normalized);
-  const tree = parser.parse(protectedSource) as MdastRoot;
-  restoreAttrColons(tree);
+  const tree = parser.parse(normalized) as MdastRoot;
   // Spans first, so a heading ending in `[x]{.muted}` keeps its span rather
   // than handing `{.muted}` to the heading. Positions index the normalized
-  // source; the colon placeholder is a same-length swap, so offsets agree.
+  // source.
   liftBracketedSpans(tree, normalized);
   // After spans, which need the parser's source positions on text nodes.
   liftObsidianSyntax(tree);
@@ -113,29 +108,4 @@ function normalizeDirectiveOpeners(markdown: string): string {
     lines[i] = `${fence}${trimmed}`;
   }
   return lines.join("\n");
-}
-
-function protectAttrColons(markdown: string): string {
-  return markdown
-    .replace(ATTR_BLOCK_RE, (m) => m.replace(/:/g, COLON_PLACEHOLDER))
-    .replace(
-      CROSSREF_RE,
-      (_m, lead: string, prefix: string, tail: string) =>
-        `${lead}@${prefix}${COLON_PLACEHOLDER}${tail}`,
-    );
-}
-
-// Walk the tree and restore colons in every string field — text values,
-// code lang/meta, link and image url/title/alt, directive attribute
-// records, and anything a plugin attaches under `data`.
-function restoreAttrColons(node: unknown): void {
-  if (node === null || typeof node !== "object") return;
-  const n = node as Record<string, unknown>;
-  for (const [k, v] of Object.entries(n)) {
-    if (typeof v === "string") {
-      if (v.includes(COLON_PLACEHOLDER)) n[k] = v.split(COLON_PLACEHOLDER).join(":");
-    } else if (k !== "position") {
-      restoreAttrColons(v);
-    }
-  }
 }
