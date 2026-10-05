@@ -34,16 +34,17 @@ Unknown keys are handled differently per layer. In `mdpdf.config.json` they are 
 
 Only the block forms of directives are on. The inline form, `:name`, is switched off: it read ordinary text such as `5:45` or `key:value` as a directive, and the text after the colon disappeared.
 
-The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so five passes run around the parse.
+The source is written in a Pandoc-flavoured dialect that remark doesn't fully understand, so six passes run around the parse.
 
 **Before the parse:**
 
+- Obsidian `%%comments%%` are removed. A comment hides whatever it contains, so this happens on the source: after the parse, a link or bold text inside a comment would split it into pieces. Code blocks and code spans are left alone.
 - `::: name` and `:::{.name key="v"}` are rewritten into remark-directive's form, `:::name{key="v"}`.
 
 **After the parse:**
 
 - [`spans.ts`](../src/parser/spans.ts) turns `[text]{.muted}` into span nodes. It works on text nodes only, so code and math are untouched, and it checks the original source so an escaped `\[` never opens a span.
-- [`obsidian.ts`](../src/parser/obsidian.ts) rewrites Obsidian's own syntax into nodes the generator already handles: `> [!tip]` callouts become callouts, `[[wikilinks]]` become their text, `![[image.png]]` becomes an image, `==highlights==` become highlight nodes, and `%%comments%%` are removed.
+- [`obsidian.ts`](../src/parser/obsidian.ts) rewrites Obsidian's own syntax into nodes the generator already handles: `> [!tip]` callouts become callouts, `[[wikilinks]]` become their text, `![[image.png]]` becomes an image, and `==highlights==` become highlight nodes.
 - Reference links (`[text][ref]` with `[ref]: url` elsewhere) are rewritten into ordinary links and images, and the definitions are dropped.
 - [`attributes.ts`](../src/parser/attributes.ts) moves `{#id .class key=value}` bundles off the end of headings, images, display math and code-fence info strings onto the node. Ids must match `^[A-Za-z][A-Za-z0-9_:-]*$`; anything else is an error, because an id becomes a Typst label.
 
