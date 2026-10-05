@@ -7,7 +7,7 @@ import remarkDefinitionList from "remark-definition-list";
 import type { Definition, Image, Link, Nodes, Root as MdastRoot } from "mdast";
 import { extractAttributes } from "./attributes.js";
 import { liftBracketedSpans } from "./spans.js";
-import { liftObsidianSyntax } from "./obsidian.js";
+import { liftObsidianSyntax, stripComments } from "./obsidian.js";
 
 const parser = unified()
   .use(remarkParse)
@@ -32,7 +32,7 @@ function withoutInlineDirectives(this: Processor): void {
 }
 
 export function parseMarkdownToMdast(markdown: string): MdastRoot {
-  const normalized = normalizeDirectiveOpeners(markdown);
+  const normalized = normalizeDirectiveOpeners(stripComments(markdown));
   const tree = parser.parse(normalized) as MdastRoot;
   // Spans first, so a heading ending in `[x]{.muted}` keeps its span rather
   // than handing `{.muted}` to the heading. Positions index the normalized

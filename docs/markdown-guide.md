@@ -223,7 +223,7 @@ Some ==highlighted words== in a sentence. %%A comment that stays hidden.%%
 - **Wikilinks** become their text: the alias if there is one, otherwise the note's name. A PDF has nowhere to link them.
 - **`![[figure.png]]`** embeds an image. It is found by name in the note's folder or any folder below it. An embed of another note becomes that note's name.
 - **`==highlights==`** get a grey marker.
-- **`%%comments%%`** and trailing `^block-ids` are removed.
+- **`%%comments%%`** are removed, along with anything inside them: links, URLs, formatting, even several lines. Trailing `^block-ids` are removed too.
 
 One thing to know: in this design `##` is a small section label and `###` is the large heading, so a note that uses `##` for its main headings will look quieter than it does in Obsidian.
 

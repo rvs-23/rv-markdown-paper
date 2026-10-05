@@ -19,7 +19,7 @@ The look of every PDF comes from one Typst template. This doc describes what it 
 
 1. **One design, no themes.** Authors choose a paper colour and nothing else visual. Every document from every author looks like it belongs to the same book.
 2. **One ink.** Text is a near-black `#11131A` that steps down through four lighter greys for secondary text. The `:::danger` callout is the only inverted block, light text on ink, and nothing else inverts.
-3. **Each font has one job.** Archivo sets body text, headings, tables and labels. Instrument Serif appears only in italic, only as ornament. JetBrains Mono sets code and table data.
+3. **Each font has one job.** Archivo sets body text, headings, tables and labels. Instrument Serif appears only in italic, only as ornament. JetBrains Mono sets code and table data, except a table's first column, which holds labels in Archivo.
 4. **The template is the design.** The TypeScript code only marks what each block is. All styling is in the template.
 
 ## Where the design lives
@@ -134,7 +134,7 @@ Each Markdown construct maps onto one template function. [markdown-guide.md](mar
 | `:::exbox` | `exbox` | Exercise: large serif numeral, title and tag |
 | `:::eyebrow` / `:::dropcap` | `eyebrow` / `dropcap` | Chapter-opener label; 64 pt serif initial |
 | Code fence with `filename=` | `code-block` | Panel with a filename and language strip |
-| Table | `md-table` | Columns sized to their content; header rule, no stripes |
+| Table | `md-table` | Columns sized to their content; header rule, no stripes. The first column is labels in Archivo, the rest data in JetBrains Mono. |
 | Task list | `task-list` | Ink checkboxes; done items muted |
 | `==highlight==` | `mark` | Grey marker behind the text |
 | `---` | `rule` | Full-width hairline |

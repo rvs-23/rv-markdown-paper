@@ -8,9 +8,10 @@ import type { Blockquote, Image, Paragraph, PhrasingContent, Root, RootContent, 
 //   [[Page|Alias]]        → "Alias" (a PDF has nowhere to link a note)
 //   ![[figure.png]]       → an image
 //   ==highlight==         → a `highlight` node
-//   %%comment%%, ^block   → removed, as Obsidian hides them
+//   ^block                → removed, as Obsidian hides it
 //
 // Only text nodes are read, so code and math are never touched.
+// `%%comments%%` are removed earlier, from the source, by stripComments.
 
 /** `==text==`, set with a grey marker so the page keeps one ink. */
 export interface Highlight {
@@ -43,6 +44,85 @@ const IMAGE_EXT_RE = /\.(png|jpe?g|gif|svg|webp)$/i;
 const WIKI_RE = /(!?)\[\[([^[\]|\n]+)(?:\|([^[\]\n]*))?\]\]/g;
 
 type Parent = { children: unknown[] };
+
+const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
+// The next code span opener or comment marker on a line.
+const INLINE_RE = /(`+)|%%/g;
+
+/**
+ * Removes Obsidian `%%comments%%` from Markdown source.
+ *
+ * A comment hides everything inside it, so it goes before parsing: once
+ * parsed, a link or **bold** inside a comment splits it into pieces, and
+ * a bare URL swallows the closing `%%`. Fenced code and code spans are
+ * left alone, and an unclosed `%%` stays as typed. A line left empty by
+ * a comment is dropped, so it can't split the paragraph around it.
+ *
+ * Args:
+ *   markdown: The document body, without frontmatter.
+ *
+ * Returns:
+ *   The body with every comment removed.
+ */
+export function stripComments(markdown: string): string {
+  const out: string[] = [];
+  let fence: string | null = null;
+  // Inside a comment: the source lines it covers, kept in case it never closes.
+  let comment: string[] | null = null;
+  let kept = "";
+
+  for (const line of markdown.split("\n")) {
+    if (fence !== null && comment === null) {
+      out.push(line);
+      if (new RegExp(`^ {0,3}${fence[0]}{${fence.length},}[ \\t]*$`).test(line)) fence = null;
+      continue;
+    }
+    if (comment === null && FENCE_RE.test(line)) {
+      fence = FENCE_RE.exec(line)![1]!;
+      out.push(line);
+      continue;
+    }
+
+    let rest = line;
+    let result = kept;
+    if (comment !== null) {
+      comment.push(line);
+      const close = rest.indexOf("%%");
+      if (close < 0) continue;
+      rest = rest.slice(close + 2);
+      comment = null;
+    }
+    INLINE_RE.lastIndex = 0;
+    let at = 0;
+    for (let m = INLINE_RE.exec(rest); m; m = INLINE_RE.exec(rest)) {
+      if (m[1]) {
+        // A code span runs to the next backtick run of the same length.
+        const end = new RegExp(`(?<!\`)${m[1]}(?!\`)`, "g");
+        end.lastIndex = m.index + m[1].length;
+        const close = end.exec(rest);
+        if (close) INLINE_RE.lastIndex = close.index + m[1].length;
+        continue;
+      }
+      const close = rest.indexOf("%%", m.index + 2);
+      result += rest.slice(at, m.index);
+      if (close < 0) {
+        comment = [result + rest.slice(m.index)];
+        kept = result;
+        break;
+      }
+      at = close + 2;
+      INLINE_RE.lastIndex = at;
+    }
+    if (comment !== null) continue;
+    result += rest.slice(at);
+    kept = "";
+    if (result.trim() === "" && line.trim() !== "") continue;
+    out.push(result);
+  }
+  // Never closed: put the text back as written.
+  if (comment !== null) out.push(...comment);
+  return out.join("\n");
+}
 
 /**
  * Rewrites Obsidian-only syntax in a parsed document, in place.
@@ -125,10 +205,10 @@ function liftInline(nodes: PhrasingContent[]): PhrasingContent[] {
   return liftHighlights(withLinks);
 }
 
-// Comments vanish; embeds of image files become images; every other
+// Embeds of image files become images; every other
 // wikilink becomes its display text.
 function liftWikiLinks(node: Text): PhrasingContent[] {
-  const value = node.value.replace(/%%[\s\S]*?%%/g, "");
+  const value = node.value;
   const out: PhrasingContent[] = [];
   let last = 0;
   for (const match of value.matchAll(WIKI_RE)) {

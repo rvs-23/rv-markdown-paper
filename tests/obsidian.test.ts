@@ -60,4 +60,21 @@ describe("Obsidian highlights, comments and block ids", () => {
   it("drops %%comments%% and trailing ^block ids", () => {
     expect(gen("Shown %%hidden%% shown. ^para-1\n")).toBe("Shown  shown.\n");
   });
+
+  it("hides a comment whatever it contains", () => {
+    // A bare URL used to swallow the closing %%, and markup split the
+    // comment into pieces, so both printed.
+    expect(gen("Before %%Trousers: https://in.pinterest.com/pin/1%% after.\n")).toBe("Before  after.\n");
+    expect(gen("A %%see **this** and [that](https://x.com)%% B.\n")).toBe("A  B.\n");
+    expect(gen("Top\n\n%%\nBlock with https://e.com\n\nand a gap\n%%\n\nBottom\n")).toBe("Top\n\nBottom\n");
+  });
+
+  it("keeps a paragraph whole around a comment line", () => {
+    expect(gen("Line one\n%%a note%%\nline two.\n")).toBe("Line one line two.\n");
+  });
+
+  it("leaves code and an unclosed %% as typed", () => {
+    expect(gen("Use `%%x%%` here.\n")).toBe("Use `%%x%%` here.\n");
+    expect(gen("An %%unclosed marker.\n")).toBe("An %%unclosed marker.\n");
+  });
 });
