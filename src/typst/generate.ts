@@ -443,9 +443,10 @@ function renderTableCell(cell: TableCell, ctx: Ctx): string {
 function renderFigure(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(imageUrl(image, ctx), ctx);
   const caption = (image.alt ?? "").trim();
-  // Full column width: the figure panel renders the image edge-to-edge
-  // (target.pdf's grid-paper figure bleeds to the panel's hairline).
-  const imgCall = `image("${escapeString(abs)}", width: 100%)`;
+  // Full column width unless sized: the figure panel renders the image
+  // edge-to-edge (target.pdf's grid-paper figure bleeds to the panel's
+  // hairline). A smaller image sits centred in the panel.
+  const imgCall = `image("${escapeString(abs)}"${imageSize(image) || ", width: 100%"})`;
   const attrs = getAttrs(image);
   const label = attrs?.id ? ` <${attrs.id}>` : "";
   if (caption === "") {
@@ -795,9 +796,52 @@ function renderLink(node: Link, ctx: Ctx): string {
   return `#link("${url}")[${body}];`;
 }
 
+const IMAGE_LENGTH_RE = /^(\d*\.?\d+)(%|mm|cm|in|pt|px)?$/;
+
+/**
+ * Builds the size arguments for an image's Typst `image(...)` call.
+ *
+ * The size comes from `{width=50% height=8cm}` after the image, or from
+ * an Obsidian embed's `|300` / `|300x200`. A bare number is CSS pixels.
+ * With both set, the image fits inside the box without stretching.
+ *
+ * Args:
+ *   image: The image node.
+ *
+ * Returns:
+ *   Arguments starting with ", ", or "" when the image has no size.
+ */
+function imageSize(image: Image): string {
+  const props = getAttrs(image)?.props ?? {};
+  const embed = (image.data as { size?: { width?: string; height?: string } } | undefined)?.size;
+  const width = embed?.width ?? props.width;
+  const height = embed?.height ?? props.height;
+  const args = [];
+  if (width) args.push(`width: ${imageLength(width, image.url)}`);
+  if (height) {
+    // A percentage height would be of the room left on the page, which moves.
+    if (height.trim().endsWith("%")) throw new Error(`Image height for ${image.url} can't be a percentage. Use mm, cm, in, pt or px, such as {height=8cm}.`);
+    args.push(`height: ${imageLength(height, image.url)}`);
+  }
+  if (width && height) args.push(`fit: "contain"`);
+  return args.map((a) => `, ${a}`).join("");
+}
+
+function imageLength(value: string, url: string): string {
+  const match = IMAGE_LENGTH_RE.exec(value.trim());
+  if (!match) {
+    throw new Error(
+      `Image size "${value}" for ${url} isn't a length.\n` +
+        "Use a percentage, mm, cm, in, pt or px, such as {width=50%} or {height=8cm}.",
+    );
+  }
+  const [, num, unit = "px"] = match;
+  return unit === "px" ? `${Number(num) * 0.75}pt` : `${num}${unit}`;
+}
+
 function renderInlineImage(image: Image, ctx: Ctx): string {
   const abs = resolveImagePath(imageUrl(image, ctx), ctx);
-  return `#image("${escapeString(abs)}");`;
+  return `#image("${escapeString(abs)}"${imageSize(image)});`;
 }
 
 // ---- helpers ----

@@ -136,9 +136,14 @@ function liftWikiLinks(node: Text): PhrasingContent[] {
     const target = rawTarget!.trim();
     out.push({ type: "text", value: value.slice(last, match.index) });
     if (bang && IMAGE_EXT_RE.test(target)) {
-      // The part after `|` is a display size in Obsidian, not a caption.
+      // The part after `|` is a display size in Obsidian (`300` or
+      // `300x200`, in pixels), not a caption.
       const image: Image = { type: "image", url: target, alt: "" };
-      (image as { data?: Record<string, unknown> }).data = { obsidianEmbed: true };
+      const size = /^\s*(\d+)(?:x(\d+))?\s*$/.exec(alias ?? "");
+      (image as { data?: Record<string, unknown> }).data = {
+        obsidianEmbed: true,
+        ...(size && { size: { width: size[1], height: size[2] } }),
+      };
       out.push(image);
     } else {
       out.push({ type: "text", value: alias?.trim() || displayName(target) });

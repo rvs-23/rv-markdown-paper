@@ -221,7 +221,7 @@ Some ==highlighted words== in a sentence. %%A comment that stays hidden.%%
 
 - **Callouts** use the four callout styles. Obsidian's other types fold onto them: `info` and `abstract` become notes, `success` and `hint` become tips, `question` and `caution` become warnings, `bug` and `error` become danger.
 - **Wikilinks** become their text: the alias if there is one, otherwise the note's name. A PDF has nowhere to link them.
-- **`![[figure.png]]`** embeds an image. It is found by name in the note's folder or any folder below it. An embed of another note becomes that note's name.
+- **`![[figure.png]]`** embeds an image. It is found by name in the note's folder or any folder below it. A size works as in Obsidian: `![[figure.png|300]]` is 300 pixels wide, `![[figure.png|300x200]]` fits in 300 by 200. An embed of another note becomes that note's name.
 - **`==highlights==`** get a grey marker.
 - **`%%comments%%`** and trailing `^block-ids` are removed.
 
@@ -244,6 +244,8 @@ As [@fig:pool-queue] shows, the queue is the bottleneck.
 ```
 
 An image alone in its paragraph becomes a full-width figure, and its alt text becomes the caption, numbered automatically ("Fig. 1"). `[@fig:id]` references it by number.
+
+To make an image smaller, give it a width or a height: `{width=50%}`, `{height=8cm}`, or both, as in `{#fig:pool-queue width=60%}`. A width can be a percentage of the column; otherwise use `mm`, `cm`, `in`, `pt` or `px`. A bare number is pixels. With both set, the image fits inside that box without stretching. A tall portrait photo fills a whole page at full width, so give it a height.
 
 ## Math
 
