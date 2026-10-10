@@ -38,11 +38,31 @@ export function parseMarkdownToMdast(markdown: string): MdastRoot {
   // than handing `{.muted}` to the heading. Positions index the normalized
   // source.
   liftBracketedSpans(tree, normalized);
+  liftOneLineDisplayMath(tree, normalized);
   // After spans, which need the parser's source positions on text nodes.
   liftObsidianSyntax(tree);
   resolveReferences(tree);
   extractAttributes(tree);
   return tree;
+}
+
+// `$$ x $$` on one line, alone in its paragraph, is display math, as it
+// is in Obsidian. remark-math only treats `$$` on a line of its own as a
+// block, and reads the one-line form as inline math.
+function liftOneLineDisplayMath(tree: MdastRoot, source: string): void {
+  const visit = (node: Nodes): void => {
+    if (!("children" in node)) return;
+    const children = node.children as Nodes[];
+    children.forEach((child, i) => {
+      const only = child.type === "paragraph" && child.children.length === 1 ? child.children[0]! : null;
+      if (only?.type === "inlineMath" && source.startsWith("$$", only.position?.start.offset ?? -1)) {
+        children[i] = { type: "math", value: only.value, position: only.position };
+      } else {
+        visit(child);
+      }
+    });
+  };
+  visit(tree);
 }
 
 // Reference-style links and images (`[text][ref]`, `[ref]`, `![alt][ref]`

@@ -24,6 +24,7 @@ import type {
 import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
 import type { Span } from "../parser/spans.js";
+import type { MermaidDrawing } from "../core/mermaid.js";
 import { toString as mdastToString } from "mdast-util-to-string";
 import { tex2typst } from "tex2typst";
 
@@ -290,6 +291,8 @@ export function usesRail(tree: Root): boolean {
 }
 
 function renderCodeBlock(node: Code): string {
+  const drawn = (node.data as { mermaid?: MermaidDrawing } | undefined)?.mermaid;
+  if (drawn) return `#diagram(bytes("${escapeString(drawn.svg)}"), ${drawn.widthPt}pt)`;
   const lang = node.lang ?? "";
   const maxFenceInContent = longestBacktickRun(node.value);
   const fenceLen = Math.max(3, maxFenceInContent + 1);
@@ -588,6 +591,20 @@ function renderInlineMath(node: { value: string; data?: { attrs?: Attributes } }
   return `$${latexToTypst(node.value)}$`;
 }
 
+// Typst's built-in math operators. tex2typst's strict mode rejects most
+// of their LaTeX spellings (`\max`, `\det`, `\sinh`), so each is passed
+// as `\operatorname{…}` and the resulting `op("max")` becomes Typst's own
+// `max`, which already has the right limits and spacing.
+const TYPST_OPERATORS = new Set([
+  "arccos", "arcsin", "arctan", "arg", "cos", "cosh", "cot", "coth", "csc", "csch",
+  "deg", "det", "dim", "exp", "gcd", "hom", "inf", "ker", "lcm", "lg", "lim",
+  "liminf", "limsup", "ln", "log", "max", "min", "Pr", "sec", "sech", "sin",
+  "sinh", "sup", "tan", "tanh",
+]);
+const OPERATOR_MACROS = Object.fromEntries(
+  [...TYPST_OPERATORS].map((name) => [`\\${name}`, `\\operatorname{${name}}`]),
+);
+
 // LaTeX → Typst math via tex2typst, in strict mode so an unknown command
 // fails instead of degrading to a bare identifier. The source is checked
 // first: a raw `#` would start Typst code inside math, and a raw `"` could
@@ -599,7 +616,9 @@ function latexToTypst(latex: string): string {
     throw new Error(`Math may not contain a raw # or ": $${latex}$`);
   }
   try {
-    return tex2typst(latex, { nonStrict: false }).trim();
+    return tex2typst(latex, { nonStrict: false, customTexMacros: OPERATOR_MACROS })
+      .replace(/op\("(\w+)"\)/g, (op, name: string) => (TYPST_OPERATORS.has(name) ? name : op))
+      .trim();
   } catch (err) {
     throw new Error(`Could not convert math $${latex}$: ${(err as Error).message}`);
   }

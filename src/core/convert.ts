@@ -11,6 +11,7 @@ import { estimateReadingTime } from "./readingTime.js";
 import { generateTypst, usesRail } from "../typst/generate.js";
 import { renderTypstToPdf } from "../typst/render.js";
 import { assertFontCoverage, collectOptionText, collectRenderedText } from "../typst/fonts.js";
+import { drawMermaid } from "./mermaid.js";
 
 export type ConvertOptions = {
   inputPath: string;
@@ -76,6 +77,8 @@ export async function convertMarkdownToPdf(options: ConvertOptions): Promise<voi
     readingTime,
     cover: injectReadingTimeIntoCoverMeta(resolved.cover, readingTime),
   };
+
+  await drawMermaid(tree);
 
   // Typst drops characters no font covers without a word, so refuse them
   // here, before any PDF is written. mdast lines count from the end of

@@ -185,7 +185,7 @@ with ThreadPoolExecutor(max_workers=8) as pool:
 ```
 ````
 
-Code blocks use a mono face on a grey panel, with grayscale syntax highlighting. The `{...}` form adds a header strip with the filename on the left and the label on the right.
+Code blocks use a mono face on a grey panel, with grayscale syntax highlighting. The `{...}` form adds a header strip with the filename on the left and the label on the right. A line too long for the panel wraps at its edge and continues four columns in from the line's own indentation.
 
 ## Tables
 
@@ -249,6 +249,17 @@ To make an image smaller, give it a width or a height: `{width=50%}`, `{height=8
 
 An image inside a sentence stays in the line, at its own size. `{height=1em}` makes it the height of the text, which suits icons and badges.
 
+## Diagrams
+
+````markdown
+```mermaid
+flowchart LR
+    md["Markdown"] --> parse["Parse"] --> pdf["PDF"]
+```
+````
+
+A `mermaid` code block becomes a diagram, set as a figure at its natural width, or the column's width if it is wider. Its labels are set in the body font. Drawing needs [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) (`brew install mermaid-cli`). Without it, the block prints as code and `mdpdf` says so. A diagram with an error fails the render with Mermaid's message.
+
 ## Math
 
 ```markdown
@@ -259,7 +270,9 @@ $$ N = \lambda \cdot W $$ {#eq:little}
 By [@eq:little], the pool needs $\frac{N}{W}$ workers.
 ```
 
-Display math is centred in a thin frame. With an `{#eq:id}`, it gets a number like "(1)", and `[@eq:id]` references it.
+Display math is centred in a thin frame and numbered "(1)", "(2)" and so on. With an `{#eq:id}`, `[@eq:id]` references it by number. `$$ … $$` on one line, alone in its paragraph, is display math too, as in Obsidian. An equation too wide for the column is set smaller until it fits.
+
+The standard operators (`\max`, `\min`, `\log`, `\det`, `\lim`, `\sinh` and the rest) work, and `\operatorname{rank}` sets any other name the same way.
 
 ## Footnotes
 

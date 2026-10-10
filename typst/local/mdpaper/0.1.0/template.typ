@@ -394,6 +394,13 @@
   #body
 ]
 
+// ---------- Mermaid diagram ----------
+// A diagram drawn by mermaid-cli as SVG, set as a figure at its natural
+// width but never wider than the column.
+#let diagram(svg, width) = figure(
+  layout(size => image(svg, format: "svg", width: calc.min(width, size.width))),
+)
+
 // ---------- task list ----------
 // Per spec §12.6: square ink-bordered checkbox; checked items invert to a
 // filled ink box with a page-coloured tick, and their body text drops to
@@ -1096,6 +1103,14 @@
   // to c-ink-2 as a stopgap because we shipped Regular (400) only;
   // with Light shipped we can put the fill back to c-ink and let the
   // weight do the work — sharper letterforms, no perceived greying.
+  //
+  // Each line is set on its own. A line wider than the panel would run
+  // out of it, because a long name or ID has nowhere to break, and Typst
+  // breaks an indented line straight after its indentation, losing the
+  // code's shape. So a line that doesn't fit has every character boxed,
+  // which lets it break at the panel edge, and wraps with a hanging indent
+  // four columns in from its own indentation. Boxes add no characters,
+  // so the code still copies out as written.
   show raw.where(block: true): it => block(
     fill: c-surface,
     inset: (x: 12pt, y: 10pt),
@@ -1103,7 +1118,23 @@
     stroke: 0.5pt + c-hairline,
   )[
     #set par(justify: false)
-    #text(font: f-mono, size: 8.6pt, weight: 300, fill: c-ink, it)
+    #set text(font: f-mono, size: 8.6pt, weight: 300, fill: c-ink)
+    #layout(size => {
+      let column = measure("0").width
+      for line in it.lines {
+        if line.text.trim() == "" {
+          // An empty line still takes a line's height.
+          block(above: 0pt, below: par.leading, hide("0"))
+        } else if measure(line).width <= size.width {
+          block(above: 0pt, below: par.leading, line)
+        } else {
+          let indent = line.text.len() - line.text.trim(" ", at: start).len()
+          let hang = (indent + 4) * column
+          show regex("\\S"): box
+          block(above: 0pt, below: par.leading, inset: (left: hang))[#h(-hang)#line]
+        }
+      }
+    })
   ]
   show raw.where(block: false): it => box(
     fill: c-surface,
@@ -1144,12 +1175,20 @@
   // text() sets the math font at 15pt 500 inside the panel; the
   // panel keeps its top/bottom hairline + generous inset for
   // breathing room.
+  //
+  // An equation can't wrap, so one wider than the column is set smaller
+  // until it fits, with room on both sides for the centred equation to
+  // clear its number.
   show math.equation.where(block: true): it => block(
     above: 1.8em, below: 1.8em,
     stroke: (top: 0.3pt + c-hairline, bottom: 0.3pt + c-hairline),
     inset: (top: 18pt, bottom: 18pt),
     width: 100%,
-    text(size: 15pt, weight: 500, it),
+    layout(size => {
+      let natural = measure(text(size: 15pt, weight: 500, math.equation(math.display(it.body)))).width
+      let room = size.width - 2 * 36pt
+      text(size: 15pt * calc.min(1, room / natural), weight: 500, it)
+    }),
   )
 
   // --------- Running header/footer ---------
