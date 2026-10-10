@@ -38,6 +38,12 @@ To try it on a document that ships with the repo:
 mdpdf examples/kannada-notes/notes.md out/notes.pdf
 ```
 
+The output's extension picks the format. Ending it in `.png` or `.svg` writes one image per page, which is handy for checking a layout without a PDF viewer. `{p}` in the name becomes the page number:
+
+```bash
+mdpdf notes.md "pages/notes-{p}.png"
+```
+
 `mdpdf` runs the built code, so after pulling changes run `npm install` in the repo to rebuild it.
 
 Without `npm link`, run it through npm from inside the repo. npm always runs from the repo's root, so paths are relative to the repo, wherever you are standing:
