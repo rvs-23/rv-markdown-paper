@@ -1144,12 +1144,20 @@
   // text() sets the math font at 15pt 500 inside the panel; the
   // panel keeps its top/bottom hairline + generous inset for
   // breathing room.
+  //
+  // An equation can't wrap, so one wider than the column is set smaller
+  // until it fits, with room on both sides for the centred equation to
+  // clear its number.
   show math.equation.where(block: true): it => block(
     above: 1.8em, below: 1.8em,
     stroke: (top: 0.3pt + c-hairline, bottom: 0.3pt + c-hairline),
     inset: (top: 18pt, bottom: 18pt),
     width: 100%,
-    text(size: 15pt, weight: 500, it),
+    layout(size => {
+      let natural = measure(text(size: 15pt, weight: 500, math.equation(math.display(it.body)))).width
+      let room = size.width - 2 * 36pt
+      text(size: 15pt * calc.min(1, room / natural), weight: 500, it)
+    }),
   )
 
   // --------- Running header/footer ---------

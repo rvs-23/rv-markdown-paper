@@ -295,3 +295,22 @@ describe("image sizes", () => {
     expect(() => gen("![Cap](a.png){height=50%}\n")).toThrow("can't be a percentage");
   });
 });
+
+describe("math operators", () => {
+  it("sets LaTeX operators as Typst's own", () => {
+    // Strict tex2typst rejected `\max`, `\det` and most others.
+    expect(gen("$\\max(a, b) + \\min_i x_i + \\det A + \\liminf_n a_n + \\sinh x$\n")).toContain(
+      "$max(a, b) + min_i x_i + det A + liminf_n a_n + sinh x$",
+    );
+    expect(gen("$\\operatorname{rank} M$\n")).toContain('op("rank") M');
+  });
+
+  it("still rejects an unknown command", () => {
+    expect(() => gen("$\\notacommand x$\n")).toThrow("Could not convert math");
+  });
+
+  it("sets one-line $$…$$ alone in its paragraph as display math", () => {
+    expect(gen("$$ \\max(a, b) $$\n")).toBe("$ max(a, b) $\n");
+    expect(gen("Inline $$x$$ stays inline.\n")).toBe("Inline $x$ stays inline.\n");
+  });
+});
