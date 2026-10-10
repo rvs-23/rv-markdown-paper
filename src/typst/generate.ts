@@ -24,6 +24,7 @@ import type {
 import { escapeMarkup, escapeString, typstString } from "./escape.js";
 import type { Attributes } from "../parser/attributes.js";
 import type { Span } from "../parser/spans.js";
+import type { MermaidDrawing } from "../core/mermaid.js";
 import { toString as mdastToString } from "mdast-util-to-string";
 import { tex2typst } from "tex2typst";
 
@@ -290,6 +291,8 @@ export function usesRail(tree: Root): boolean {
 }
 
 function renderCodeBlock(node: Code): string {
+  const drawn = (node.data as { mermaid?: MermaidDrawing } | undefined)?.mermaid;
+  if (drawn) return `#diagram(bytes("${escapeString(drawn.svg)}"), ${drawn.widthPt}pt)`;
   const lang = node.lang ?? "";
   const maxFenceInContent = longestBacktickRun(node.value);
   const fenceLen = Math.max(3, maxFenceInContent + 1);

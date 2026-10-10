@@ -249,6 +249,17 @@ To make an image smaller, give it a width or a height: `{width=50%}`, `{height=8
 
 An image inside a sentence stays in the line, at its own size. `{height=1em}` makes it the height of the text, which suits icons and badges.
 
+## Diagrams
+
+````markdown
+```mermaid
+flowchart LR
+    md["Markdown"] --> parse["Parse"] --> pdf["PDF"]
+```
+````
+
+A `mermaid` code block becomes a diagram, set as a figure at its natural width, or the column's width if it is wider. Its labels are set in the body font. Drawing needs [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) (`brew install mermaid-cli`). Without it, the block prints as code and `mdpdf` says so. A diagram with an error fails the render with Mermaid's message.
+
 ## Math
 
 ```markdown

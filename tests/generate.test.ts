@@ -314,3 +314,18 @@ describe("math operators", () => {
     expect(gen("Inline $$x$$ stays inline.\n")).toBe("Inline $x$ stays inline.\n");
   });
 });
+
+describe("Mermaid diagrams", () => {
+  it("sets a drawn diagram as a figure and leaves other code alone", () => {
+    const tree = parseMarkdownToMdast("```mermaid\nflowchart LR\n  a --> b\n```\n\n```python\nx = 1\n```\n");
+    const code = tree.children[0] as { data?: Record<string, unknown> };
+    code.data = { mermaid: { svg: '<svg viewBox="0 0 10 10"><text>"a"</text></svg>', widthPt: 120 } };
+    const out = generateTypst(tree, { sourceDir: "/tmp/mdpdf-tests" });
+    expect(out).toContain('#diagram(bytes("<svg viewBox=\\"0 0 10 10\\"><text>\\"a\\"</text></svg>"), 120pt)');
+    expect(out).toContain("```python\nx = 1\n```");
+  });
+
+  it("prints a diagram as code when it wasn't drawn", () => {
+    expect(gen("```mermaid\nflowchart LR\n  a --> b\n```\n")).toBe("```mermaid\nflowchart LR\n  a --> b\n```\n");
+  });
+});

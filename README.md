@@ -100,6 +100,8 @@ A tinted callout.
 
 Notes written in Obsidian render as they are: callouts (`> [!tip]`), `[[wikilinks]]`, `![[image.png]]` embeds and `==highlights==` are all understood.
 
+Mermaid diagrams are drawn when [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) is installed (`brew install mermaid-cli`). Without it, they print as code.
+
 ## How it works
 
 ```mermaid

@@ -394,6 +394,13 @@
   #body
 ]
 
+// ---------- Mermaid diagram ----------
+// A diagram drawn by mermaid-cli as SVG, set as a figure at its natural
+// width but never wider than the column.
+#let diagram(svg, width) = figure(
+  layout(size => image(svg, format: "svg", width: calc.min(width, size.width))),
+)
+
 // ---------- task list ----------
 // Per spec §12.6: square ink-bordered checkbox; checked items invert to a
 // filled ink box with a page-coloured tick, and their body text drops to
