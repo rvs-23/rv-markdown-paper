@@ -382,4 +382,49 @@ describe.skipIf(!hasTools)("edge-case rendering", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  // Word boxes from pdftotext -bbox, for checking where text landed.
+  async function wordBoxes(markdown: string): Promise<Array<{ word: string; xMin: number; xMax: number; yMin: number }>> {
+    const dir = await mkdtemp(join(tmpdir(), "mdpdf-box-"));
+    try {
+      await writeFile(join(dir, "doc.md"), markdown, "utf8");
+      await convertMarkdownToPdf({ inputPath: join(dir, "doc.md"), outputPath: join(dir, "doc.pdf") });
+      const html = pdfText(join(dir, "doc.pdf"), ["-bbox"]);
+      return [...html.matchAll(/xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)"[^>]*>([^<]*)</g)].map((m) => ({
+        word: m[4]!,
+        xMin: Number(m[1]),
+        yMin: Number(m[2]),
+        xMax: Number(m[3]),
+      }));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("wraps a code line too long for its panel inside the panel, under its indent", async () => {
+    // An unbreakable ID ran out of the panel, and a wrapped indented line
+    // restarted at the panel's left edge.
+    const id = "ri.foundry.main.dataset.3db1ce53-2dfb-4879-98b0-7727c128db65";
+    const md = `Intro.\n\n\`\`\`python\nf(\n    readings=Input("${id}"),\n)\n\`\`\`\n`;
+    const words = await wordBoxes(md);
+    const start = words.find((w) => w.word.startsWith("readings"))!;
+    const code = words.filter((w) => Math.abs(w.yMin - start.yMin) < 40);
+    // No code runs past the panel, which ends 12pt inside the column:
+    // A4 210mm less the 48mm right margin.
+    const panelRight = ((210 - 48) * 72) / 25.4 - 12;
+    expect(Math.max(...code.map((w) => w.xMax))).toBeLessThan(panelRight + 0.5);
+    // The line wrapped, and its continuation sits right of where it began.
+    const rest = code.filter((w) => w.yMin > start.yMin + 1 && w.word !== ")");
+    expect(rest.length).toBeGreaterThan(0);
+    expect(rest[0]!.xMin).toBeGreaterThan(start.xMin);
+  });
+
+  it("shrinks a display equation wider than the column so its number stays clear", async () => {
+    const md =
+      "Intro.\n\n$$\n\\text{compute-seconds} = \\text{compute units} \\times \\text{seconds} \\times \\text{product rate} \\times \\text{factor}\n$$\n";
+    const words = await wordBoxes(md);
+    const number = words.find((w) => w.word === "(1)")!;
+    const last = words.find((w) => w.word === "factor")!;
+    expect(last.xMax).toBeLessThan(number.xMin);
+  });
 });

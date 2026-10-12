@@ -47,7 +47,7 @@ The tests live in `tests/`, in four layers:
 | Render | `*.integration.test.ts` | Problems that only show in the PDF. These compile real documents and read the text back with `pdftotext`. |
 | Contracts | `render.integration`, `examples.integration`, `guide.integration` | The example chapter is exactly 6 pages, with set text on each page. No example has a near-empty page. Every example in the Markdown guide renders as its feature. |
 
-The render tests skip when Typst or pdftotext is missing. `tests/helpers.ts` holds the shared detection and `pdftotext` call.
+The render tests skip when Typst or pdftotext is missing. `tests/helpers.ts` holds the shared detection and `pdftotext` call. The Mermaid tests check drawing when `mmdc` is installed and the printed-as-code fallback when it isn't, so CI, which doesn't install it, covers the fallback.
 
 ## Committed PDFs
 

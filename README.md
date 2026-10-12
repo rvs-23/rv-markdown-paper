@@ -38,6 +38,12 @@ To try it on a document that ships with the repo:
 mdpdf examples/kannada-notes/notes.md out/notes.pdf
 ```
 
+The output's extension picks the format. Ending it in `.png` or `.svg` writes one image per page, which is handy for checking a layout without a PDF viewer. `{p}` in the name becomes the page number:
+
+```bash
+mdpdf notes.md "pages/notes-{p}.png"
+```
+
 `mdpdf` runs the built code, so after pulling changes run `npm install` in the repo to rebuild it.
 
 Without `npm link`, run it through npm from inside the repo. npm always runs from the repo's root, so paths are relative to the repo, wherever you are standing:
@@ -99,6 +105,8 @@ A tinted callout.
 [docs/markdown-guide.md](docs/markdown-guide.md) shows every feature: the Markdown to write and what it becomes. It's written to be handed to a person or an AI agent drafting a document for this tool.
 
 Notes written in Obsidian render as they are: callouts (`> [!tip]`), `[[wikilinks]]`, `![[image.png]]` embeds and `==highlights==` are all understood.
+
+Mermaid diagrams are drawn when [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) is installed (`brew install mermaid-cli`). Without it, they print as code.
 
 ## How it works
 

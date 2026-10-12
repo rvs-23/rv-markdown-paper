@@ -39,7 +39,7 @@ function buildPreamble(options: DocumentOptions, rail: boolean): string {
     `#import "${TEMPLATE_PACKAGE}": paper, note, tip, warning, danger, warn, system, ` +
       `marg, eyebrow, dropcap, epigraph, exbox, code-block, ` +
       `task-box, task-item, task-list, _sig-numeral, _sig-history, ` +
-      `page-right, endnote-ref, endnotes, rule, md-table, mark`,
+      `page-right, endnote-ref, endnotes, rule, md-table, mark, diagram`,
   );
   // Palette tokens are needed by generated body content (e.g. the
   // definition-list grid renders its hairline with `c-hairline`, a

@@ -73,7 +73,9 @@ The converter rejects these before Typst runs:
 
 **Cross-references.** `[@fig:x]` and `[@eq:y]` become Typst references ("Fig. 1", "(1)"). A reference to a label that doesn't exist stays as plain text, because Typst would otherwise fail on it.
 
-**Math.** `$…$` is LaTeX, converted to Typst math by [`tex2typst`](https://github.com/qwinsi/tex2typst) in strict mode, so an unknown command fails with the formula named.
+**Math.** `$…$` is LaTeX, converted to Typst math by [`tex2typst`](https://github.com/qwinsi/tex2typst) in strict mode, so an unknown command fails with the formula named. The standard operators (`\max`, `\det` and the rest), which strict mode doesn't know, are passed through as Typst's own.
+
+**Mermaid.** Before generating, [`mermaid.ts`](../src/core/mermaid.ts) draws every `mermaid` block with mermaid-cli (`mmdc`), all in one run because each run starts a headless browser. Labels are drawn as plain SVG text in Archivo, since Typst can't draw HTML labels, and the SVG goes into the Typst source as a string, so no file is written beside the document. mermaid-cli isn't a dependency: without it the blocks print as code, with a warning.
 
 **Escaping.** Text goes through [`escape.ts`](../src/typst/escape.ts), which escapes every character Typst markup would read as syntax (`*`, `_`, `#`, `$`, `@`, `<`, `~`, `/` and more). It also escapes `=`, `-`, `+` and `N.` at the start of a line, where Typst would read a heading or list.
 

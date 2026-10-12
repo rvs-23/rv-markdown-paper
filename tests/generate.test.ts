@@ -295,3 +295,37 @@ describe("image sizes", () => {
     expect(() => gen("![Cap](a.png){height=50%}\n")).toThrow("can't be a percentage");
   });
 });
+
+describe("math operators", () => {
+  it("sets LaTeX operators as Typst's own", () => {
+    // Strict tex2typst rejected `\max`, `\det` and most others.
+    expect(gen("$\\max(a, b) + \\min_i x_i + \\det A + \\liminf_n a_n + \\sinh x$\n")).toContain(
+      "$max(a, b) + min_i x_i + det A + liminf_n a_n + sinh x$",
+    );
+    expect(gen("$\\operatorname{rank} M$\n")).toContain('op("rank") M');
+  });
+
+  it("still rejects an unknown command", () => {
+    expect(() => gen("$\\notacommand x$\n")).toThrow("Could not convert math");
+  });
+
+  it("sets one-line $$…$$ alone in its paragraph as display math", () => {
+    expect(gen("$$ \\max(a, b) $$\n")).toBe("$ max(a, b) $\n");
+    expect(gen("Inline $$x$$ stays inline.\n")).toBe("Inline $x$ stays inline.\n");
+  });
+});
+
+describe("Mermaid diagrams", () => {
+  it("sets a drawn diagram as a figure and leaves other code alone", () => {
+    const tree = parseMarkdownToMdast("```mermaid\nflowchart LR\n  a --> b\n```\n\n```python\nx = 1\n```\n");
+    const code = tree.children[0] as { data?: Record<string, unknown> };
+    code.data = { mermaid: { svg: '<svg viewBox="0 0 10 10"><text>"a"</text></svg>', widthPt: 120 } };
+    const out = generateTypst(tree, { sourceDir: "/tmp/mdpdf-tests" });
+    expect(out).toContain('#diagram(bytes("<svg viewBox=\\"0 0 10 10\\"><text>\\"a\\"</text></svg>"), 120pt)');
+    expect(out).toContain("```python\nx = 1\n```");
+  });
+
+  it("prints a diagram as code when it wasn't drawn", () => {
+    expect(gen("```mermaid\nflowchart LR\n  a --> b\n```\n")).toBe("```mermaid\nflowchart LR\n  a --> b\n```\n");
+  });
+});

@@ -134,6 +134,7 @@ Each Markdown construct maps onto one template function. [markdown-guide.md](mar
 | `:::exbox` | `exbox` | Exercise: large serif numeral, title and tag |
 | `:::eyebrow` / `:::dropcap` | `eyebrow` / `dropcap` | Chapter-opener label; 64 pt serif initial |
 | Code fence with `filename=` | `code-block` | Panel with a filename and language strip |
+| ` ```mermaid ` | `diagram` | Mermaid's neutral theme, in a figure panel at natural width |
 | Table | `md-table` | Columns sized to their content; header rule, no stripes. The first column is labels in Archivo, the rest data in JetBrains Mono. |
 | Task list | `task-list` | Ink checkboxes; done items muted |
 | `==highlight==` | `mark` | Grey marker behind the text |
